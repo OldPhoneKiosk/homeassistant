@@ -134,6 +134,39 @@ async def test_delete_device_server_error_maps():
         await client.async_delete_device("dev-1")
 
 
+async def test_provision_panel_runs_start_then_approve():
+    seen = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request.url.path)
+        if request.url.path == const.ENDPOINT_PAIRING_START:
+            return httpx.Response(200, json={"request_id": "r1", "pairing_code": "482913"})
+        if request.url.path == const.ENDPOINT_PAIRING_APPROVE:
+            body = json.loads(request.content)
+            assert body["pairing_code"] == "482913"
+            assert body["name"] == "Kitchen"
+            assert body["room"] == "Kitchen"
+            return httpx.Response(200, json={"device_id": "dev-9", "device_secret": "sek"})
+        return httpx.Response(404)
+
+    client = _client(handler)
+    provisioned = await client.async_provision_panel("Kitchen", "Kitchen")
+    assert provisioned.device_id == "dev-9"
+    assert provisioned.device_secret == "sek"
+    assert seen == [const.ENDPOINT_PAIRING_START, const.ENDPOINT_PAIRING_APPROVE]
+
+
+async def test_provision_panel_auth_error_maps():
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == const.ENDPOINT_PAIRING_START:
+            return httpx.Response(200, json={"pairing_code": "1"})
+        return httpx.Response(401, text="nope")
+
+    client = _client(handler)
+    with pytest.raises(api.BridgeAuthError):
+        await client.async_provision_panel("X")
+
+
 async def test_async_check_success():
     def handler(request: httpx.Request) -> httpx.Response:
         if request.url.path == const.ENDPOINT_HEALTH:

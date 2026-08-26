@@ -16,6 +16,11 @@ ENDPOINT_HEALTH = "/health"
 ENDPOINT_DEVICES = "/api/devices"
 ENDPOINT_DEVICE = "/api/devices/{device_id}"
 ENDPOINT_COMMANDS = "/api/devices/{device_id}/commands"
+ENDPOINT_PAIRING_START = "/api/pairing/start"
+ENDPOINT_PAIRING_APPROVE = "/api/pairing/approve"
+
+# Pairing QR payload
+PAIRING_PAYLOAD_VERSION = 1
 
 # Polling
 DEFAULT_SCAN_INTERVAL = timedelta(seconds=15)
@@ -46,4 +51,7 @@ MANUFACTURER = "OldPhoneKiosk"
 
 # Services
 SERVICE_REVOKE_PANEL = "revoke_panel"
+SERVICE_PAIR_NEW_PANEL = "pair_new_panel"
 ATTR_DEVICE_ID = "device_id"  # Bridge device id (not the HA registry device id)
+ATTR_NAME = "name"
+ATTR_ROOM = "room"

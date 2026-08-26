@@ -1,3 +1,24 @@
+pair_new_panel:
+  name: Pair a new panel
+  description: >-
+    Provision a new panel on the Bridge and return a pairing QR payload to scan in
+    the OldPhoneKiosk app. Also raises a persistent notification with the QR/payload.
+  fields:
+    name:
+      name: Panel name
+      description: Display name for the new panel.
+      required: true
+      example: "Kitchen Panel"
+      selector:
+        text:
+    room:
+      name: Room
+      description: Optional room/area for the panel.
+      required: false
+      example: "Kitchen"
+      selector:
+        text:
+
 revoke_panel:
   name: Revoke panel
   description: >-

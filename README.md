@@ -31,6 +31,34 @@ Bridge URL (e.g. `http://127.0.0.1:8788`) and API key.
 
 ## Services
 
+### `oldphonekiosk.pair_new_panel`
+
+Provisions a **new** panel on the Bridge (start + approve, using the configured
+API key) and returns a **pairing QR payload** to scan in the OldPhoneKiosk app. It
+also raises a persistent notification with the QR image (or the raw payload).
+
+```yaml
+service: oldphonekiosk.pair_new_panel
+data:
+  name: Kitchen Panel
+  room: Kitchen
+```
+
+Response (service supports response data):
+
+```yaml
+device_id: "b1e7c2a0-..."
+payload: '{"bridge_url":"http://bridge.local:8788","device_id":"...","device_secret":"...","version":1,...}'
+qr_svg_data_uri: "data:image/svg+xml;base64,..."   # present when qrcode is installed
+```
+
+The panel app scans the QR (or you can paste the `payload`) to finish pairing; it
+then fetches a short-lived WS token and connects. The QR image needs the `qrcode`
+library (declared in the manifest); without it the payload is still returned.
+
+> The QR carries `device_secret`. Show it briefly and let one panel scan it.
+> `bridge_url` must be reachable from the device (not `127.0.0.1` for a real phone).
+
 ### `oldphonekiosk.revoke_panel`
 
 Revokes and removes a panel on its Bridge (`DELETE /api/devices/{id}`), then
@@ -113,8 +141,9 @@ custom_components/oldphonekiosk/
   config_flow.py    # Bridge URL + API key setup
   __init__.py       # entry setup/unload, platform forwarding, service registration
   entity.py         # shared base entity / device_info (+ bridge_device_id attribute)
-  services.py       # oldphonekiosk.revoke_panel handler
-  services.yaml     # service schema shown in the HA UI
+  services.py       # revoke_panel + pair_new_panel handlers
+  services.yaml     # service schemas shown in the HA UI
+  pairing.py        # pairing QR payload build + SVG QR (HA-independent)
   binary_sensor.py sensor.py select.py button.py
   strings.json translations/en.json
 ```

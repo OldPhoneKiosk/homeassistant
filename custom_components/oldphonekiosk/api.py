@@ -18,6 +18,8 @@ from .const import (
     ENDPOINT_DEVICE,
     ENDPOINT_DEVICES,
     ENDPOINT_HEALTH,
+    ENDPOINT_PAIRING_APPROVE,
+    ENDPOINT_PAIRING_START,
 )
 
 
@@ -35,6 +37,14 @@ class BridgeConnectionError(BridgeError):
 
 class BridgeNotFoundError(BridgeError):
     """The Bridge returned 404 (unknown device)."""
+
+
+@dataclass(slots=True)
+class ProvisionedPanel:
+    """Per-device credentials produced by provisioning a new panel."""
+
+    device_id: str
+    device_secret: str
 
 
 @dataclass(slots=True)
@@ -156,3 +166,27 @@ class BridgeClient:
         Raises BridgeNotFoundError if the Bridge does not know the device.
         """
         await self._request("DELETE", ENDPOINT_DEVICE.format(device_id=device_id))
+
+    async def async_provision_panel(
+        self, name: str, room: str | None = None
+    ) -> ProvisionedPanel:
+        """Provision a new panel: start pairing, then approve, returning credentials.
+
+        Home Assistant performs both steps (it holds the API key) so it can encode
+        the resulting per-device credentials into a pairing QR code.
+        """
+        start = await self._request(
+            "POST",
+            ENDPOINT_PAIRING_START,
+            json={"display_name": name},
+        )
+        pairing_code = start.json()["pairing_code"]
+        approve = await self._request(
+            "POST",
+            ENDPOINT_PAIRING_APPROVE,
+            json={"pairing_code": pairing_code, "name": name, "room": room},
+        )
+        data = approve.json()
+        return ProvisionedPanel(
+            device_id=data["device_id"], device_secret=data["device_secret"]
+        )

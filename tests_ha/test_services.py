@@ -12,9 +12,12 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from custom_components.oldphonekiosk.api import PanelDeviceData
 from custom_components.oldphonekiosk.const import (
     ATTR_DEVICE_ID,
+    ATTR_NAME,
+    ATTR_ROOM,
     CONF_API_KEY,
     CONF_BRIDGE_URL,
     DOMAIN,
+    SERVICE_PAIR_NEW_PANEL,
     SERVICE_REVOKE_PANEL,
 )
 
@@ -45,6 +48,12 @@ class _FakeClient:
     async def async_delete_device(self, device_id: str) -> None:
         self.deleted.append(device_id)
         self._devices = [d for d in self._devices if d.device_id != device_id]
+
+    async def async_provision_panel(self, name: str, room: str | None = None):
+        from custom_components.oldphonekiosk.api import ProvisionedPanel
+
+        self.provisioned = (name, room)
+        return ProvisionedPanel(device_id="dev-new", device_secret="new-secret")
 
     async def close(self) -> None:
         pass
@@ -96,3 +105,39 @@ async def test_revoke_panel_unknown_device_raises(hass: HomeAssistant):
         await hass.services.async_call(
             DOMAIN, SERVICE_REVOKE_PANEL, {ATTR_DEVICE_ID: "nope"}, blocking=True
         )
+
+
+async def test_pair_new_panel_service_returns_payload(hass: HomeAssistant):
+    import json
+
+    fake = _FakeClient()
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={CONF_BRIDGE_URL: "http://bridge.local:8788", CONF_API_KEY: "k"},
+    )
+    entry.add_to_hass(hass)
+    with patch("custom_components.oldphonekiosk.BridgeClient", return_value=fake):
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+    assert hass.services.has_service(DOMAIN, SERVICE_PAIR_NEW_PANEL)
+
+    response = await hass.services.async_call(
+        DOMAIN,
+        SERVICE_PAIR_NEW_PANEL,
+        {ATTR_NAME: "Kitchen", ATTR_ROOM: "Kitchen"},
+        blocking=True,
+        return_response=True,
+    )
+
+    assert fake.provisioned == ("Kitchen", "Kitchen")
+    assert response["device_id"] == "dev-new"
+    payload = json.loads(response["payload"])
+    assert payload["version"] == 1
+    assert payload["bridge_url"] == "http://bridge.local:8788"
+    assert payload["device_id"] == "dev-new"
+    assert payload["device_secret"] == "new-secret"
+    assert payload["name"] == "Kitchen"
+    # QR image is included when the qrcode lib is available (SVG data URI).
+    if response.get("qr_svg_data_uri") is not None:
+        assert response["qr_svg_data_uri"].startswith("data:image/svg+xml;base64,")

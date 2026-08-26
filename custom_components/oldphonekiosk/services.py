@@ -5,18 +5,44 @@ from __future__ import annotations
 import logging
 
 import voluptuous as vol
-from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.components import persistent_notification
+from homeassistant.core import (
+    HomeAssistant,
+    ServiceCall,
+    ServiceResponse,
+    SupportsResponse,
+)
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
 
 from .api import BridgeError, BridgeNotFoundError
-from .const import ATTR_DEVICE_ID, DOMAIN, SERVICE_REVOKE_PANEL
+from .const import (
+    ATTR_DEVICE_ID,
+    ATTR_NAME,
+    ATTR_ROOM,
+    CONF_BRIDGE_URL,
+    DOMAIN,
+    SERVICE_PAIR_NEW_PANEL,
+    SERVICE_REVOKE_PANEL,
+)
 from .coordinator import OldPhoneKioskCoordinator
+from .pairing import (
+    build_pairing_payload,
+    payload_to_json,
+    payload_to_qr_svg_data_uri,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
 REVOKE_PANEL_SCHEMA = vol.Schema({vol.Required(ATTR_DEVICE_ID): cv.string})
+
+PAIR_NEW_PANEL_SCHEMA = vol.Schema(
+    {
+        vol.Required(ATTR_NAME): cv.string,
+        vol.Optional(ATTR_ROOM): cv.string,
+    }
+)
 
 
 def _find_coordinator(
@@ -30,6 +56,65 @@ def _find_coordinator(
         ):
             return coordinator
     return None
+
+
+def _any_coordinator(hass: HomeAssistant) -> OldPhoneKioskCoordinator | None:
+    """Return the first configured coordinator (single-Bridge assumption)."""
+    for coordinator in hass.data.get(DOMAIN, {}).values():
+        if isinstance(coordinator, OldPhoneKioskCoordinator):
+            return coordinator
+    return None
+
+
+async def _async_pair_new_panel(
+    hass: HomeAssistant, call: ServiceCall
+) -> ServiceResponse:
+    """Provision a new panel on the Bridge and return a scannable QR payload."""
+    name: str = call.data[ATTR_NAME]
+    room: str | None = call.data.get(ATTR_ROOM)
+
+    coordinator = _any_coordinator(hass)
+    if coordinator is None:
+        raise ServiceValidationError("No OldPhoneKiosk Bridge is configured.")
+
+    try:
+        provisioned = await coordinator.client.async_provision_panel(name, room)
+    except BridgeError as err:
+        raise HomeAssistantError(f"Bridge provisioning failed: {err}") from err
+
+    bridge_url = coordinator.entry.data[CONF_BRIDGE_URL]
+    payload = build_pairing_payload(
+        bridge_url=bridge_url,
+        device_id=provisioned.device_id,
+        device_secret=provisioned.device_secret,
+        name=name,
+        room=room,
+    )
+    payload_json = payload_to_json(payload)
+    qr_data_uri = payload_to_qr_svg_data_uri(payload_json)
+
+    await coordinator.async_request_refresh()
+
+    # Surface the QR (or the payload) to the user via a persistent notification.
+    if qr_data_uri:
+        message = f"Scan this QR in the OldPhoneKiosk app to pair **{name}**:\n\n![pairing qr]({qr_data_uri})"
+    else:
+        message = (
+            f"Pair **{name}** in the OldPhoneKiosk app with this payload "
+            f"(install `qrcode` for an image):\n\n```\n{payload_json}\n```"
+        )
+    persistent_notification.async_create(
+        hass,
+        message,
+        title="OldPhoneKiosk — pair a panel",
+        notification_id=f"{DOMAIN}_pair_{provisioned.device_id}",
+    )
+
+    return {
+        "device_id": provisioned.device_id,
+        "payload": payload_json,
+        "qr_svg_data_uri": qr_data_uri,
+    }
 
 
 async def _async_revoke_panel(hass: HomeAssistant, call: ServiceCall) -> None:
@@ -67,11 +152,21 @@ def async_setup_services(hass: HomeAssistant) -> None:
     async def _handle_revoke_panel(call: ServiceCall) -> None:
         await _async_revoke_panel(hass, call)
 
+    async def _handle_pair_new_panel(call: ServiceCall) -> ServiceResponse:
+        return await _async_pair_new_panel(hass, call)
+
     hass.services.async_register(
         DOMAIN,
         SERVICE_REVOKE_PANEL,
         _handle_revoke_panel,
         schema=REVOKE_PANEL_SCHEMA,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_PAIR_NEW_PANEL,
+        _handle_pair_new_panel,
+        schema=PAIR_NEW_PANEL_SCHEMA,
+        supports_response=SupportsResponse.ONLY,
     )
 
 
@@ -79,3 +174,4 @@ def async_unload_services(hass: HomeAssistant) -> None:
     """Remove services once the last config entry is gone."""
     if not hass.data.get(DOMAIN):
         hass.services.async_remove(DOMAIN, SERVICE_REVOKE_PANEL)
+        hass.services.async_remove(DOMAIN, SERVICE_PAIR_NEW_PANEL)
