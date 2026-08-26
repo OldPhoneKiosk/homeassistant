@@ -27,6 +27,7 @@ DEVICE_JSON = {
         "screen": "photos",
         "camera": "front",
         "intercom": "idle",
+        "stream": "live",
         "app_version": "0.1.0",
         "last_seen": "2026-08-26T13:41:32.559064Z",
     },
@@ -62,7 +63,28 @@ async def test_get_devices_parses_state():
     assert d.last_seen.year == 2026
     assert d.camera_mode == "front"
     assert d.intercom == "idle"
+    assert d.stream == "live"
     assert d.video_url == "http://go2rtc/stream.html?src=panel"
+
+
+async def test_start_stop_stream_endpoints():
+    seen = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append((request.method, request.url.path, json.loads(request.content or b"{}")))
+        return httpx.Response(
+            200,
+            json={"device_id": "d", "name": "P", "capabilities": {},
+                  "state": {"online": True, "stream": "starting"},
+                  "media": {"video_url": "http://v"}},
+        )
+
+    client = _client(handler)
+    started = await client.async_start_stream("d", camera_mode="back")
+    await client.async_stop_stream("d")
+    assert seen[0] == ("POST", const.ENDPOINT_STREAM_START.format(device_id="d"), {"camera_mode": "back"})
+    assert seen[1][0:2] == ("POST", const.ENDPOINT_STREAM_STOP.format(device_id="d"))
+    assert started.stream == "starting"
 
 
 async def test_from_json_media_defaults_when_absent():

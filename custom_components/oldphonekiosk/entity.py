@@ -39,6 +39,7 @@ class OldPhoneKioskEntity(CoordinatorEntity[OldPhoneKioskCoordinator]):
             "video_url": device.video_url if device else None,
             "camera_mode": device.camera_mode if device else None,
             "intercom": device.intercom if device else None,
+            "stream": device.stream if device else None,
         }
 
     @property

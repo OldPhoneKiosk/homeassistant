@@ -59,6 +59,19 @@ library (declared in the manifest); without it the payload is still returned.
 > The QR carries `device_secret`. Show it briefly and let one panel scan it.
 > `bridge_url` must be reachable from the device (not `127.0.0.1` for a real phone).
 
+### `oldphonekiosk.start_stream` / `oldphonekiosk.stop_stream`
+
+Start/stop a media publisher session on the Bridge (go2rtc). `start_stream` takes
+`device_id` (+ optional `camera_mode`); the Bridge sets the viewer URL and tells
+the panel to publish. Real publishing needs a device build with a WebRTC
+publisher — otherwise the panel reports the stream as `unsupported` (visible in the
+`stream` attribute). `stop_stream` takes `device_id`.
+
+```yaml
+service: oldphonekiosk.start_stream
+data: { device_id: b1e7c2a0-..., camera_mode: front }
+```
+
 ### `oldphonekiosk.set_media`
 
 Sets a panel's **media config** on the Bridge: the `video_url` (a WebRTC/go2rtc

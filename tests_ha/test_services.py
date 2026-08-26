@@ -39,12 +39,14 @@ class _FakeClient:
                 screen="home",
                 camera_mode="off",
                 intercom="idle",
+                stream="idle",
                 video_url=None,
                 app_version="0.1.0",
                 last_seen=datetime.now(timezone.utc),
             )
         ]
         self.media_calls: list[dict] = []
+        self.stream_calls: list[tuple] = []
 
     async def async_get_devices(self) -> list[PanelDeviceData]:
         return list(self._devices)
@@ -64,6 +66,14 @@ class _FakeClient:
 
         self.provisioned = (name, room)
         return ProvisionedPanel(device_id="dev-new", device_secret="new-secret")
+
+    async def async_start_stream(self, device_id, camera_mode=None):
+        self.stream_calls.append(("start", device_id, camera_mode))
+        return self._devices[0]
+
+    async def async_stop_stream(self, device_id):
+        self.stream_calls.append(("stop", device_id, None))
+        return self._devices[0]
 
     async def close(self) -> None:
         pass
@@ -187,3 +197,39 @@ async def test_set_media_service(hass: HomeAssistant):
     assert fake.media_calls[0]["device_id"] == "dev-1"
     assert fake.media_calls[0]["video_url"] == "http://go2rtc/stream.html?src=panel"
     assert fake.media_calls[0]["camera_mode"] == "front"
+
+
+async def test_start_and_stop_stream_services(hass: HomeAssistant):
+    from custom_components.oldphonekiosk.const import (
+        ATTR_CAMERA_MODE,
+        SERVICE_START_STREAM,
+        SERVICE_STOP_STREAM,
+    )
+
+    fake = _FakeClient()
+    entry = MockConfigEntry(
+        domain=DOMAIN, data={CONF_BRIDGE_URL: "http://x", CONF_API_KEY: "k"}
+    )
+    entry.add_to_hass(hass)
+    with patch("custom_components.oldphonekiosk.BridgeClient", return_value=fake):
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+    assert hass.services.has_service(DOMAIN, SERVICE_START_STREAM)
+    assert hass.services.has_service(DOMAIN, SERVICE_STOP_STREAM)
+
+    await hass.services.async_call(
+        DOMAIN,
+        SERVICE_START_STREAM,
+        {ATTR_DEVICE_ID: "dev-1", ATTR_CAMERA_MODE: "front"},
+        blocking=True,
+    )
+    await hass.services.async_call(
+        DOMAIN, SERVICE_STOP_STREAM, {ATTR_DEVICE_ID: "dev-1"}, blocking=True
+    )
+    await hass.async_block_till_done()
+
+    assert fake.stream_calls == [
+        ("start", "dev-1", "front"),
+        ("stop", "dev-1", None),
+    ]

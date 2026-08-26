@@ -21,6 +21,8 @@ from .const import (
     ENDPOINT_MEDIA,
     ENDPOINT_PAIRING_APPROVE,
     ENDPOINT_PAIRING_START,
+    ENDPOINT_STREAM_START,
+    ENDPOINT_STREAM_STOP,
 )
 
 _UNSET = object()
@@ -64,6 +66,7 @@ class PanelDeviceData:
     screen: str | None
     camera_mode: str | None
     intercom: str | None
+    stream: str | None
     video_url: str | None
     app_version: str | None
     last_seen: datetime | None
@@ -83,6 +86,7 @@ class PanelDeviceData:
             screen=state.get("screen"),
             camera_mode=state.get("camera"),
             intercom=state.get("intercom"),
+            stream=state.get("stream"),
             video_url=media.get("video_url"),
             app_version=state.get("app_version"),
             last_seen=_parse_dt(state.get("last_seen")),
@@ -195,6 +199,23 @@ class BridgeClient:
             body["camera_mode"] = camera_mode
         resp = await self._request(
             "PUT", ENDPOINT_MEDIA.format(device_id=device_id), json=body
+        )
+        return PanelDeviceData.from_json(resp.json())
+
+    async def async_start_stream(
+        self, device_id: str, camera_mode: str | None = None
+    ) -> PanelDeviceData:
+        body: dict[str, Any] = {}
+        if camera_mode is not None:
+            body["camera_mode"] = camera_mode
+        resp = await self._request(
+            "POST", ENDPOINT_STREAM_START.format(device_id=device_id), json=body
+        )
+        return PanelDeviceData.from_json(resp.json())
+
+    async def async_stop_stream(self, device_id: str) -> PanelDeviceData:
+        resp = await self._request(
+            "POST", ENDPOINT_STREAM_STOP.format(device_id=device_id)
         )
         return PanelDeviceData.from_json(resp.json())
 

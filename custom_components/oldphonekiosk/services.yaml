@@ -19,6 +19,37 @@ pair_new_panel:
       selector:
         text:
 
+start_stream:
+  name: Start panel stream
+  description: >-
+    Start a media publisher session on the Bridge (go2rtc). Sets the viewer URL and
+    tells the panel to publish. Real publishing requires a device build with a
+    WebRTC publisher; otherwise the panel reports the stream as "unsupported".
+  fields:
+    device_id:
+      name: Bridge device id
+      required: true
+      example: "b1e7c2a0-..."
+      selector:
+        text:
+    camera_mode:
+      name: Camera mode
+      required: false
+      selector:
+        select:
+          options: ["front", "back", "dual"]
+
+stop_stream:
+  name: Stop panel stream
+  description: Stop the panel's media publisher session and clear the viewer URL.
+  fields:
+    device_id:
+      name: Bridge device id
+      required: true
+      example: "b1e7c2a0-..."
+      selector:
+        text:
+
 set_media:
   name: Set panel media
   description: >-

@@ -39,6 +39,7 @@ def _device(device_id: str, name: str) -> PanelDeviceData:
         screen="home",
         camera_mode="off",
         intercom="idle",
+        stream="idle",
         video_url=None,
         app_version="0.1.0",
         last_seen=datetime.now(timezone.utc),

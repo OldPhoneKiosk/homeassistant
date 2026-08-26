@@ -29,6 +29,8 @@ from .const import (
     SERVICE_PAIR_NEW_PANEL,
     SERVICE_REVOKE_PANEL,
     SERVICE_SET_MEDIA,
+    SERVICE_START_STREAM,
+    SERVICE_STOP_STREAM,
 )
 from .coordinator import OldPhoneKioskCoordinator
 from .pairing import (
@@ -59,6 +61,15 @@ SET_MEDIA_SCHEMA = vol.All(
     # Require at least one media field to change.
     cv.has_at_least_one_key(ATTR_VIDEO_URL, ATTR_CAMERA_MODE),
 )
+
+START_STREAM_SCHEMA = vol.Schema(
+    {
+        vol.Required(ATTR_DEVICE_ID): cv.string,
+        vol.Optional(ATTR_CAMERA_MODE): vol.In(CAMERA_MODES),
+    }
+)
+
+STOP_STREAM_SCHEMA = vol.Schema({vol.Required(ATTR_DEVICE_ID): cv.string})
 
 
 def _find_coordinator(
@@ -183,6 +194,36 @@ async def _async_set_media(hass: HomeAssistant, call: ServiceCall) -> None:
     await coordinator.async_request_refresh()
 
 
+async def _async_start_stream(hass: HomeAssistant, call: ServiceCall) -> None:
+    device_id: str = call.data[ATTR_DEVICE_ID]
+    coordinator = _find_coordinator(hass, device_id)
+    if coordinator is None:
+        raise ServiceValidationError(
+            f"No configured OldPhoneKiosk Bridge knows device '{device_id}'."
+        )
+    try:
+        await coordinator.client.async_start_stream(
+            device_id, camera_mode=call.data.get(ATTR_CAMERA_MODE)
+        )
+    except BridgeError as err:
+        raise HomeAssistantError(f"Bridge start_stream failed: {err}") from err
+    await coordinator.async_request_refresh()
+
+
+async def _async_stop_stream(hass: HomeAssistant, call: ServiceCall) -> None:
+    device_id: str = call.data[ATTR_DEVICE_ID]
+    coordinator = _find_coordinator(hass, device_id)
+    if coordinator is None:
+        raise ServiceValidationError(
+            f"No configured OldPhoneKiosk Bridge knows device '{device_id}'."
+        )
+    try:
+        await coordinator.client.async_stop_stream(device_id)
+    except BridgeError as err:
+        raise HomeAssistantError(f"Bridge stop_stream failed: {err}") from err
+    await coordinator.async_request_refresh()
+
+
 def async_setup_services(hass: HomeAssistant) -> None:
     """Register integration services (idempotent)."""
     if hass.services.has_service(DOMAIN, SERVICE_REVOKE_PANEL):
@@ -197,6 +238,12 @@ def async_setup_services(hass: HomeAssistant) -> None:
     async def _handle_set_media(call: ServiceCall) -> None:
         await _async_set_media(hass, call)
 
+    async def _handle_start_stream(call: ServiceCall) -> None:
+        await _async_start_stream(hass, call)
+
+    async def _handle_stop_stream(call: ServiceCall) -> None:
+        await _async_stop_stream(hass, call)
+
     hass.services.async_register(
         DOMAIN,
         SERVICE_REVOKE_PANEL,
@@ -208,6 +255,12 @@ def async_setup_services(hass: HomeAssistant) -> None:
         SERVICE_SET_MEDIA,
         _handle_set_media,
         schema=SET_MEDIA_SCHEMA,
+    )
+    hass.services.async_register(
+        DOMAIN, SERVICE_START_STREAM, _handle_start_stream, schema=START_STREAM_SCHEMA
+    )
+    hass.services.async_register(
+        DOMAIN, SERVICE_STOP_STREAM, _handle_stop_stream, schema=STOP_STREAM_SCHEMA
     )
     hass.services.async_register(
         DOMAIN,
@@ -224,3 +277,5 @@ def async_unload_services(hass: HomeAssistant) -> None:
         hass.services.async_remove(DOMAIN, SERVICE_REVOKE_PANEL)
         hass.services.async_remove(DOMAIN, SERVICE_PAIR_NEW_PANEL)
         hass.services.async_remove(DOMAIN, SERVICE_SET_MEDIA)
+        hass.services.async_remove(DOMAIN, SERVICE_START_STREAM)
+        hass.services.async_remove(DOMAIN, SERVICE_STOP_STREAM)
