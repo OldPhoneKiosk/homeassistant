@@ -1,0 +1,12 @@
+{
+  "domain": "oldphonekiosk",
+  "name": "OldPhoneKiosk",
+  "codeowners": ["@OldPhoneKiosk"],
+  "config_flow": true,
+  "documentation": "https://github.com/OldPhoneKiosk/homeassistant",
+  "integration_type": "hub",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/OldPhoneKiosk/homeassistant/issues",
+  "requirements": ["httpx>=0.27"],
+  "version": "0.1.0"
+}
