@@ -9,7 +9,9 @@ description = "Home Assistant custom integration for OldPhoneKiosk wall panels."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "httpx>=0.27",
+    # >=0.26 so the `.[ha-test]` extra can coexist with the HA-pinned httpx
+    # (HA 2024.1 pins httpx==0.26.0). All features we use exist in 0.26+.
+    "httpx>=0.26",
 ]
 
 [project.optional-dependencies]

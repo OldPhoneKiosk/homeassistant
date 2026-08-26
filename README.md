@@ -87,6 +87,22 @@ pytest tests_ha -q
 > The fast `tests/` run (`pytest`) only collects `tests/` (`testpaths`), so it is
 > unaffected and needs neither HA nor PHACC.
 
+### CI
+
+`.github/workflows/tests.yml` (push/PR to `main` + manual dispatch):
+
+| Job | Python | What it runs |
+| --- | ------ | ------------ |
+| `fast-tests` | 3.11 **and** 3.12 | `pip install -e '.[dev]'` → `pytest` (HA-free unit tests) |
+| `ha-harness` | 3.12 | newest `pytest-homeassistant-custom-component<0.14` that resolves on 3.12 → `pytest tests_ha` |
+
+The harness job installs the newest PHACC that resolves on Python 3.12 (pip
+backtracks past HA lines that require 3.13), so CI exercises a **newer** Home
+Assistant than the local 3.11 pin. Locally, PHACC is pinned to `0.13.90`
+(HA 2024.1.4) because that is the last line supporting Python 3.11 — the only
+interpreter available on the dev box. The `ConfigFlowResult` shim keeps the
+component loading across both.
+
 ## Layout
 
 ```
