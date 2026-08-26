@@ -34,7 +34,7 @@ from .const import (
 )
 from .coordinator import OldPhoneKioskCoordinator
 from .pairing import (
-    build_pairing_payload,
+    build_claim_payload,
     payload_to_json,
     payload_to_qr_svg_data_uri,
 )
@@ -105,15 +105,15 @@ async def _async_pair_new_panel(
         raise ServiceValidationError("No OldPhoneKiosk Bridge is configured.")
 
     try:
-        provisioned = await coordinator.client.async_provision_panel(name, room)
+        claim = await coordinator.client.async_create_claim(name, room)
     except BridgeError as err:
         raise HomeAssistantError(f"Bridge provisioning failed: {err}") from err
 
     bridge_url = coordinator.entry.data[CONF_BRIDGE_URL]
-    payload = build_pairing_payload(
+    # QR carries a one-time claim token — never the device secret.
+    payload = build_claim_payload(
         bridge_url=bridge_url,
-        device_id=provisioned.device_id,
-        device_secret=provisioned.device_secret,
+        claim_token=claim.claim_token,
         name=name,
         room=room,
     )
@@ -134,11 +134,11 @@ async def _async_pair_new_panel(
         hass,
         message,
         title="OldPhoneKiosk — pair a panel",
-        notification_id=f"{DOMAIN}_pair_{provisioned.device_id}",
+        notification_id=f"{DOMAIN}_pair_{claim.device_id}",
     )
 
     return {
-        "device_id": provisioned.device_id,
+        "device_id": claim.device_id,
         "payload": payload_json,
         "qr_svg_data_uri": qr_data_uri,
     }

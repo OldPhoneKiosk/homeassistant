@@ -61,11 +61,15 @@ class _FakeClient:
         self.deleted.append(device_id)
         self._devices = [d for d in self._devices if d.device_id != device_id]
 
-    async def async_provision_panel(self, name: str, room: str | None = None):
-        from custom_components.oldphonekiosk.api import ProvisionedPanel
+    async def async_create_claim(self, name: str, room: str | None = None):
+        from custom_components.oldphonekiosk.api import PanelClaim
 
         self.provisioned = (name, room)
-        return ProvisionedPanel(device_id="dev-new", device_secret="new-secret")
+        return PanelClaim(
+            claim_token="claim-abc",
+            device_id="dev-new",
+            expires_at="2026-08-26T14:00:00Z",
+        )
 
     async def async_start_stream(self, device_id, camera_mode=None):
         self.stream_calls.append(("start", device_id, camera_mode))
@@ -154,10 +158,12 @@ async def test_pair_new_panel_service_returns_payload(hass: HomeAssistant):
     assert response["device_id"] == "dev-new"
     payload = json.loads(response["payload"])
     assert payload["version"] == 1
+    assert payload["type"] == "claim"
     assert payload["bridge_url"] == "http://bridge.local:8788"
-    assert payload["device_id"] == "dev-new"
-    assert payload["device_secret"] == "new-secret"
+    assert payload["claim_token"] == "claim-abc"
     assert payload["name"] == "Kitchen"
+    # The QR must NOT carry the device secret.
+    assert "device_secret" not in payload
     # QR image is included when the qrcode lib is available (SVG data URI).
     if response.get("qr_svg_data_uri") is not None:
         assert response["qr_svg_data_uri"].startswith("data:image/svg+xml;base64,")

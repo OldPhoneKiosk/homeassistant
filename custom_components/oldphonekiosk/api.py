@@ -18,6 +18,7 @@ from .const import (
     ENDPOINT_DEVICE,
     ENDPOINT_DEVICES,
     ENDPOINT_HEALTH,
+    ENDPOINT_CLAIM_CREATE,
     ENDPOINT_MEDIA,
     ENDPOINT_PAIRING_APPROVE,
     ENDPOINT_PAIRING_START,
@@ -50,6 +51,15 @@ class ProvisionedPanel:
 
     device_id: str
     device_secret: str
+
+
+@dataclass(slots=True)
+class PanelClaim:
+    """A one-time claim token for QR pairing (no secret)."""
+
+    claim_token: str
+    device_id: str
+    expires_at: str
 
 
 @dataclass(slots=True)
@@ -218,6 +228,20 @@ class BridgeClient:
             "POST", ENDPOINT_STREAM_STOP.format(device_id=device_id)
         )
         return PanelDeviceData.from_json(resp.json())
+
+    async def async_create_claim(
+        self, name: str, room: str | None = None
+    ) -> PanelClaim:
+        """Provision a device and get a one-time claim token (for a QR code)."""
+        resp = await self._request(
+            "POST", ENDPOINT_CLAIM_CREATE, json={"name": name, "room": room}
+        )
+        data = resp.json()
+        return PanelClaim(
+            claim_token=data["claim_token"],
+            device_id=data["device_id"],
+            expires_at=data["expires_at"],
+        )
 
     async def async_provision_panel(
         self, name: str, room: str | None = None

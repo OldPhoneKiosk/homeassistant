@@ -27,6 +27,22 @@ def test_build_payload_matches_ios_schema():
     }
 
 
+def test_build_claim_payload_has_no_secret():
+    payload = pairing.build_claim_payload(
+        bridge_url="http://127.0.0.1:8788/",
+        claim_token="claim-xyz",
+        name="Kitchen",
+    )
+    assert payload == {
+        "version": 1,
+        "type": "claim",
+        "bridge_url": "http://127.0.0.1:8788",
+        "claim_token": "claim-xyz",
+        "name": "Kitchen",
+    }
+    assert "device_secret" not in payload
+
+
 def test_build_payload_omits_optional_fields():
     payload = pairing.build_pairing_payload(
         bridge_url="http://h:8788", device_id="d", device_secret="s"

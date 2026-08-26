@@ -36,6 +36,30 @@ def build_pairing_payload(
     return payload
 
 
+def build_claim_payload(
+    *,
+    bridge_url: str,
+    claim_token: str,
+    name: str | None = None,
+    room: str | None = None,
+) -> dict[str, Any]:
+    """Assemble a QR payload carrying a one-time claim token (no device secret).
+
+    The device redeems the token at the Bridge for its credentials.
+    """
+    payload: dict[str, Any] = {
+        "version": PAIRING_PAYLOAD_VERSION,
+        "type": "claim",
+        "bridge_url": bridge_url.rstrip("/"),
+        "claim_token": claim_token,
+    }
+    if name:
+        payload["name"] = name
+    if room:
+        payload["room"] = room
+    return payload
+
+
 def payload_to_json(payload: dict[str, Any]) -> str:
     """Serialize the payload as compact, stable JSON (the QR contents)."""
     return json.dumps(payload, separators=(",", ":"), sort_keys=True)

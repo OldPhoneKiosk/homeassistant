@@ -21,6 +21,7 @@ ENDPOINT_STREAM_START = "/api/devices/{device_id}/stream/start"
 ENDPOINT_STREAM_STOP = "/api/devices/{device_id}/stream/stop"
 ENDPOINT_PAIRING_START = "/api/pairing/start"
 ENDPOINT_PAIRING_APPROVE = "/api/pairing/approve"
+ENDPOINT_CLAIM_CREATE = "/api/pairing/claim/create"
 
 # Camera modes (mirror of Bridge CameraState)
 CAMERA_MODES = ["off", "front", "back", "dual"]

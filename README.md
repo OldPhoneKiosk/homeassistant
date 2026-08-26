@@ -33,9 +33,10 @@ Bridge URL (e.g. `http://127.0.0.1:8788`) and API key.
 
 ### `oldphonekiosk.pair_new_panel`
 
-Provisions a **new** panel on the Bridge (start + approve, using the configured
-API key) and returns a **pairing QR payload** to scan in the OldPhoneKiosk app. It
-also raises a persistent notification with the QR image (or the raw payload).
+Provisions a **new** panel on the Bridge and returns a **pairing QR payload** to
+scan in the OldPhoneKiosk app. The QR carries a **one-time claim token** (not the
+device secret); the app redeems it at the Bridge for its credentials. A persistent
+notification with the QR image (or raw payload) is also raised.
 
 ```yaml
 service: oldphonekiosk.pair_new_panel

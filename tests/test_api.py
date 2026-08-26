@@ -230,6 +230,22 @@ async def test_provision_panel_runs_start_then_approve():
     assert seen == [const.ENDPOINT_PAIRING_START, const.ENDPOINT_PAIRING_APPROVE]
 
 
+async def test_create_claim_returns_token():
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.path == const.ENDPOINT_CLAIM_CREATE
+        body = json.loads(request.content)
+        assert body["name"] == "Kitchen"
+        return httpx.Response(
+            200,
+            json={"claim_token": "claim-abc", "device_id": "dev-9", "expires_at": "2026-08-26T14:00:00Z"},
+        )
+
+    client = _client(handler)
+    claim = await client.async_create_claim("Kitchen", "Kitchen")
+    assert claim.claim_token == "claim-abc"
+    assert claim.device_id == "dev-9"
+
+
 async def test_provision_panel_auth_error_maps():
     def handler(request: httpx.Request) -> httpx.Response:
         if request.url.path == const.ENDPOINT_PAIRING_START:
