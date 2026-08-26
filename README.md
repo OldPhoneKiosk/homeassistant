@@ -62,9 +62,30 @@ pip install -e '.[dev]'
 pytest -q
 ```
 
-The Home-Assistant-facing modules (`config_flow`, `coordinator`, entity platforms)
-are validated by loading the component into a running HA instance; full
-`pytest-homeassistant-custom-component` coverage is deferred.
+### Full HA runtime harness (`tests_ha/`)
+
+`tests_ha/` runs against a real Home Assistant using
+`pytest-homeassistant-custom-component` (PHACC): config flow (happy path +
+`cannot_connect`/`invalid_auth`), coordinator data building, and the
+`revoke_panel` service (full entry setup → call → device removed).
+
+PHACC pulls a large, version-pinned HA, so install it in a **separate** venv from
+the fast `dev` tests. On Python 3.11 use the pinned `ha-test` extra
+(HA 2024.1.4 — the last release supporting 3.11):
+
+```bash
+cd homeassistant
+python3.11 -m venv .venv-ha
+. .venv-ha/bin/activate
+pip install -e '.[ha-test]'
+pytest tests_ha -q
+```
+
+> The component keeps a small compat shim for `ConfigFlowResult` (added in
+> HA 2024.4) so it loads on both 2024.1 and current HA.
+>
+> The fast `tests/` run (`pytest`) only collects `tests/` (`testpaths`), so it is
+> unaffected and needs neither HA nor PHACC.
 
 ## Layout
 

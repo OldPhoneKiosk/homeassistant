@@ -5,7 +5,12 @@ from __future__ import annotations
 from typing import Any
 
 import voluptuous as vol
-from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
+from homeassistant.config_entries import ConfigFlow
+
+try:  # HA >= 2024.4
+    from homeassistant.config_entries import ConfigFlowResult
+except ImportError:  # HA < 2024.4
+    from homeassistant.data_entry_flow import FlowResult as ConfigFlowResult
 
 from .api import BridgeAuthError, BridgeClient, BridgeConnectionError
 from .const import CONF_API_KEY, CONF_BRIDGE_URL, DOMAIN
