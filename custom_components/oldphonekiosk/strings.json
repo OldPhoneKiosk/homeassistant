@@ -1,0 +1,39 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "OldPhoneKiosk Bridge",
+        "description": "Connect Home Assistant to your OldPhoneKiosk Bridge.",
+        "data": {
+          "bridge_url": "Bridge URL",
+          "api_key": "API key"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to the Bridge.",
+      "invalid_auth": "Invalid API key.",
+      "unknown": "Unexpected error."
+    },
+    "abort": {
+      "already_configured": "This Bridge is already configured."
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "online": { "name": "Online" }
+    },
+    "sensor": {
+      "battery": { "name": "Battery" },
+      "last_seen": { "name": "Last seen" },
+      "app_version": { "name": "App version" }
+    },
+    "select": {
+      "screen": { "name": "Screen" }
+    },
+    "button": {
+      "wake": { "name": "Wake" },
+      "sleep": { "name": "Sleep" }
+    }
+  }
+}
