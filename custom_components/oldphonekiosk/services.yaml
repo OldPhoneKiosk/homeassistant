@@ -19,6 +19,33 @@ pair_new_panel:
       selector:
         text:
 
+set_media:
+  name: Set panel media
+  description: >-
+    Set a panel's media config on the Bridge: the video/WebRTC player URL (e.g. a
+    go2rtc page) shown by the Lovelace card, and/or the camera mode.
+  fields:
+    device_id:
+      name: Bridge device id
+      description: The Bridge device id (see the panel's 'bridge_device_id' attribute).
+      required: true
+      example: "b1e7c2a0-..."
+      selector:
+        text:
+    video_url:
+      name: Video URL
+      description: WebRTC/go2rtc player URL (empty to clear).
+      required: false
+      example: "http://homeassistant.local:1984/stream.html?src=front_door"
+      selector:
+        text:
+    camera_mode:
+      name: Camera mode
+      required: false
+      selector:
+        select:
+          options: ["off", "front", "back", "dual"]
+
 revoke_panel:
   name: Revoke panel
   description: >-

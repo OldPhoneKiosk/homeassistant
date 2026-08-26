@@ -37,6 +37,9 @@ def _device(device_id: str, name: str) -> PanelDeviceData:
         battery=80,
         brightness=0.35,
         screen="home",
+        camera_mode="off",
+        intercom="idle",
+        video_url=None,
         app_version="0.1.0",
         last_seen=datetime.now(timezone.utc),
     )

@@ -59,6 +59,23 @@ library (declared in the manifest); without it the payload is still returned.
 > The QR carries `device_secret`. Show it briefly and let one panel scan it.
 > `bridge_url` must be reachable from the device (not `127.0.0.1` for a real phone).
 
+### `oldphonekiosk.set_media`
+
+Sets a panel's **media config** on the Bridge: the `video_url` (a WebRTC/go2rtc
+player page the Lovelace card renders) and/or the `camera_mode`.
+
+```yaml
+service: oldphonekiosk.set_media
+data:
+  device_id: b1e7c2a0-...            # Bridge device id
+  video_url: "http://homeassistant.local:1984/stream.html?src=front_door"
+  camera_mode: front                 # off | front | back | dual
+```
+
+Every panel entity also exposes `video_url`, `camera_mode`, and `intercom` as
+state attributes, so the Lovelace card can read them (e.g. from
+`binary_sensor.<panel>_online`). Nothing is hardcoded — the URL comes from you.
+
 ### `oldphonekiosk.revoke_panel`
 
 Revokes and removes a panel on its Bridge (`DELETE /api/devices/{id}`), then

@@ -37,13 +37,23 @@ class _FakeClient:
                 battery=80,
                 brightness=0.35,
                 screen="home",
+                camera_mode="off",
+                intercom="idle",
+                video_url=None,
                 app_version="0.1.0",
                 last_seen=datetime.now(timezone.utc),
             )
         ]
+        self.media_calls: list[dict] = []
 
     async def async_get_devices(self) -> list[PanelDeviceData]:
         return list(self._devices)
+
+    async def async_set_media(self, device_id, *, video_url=..., camera_mode=None):
+        self.media_calls.append(
+            {"device_id": device_id, "video_url": video_url, "camera_mode": camera_mode}
+        )
+        return self._devices[0]
 
     async def async_delete_device(self, device_id: str) -> None:
         self.deleted.append(device_id)
@@ -141,3 +151,39 @@ async def test_pair_new_panel_service_returns_payload(hass: HomeAssistant):
     # QR image is included when the qrcode lib is available (SVG data URI).
     if response.get("qr_svg_data_uri") is not None:
         assert response["qr_svg_data_uri"].startswith("data:image/svg+xml;base64,")
+
+
+async def test_set_media_service(hass: HomeAssistant):
+    from custom_components.oldphonekiosk.const import (
+        ATTR_CAMERA_MODE,
+        ATTR_VIDEO_URL,
+        SERVICE_SET_MEDIA,
+    )
+
+    fake = _FakeClient()
+    entry = MockConfigEntry(
+        domain=DOMAIN, data={CONF_BRIDGE_URL: "http://x", CONF_API_KEY: "k"}
+    )
+    entry.add_to_hass(hass)
+    with patch("custom_components.oldphonekiosk.BridgeClient", return_value=fake):
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+    assert hass.services.has_service(DOMAIN, SERVICE_SET_MEDIA)
+
+    await hass.services.async_call(
+        DOMAIN,
+        SERVICE_SET_MEDIA,
+        {
+            ATTR_DEVICE_ID: "dev-1",
+            ATTR_VIDEO_URL: "http://go2rtc/stream.html?src=panel",
+            ATTR_CAMERA_MODE: "front",
+        },
+        blocking=True,
+    )
+    await hass.async_block_till_done()
+
+    assert len(fake.media_calls) == 1
+    assert fake.media_calls[0]["device_id"] == "dev-1"
+    assert fake.media_calls[0]["video_url"] == "http://go2rtc/stream.html?src=panel"
+    assert fake.media_calls[0]["camera_mode"] == "front"

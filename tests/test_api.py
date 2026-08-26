@@ -25,10 +25,12 @@ DEVICE_JSON = {
         "battery": 77,
         "brightness": 0.4,
         "screen": "photos",
-        "camera": "off",
+        "camera": "front",
+        "intercom": "idle",
         "app_version": "0.1.0",
         "last_seen": "2026-08-26T13:41:32.559064Z",
     },
+    "media": {"video_url": "http://go2rtc/stream.html?src=panel"},
 }
 
 
@@ -58,6 +60,56 @@ async def test_get_devices_parses_state():
     assert d.app_version == "0.1.0"
     assert d.last_seen is not None
     assert d.last_seen.year == 2026
+    assert d.camera_mode == "front"
+    assert d.intercom == "idle"
+    assert d.video_url == "http://go2rtc/stream.html?src=panel"
+
+
+async def test_from_json_media_defaults_when_absent():
+    d = api.PanelDeviceData.from_json({"device_id": "x"})
+    assert d.video_url is None
+    assert d.camera_mode is None
+    assert d.intercom is None
+
+
+async def test_set_media_puts_only_provided_fields():
+    seen = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.method == "PUT"
+        assert request.url.path == const.ENDPOINT_MEDIA.format(device_id="dev-1")
+        seen["body"] = json.loads(request.content)
+        return httpx.Response(
+            200,
+            json={
+                "device_id": "dev-1",
+                "name": "P",
+                "capabilities": {},
+                "state": {"online": True, "camera": "back"},
+                "media": {"video_url": "http://v"},
+            },
+        )
+
+    client = _client(handler)
+    updated = await client.async_set_media("dev-1", camera_mode="back")
+    assert seen["body"] == {"camera_mode": "back"}  # video_url not sent
+    assert updated.camera_mode == "back"
+    assert updated.video_url == "http://v"
+
+
+async def test_set_media_can_clear_video_url():
+    seen = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen["body"] = json.loads(request.content)
+        return httpx.Response(
+            200,
+            json={"device_id": "d", "name": "P", "capabilities": {}, "state": {"online": False}, "media": {"video_url": None}},
+        )
+
+    client = _client(handler)
+    await client.async_set_media("d", video_url=None)
+    assert seen["body"] == {"video_url": None}
 
 
 async def test_get_devices_empty():

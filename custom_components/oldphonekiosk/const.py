@@ -16,8 +16,12 @@ ENDPOINT_HEALTH = "/health"
 ENDPOINT_DEVICES = "/api/devices"
 ENDPOINT_DEVICE = "/api/devices/{device_id}"
 ENDPOINT_COMMANDS = "/api/devices/{device_id}/commands"
+ENDPOINT_MEDIA = "/api/devices/{device_id}/media"
 ENDPOINT_PAIRING_START = "/api/pairing/start"
 ENDPOINT_PAIRING_APPROVE = "/api/pairing/approve"
+
+# Camera modes (mirror of Bridge CameraState)
+CAMERA_MODES = ["off", "front", "back", "dual"]
 
 # Pairing QR payload
 PAIRING_PAYLOAD_VERSION = 1
@@ -52,6 +56,9 @@ MANUFACTURER = "OldPhoneKiosk"
 # Services
 SERVICE_REVOKE_PANEL = "revoke_panel"
 SERVICE_PAIR_NEW_PANEL = "pair_new_panel"
+SERVICE_SET_MEDIA = "set_media"
 ATTR_DEVICE_ID = "device_id"  # Bridge device id (not the HA registry device id)
 ATTR_NAME = "name"
 ATTR_ROOM = "room"
+ATTR_VIDEO_URL = "video_url"
+ATTR_CAMERA_MODE = "camera_mode"

@@ -30,10 +30,16 @@ class OldPhoneKioskEntity(CoordinatorEntity[OldPhoneKioskCoordinator]):
         return super().available and self.device is not None
 
     @property
-    def extra_state_attributes(self) -> dict[str, str]:
-        # Expose the Bridge device id so it is easy to find for the
-        # `oldphonekiosk.revoke_panel` service (it differs from the HA device id).
-        return {"bridge_device_id": self._device_id}
+    def extra_state_attributes(self) -> dict[str, str | None]:
+        # Expose the Bridge device id (for revoke_panel) plus media/camera/intercom
+        # so the Lovelace card can read them from any panel entity.
+        device = self.device
+        return {
+            "bridge_device_id": self._device_id,
+            "video_url": device.video_url if device else None,
+            "camera_mode": device.camera_mode if device else None,
+            "intercom": device.intercom if device else None,
+        }
 
     @property
     def device_info(self) -> DeviceInfo:

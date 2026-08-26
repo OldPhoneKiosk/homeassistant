@@ -18,9 +18,12 @@ from .const import (
     ENDPOINT_DEVICE,
     ENDPOINT_DEVICES,
     ENDPOINT_HEALTH,
+    ENDPOINT_MEDIA,
     ENDPOINT_PAIRING_APPROVE,
     ENDPOINT_PAIRING_START,
 )
+
+_UNSET = object()
 
 
 class BridgeError(Exception):
@@ -59,12 +62,16 @@ class PanelDeviceData:
     battery: int | None
     brightness: float | None
     screen: str | None
+    camera_mode: str | None
+    intercom: str | None
+    video_url: str | None
     app_version: str | None
     last_seen: datetime | None
 
     @classmethod
     def from_json(cls, data: dict[str, Any]) -> "PanelDeviceData":
         state = data.get("state") or {}
+        media = data.get("media") or {}
         return cls(
             device_id=data["device_id"],
             name=data.get("name") or data["device_id"],
@@ -74,6 +81,9 @@ class PanelDeviceData:
             battery=state.get("battery"),
             brightness=state.get("brightness"),
             screen=state.get("screen"),
+            camera_mode=state.get("camera"),
+            intercom=state.get("intercom"),
+            video_url=media.get("video_url"),
             app_version=state.get("app_version"),
             last_seen=_parse_dt(state.get("last_seen")),
         )
@@ -166,6 +176,27 @@ class BridgeClient:
         Raises BridgeNotFoundError if the Bridge does not know the device.
         """
         await self._request("DELETE", ENDPOINT_DEVICE.format(device_id=device_id))
+
+    async def async_set_media(
+        self,
+        device_id: str,
+        *,
+        video_url: Any = _UNSET,
+        camera_mode: str | None = None,
+    ) -> PanelDeviceData:
+        """Set the panel's media config on the Bridge (video_url and/or camera mode).
+
+        Only provided fields are sent (``video_url`` may be None to clear it).
+        """
+        body: dict[str, Any] = {}
+        if video_url is not _UNSET:
+            body["video_url"] = video_url
+        if camera_mode is not None:
+            body["camera_mode"] = camera_mode
+        resp = await self._request(
+            "PUT", ENDPOINT_MEDIA.format(device_id=device_id), json=body
+        )
+        return PanelDeviceData.from_json(resp.json())
 
     async def async_provision_panel(
         self, name: str, room: str | None = None
