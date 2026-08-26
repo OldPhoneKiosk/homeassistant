@@ -101,6 +101,39 @@ async def test_send_command_posts_payload():
     assert result["status"] == "completed"
 
 
+async def test_delete_device_success():
+    seen = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen["method"] = request.method
+        seen["path"] = request.url.path
+        return httpx.Response(204)
+
+    client = _client(handler)
+    result = await client.async_delete_device("dev-1")
+    assert result is None
+    assert seen["method"] == "DELETE"
+    assert seen["path"] == const.ENDPOINT_DEVICE.format(device_id="dev-1")
+
+
+async def test_delete_device_not_found_maps():
+    client = _client(lambda req: httpx.Response(404, text="unknown device"))
+    with pytest.raises(api.BridgeNotFoundError):
+        await client.async_delete_device("ghost")
+
+
+async def test_delete_device_auth_error_maps():
+    client = _client(lambda req: httpx.Response(401, text="nope"))
+    with pytest.raises(api.BridgeAuthError):
+        await client.async_delete_device("dev-1")
+
+
+async def test_delete_device_server_error_maps():
+    client = _client(lambda req: httpx.Response(500, text="boom"))
+    with pytest.raises(api.BridgeError):
+        await client.async_delete_device("dev-1")
+
+
 async def test_async_check_success():
     def handler(request: httpx.Request) -> httpx.Response:
         if request.url.path == const.ENDPOINT_HEALTH:

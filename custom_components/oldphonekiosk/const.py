@@ -43,3 +43,7 @@ SCREEN_TO_COMMAND = {
 }
 
 MANUFACTURER = "OldPhoneKiosk"
+
+# Services
+SERVICE_REVOKE_PANEL = "revoke_panel"
+ATTR_DEVICE_ID = "device_id"  # Bridge device id (not the HA registry device id)

@@ -30,6 +30,12 @@ class OldPhoneKioskEntity(CoordinatorEntity[OldPhoneKioskCoordinator]):
         return super().available and self.device is not None
 
     @property
+    def extra_state_attributes(self) -> dict[str, str]:
+        # Expose the Bridge device id so it is easy to find for the
+        # `oldphonekiosk.revoke_panel` service (it differs from the HA device id).
+        return {"bridge_device_id": self._device_id}
+
+    @property
     def device_info(self) -> DeviceInfo:
         device = self.device
         return DeviceInfo(

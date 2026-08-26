@@ -1,0 +1,15 @@
+revoke_panel:
+  name: Revoke panel
+  description: >-
+    Revoke and remove a panel from the OldPhoneKiosk Bridge (and from Home
+    Assistant). The panel must re-pair to reconnect.
+  fields:
+    device_id:
+      name: Bridge device id
+      description: >-
+        The Bridge device id (NOT the Home Assistant device/registry id). It is
+        shown as the 'bridge_device_id' attribute on any of the panel's entities.
+      required: true
+      example: "b1e7c2a0-1234-4f56-8abc-0123456789ab"
+      selector:
+        text:

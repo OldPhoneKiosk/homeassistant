@@ -10,6 +10,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession  # noqa
 from .api import BridgeClient
 from .const import CONF_API_KEY, CONF_BRIDGE_URL, DOMAIN
 from .coordinator import OldPhoneKioskCoordinator
+from .services import async_setup_services, async_unload_services
 
 PLATFORMS: list[Platform] = [
     Platform.BINARY_SENSOR,
@@ -30,6 +31,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
+    # Services are domain-global; register once, after the coordinator is stored.
+    async_setup_services(hass)
     return True
 
 
@@ -39,4 +43,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if unload_ok:
         coordinator: OldPhoneKioskCoordinator = hass.data[DOMAIN].pop(entry.entry_id)
         await coordinator.client.close()
+        # Drop services when the last entry is gone.
+        async_unload_services(hass)
     return unload_ok

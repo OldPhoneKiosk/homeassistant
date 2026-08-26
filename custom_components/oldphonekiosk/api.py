@@ -15,6 +15,7 @@ import httpx
 from .const import (
     API_KEY_HEADER,
     ENDPOINT_COMMANDS,
+    ENDPOINT_DEVICE,
     ENDPOINT_DEVICES,
     ENDPOINT_HEALTH,
 )
@@ -30,6 +31,10 @@ class BridgeAuthError(BridgeError):
 
 class BridgeConnectionError(BridgeError):
     """Could not reach the Bridge."""
+
+
+class BridgeNotFoundError(BridgeError):
+    """The Bridge returned 404 (unknown device)."""
 
 
 @dataclass(slots=True)
@@ -111,6 +116,8 @@ class BridgeClient:
             raise BridgeConnectionError(str(exc)) from exc
         if resp.status_code == 401:
             raise BridgeAuthError("invalid API key")
+        if resp.status_code == 404:
+            raise BridgeNotFoundError("unknown device")
         if resp.status_code >= 400:
             raise BridgeError(f"HTTP {resp.status_code}: {resp.text}")
         return resp
@@ -142,3 +149,10 @@ class BridgeClient:
             json={"command": command},
         )
         return resp.json()
+
+    async def async_delete_device(self, device_id: str) -> None:
+        """Revoke/remove a device on the Bridge (DELETE, expects 204).
+
+        Raises BridgeNotFoundError if the Bridge does not know the device.
+        """
+        await self._request("DELETE", ENDPOINT_DEVICE.format(device_id=device_id))
