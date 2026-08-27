@@ -159,7 +159,7 @@ async def test_pair_new_panel_service_returns_payload(hass: HomeAssistant):
     payload = json.loads(response["payload"])
     assert payload["version"] == 1
     assert payload["type"] == "claim"
-    assert payload["bridge_url"] == "http://bridge.local:8788"
+    assert payload["bridge_url"] == "http://homeassistant.local:8123"
     assert payload["claim_token"] == "claim-abc"
     assert payload["name"] == "Kitchen"
     # The QR must NOT carry the device secret.

@@ -5,7 +5,7 @@ from __future__ import annotations
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .api import PanelDeviceData
+from .native_client import PanelDeviceData
 from .const import DOMAIN, MANUFACTURER
 from .coordinator import OldPhoneKioskCoordinator
 
@@ -31,7 +31,7 @@ class OldPhoneKioskEntity(CoordinatorEntity[OldPhoneKioskCoordinator]):
 
     @property
     def extra_state_attributes(self) -> dict[str, str | None]:
-        # Expose the Bridge device id (for revoke_panel) plus media/camera/intercom
+        # Expose the panel device id (for revoke_panel) plus media/camera/intercom
         # so the Lovelace card can read them from any panel entity.
         device = self.device
         return {

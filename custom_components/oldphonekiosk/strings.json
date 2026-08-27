@@ -2,21 +2,13 @@
   "config": {
     "step": {
       "user": {
-        "title": "OldPhoneKiosk Bridge",
-        "description": "Connect Home Assistant to your OldPhoneKiosk Bridge.",
-        "data": {
-          "bridge_url": "Bridge URL",
-          "api_key": "API key"
-        }
+        "title": "OldPhoneKiosk",
+        "description": "Enable the Home Assistant-native OldPhoneKiosk backend. No external bridge service is required.",
+        "data": {}
       }
     },
-    "error": {
-      "cannot_connect": "Failed to connect to the Bridge.",
-      "invalid_auth": "Invalid API key.",
-      "unknown": "Unexpected error."
-    },
     "abort": {
-      "already_configured": "This Bridge is already configured."
+      "already_configured": "OldPhoneKiosk is already configured."
     }
   },
   "entity": {

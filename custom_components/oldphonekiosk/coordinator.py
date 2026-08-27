@@ -1,30 +1,36 @@
-"""DataUpdateCoordinator polling the Bridge for panel devices."""
+"""DataUpdateCoordinator reading panel devices from the in-process backend."""
 
 from __future__ import annotations
 
+import inspect
 import logging
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .api import BridgeClient, BridgeError, PanelDeviceData
+from .api import BridgeError
 from .const import DEFAULT_SCAN_INTERVAL, DOMAIN
+from .native_client import NativeOldPhoneKioskClient, PanelDeviceData
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class OldPhoneKioskCoordinator(DataUpdateCoordinator[dict[str, PanelDeviceData]]):
-    """Fetch all panels from the Bridge and index them by device_id."""
+    """Fetch all panels from the backend and index them by device_id."""
 
     def __init__(
-        self, hass: HomeAssistant, entry: ConfigEntry, client: BridgeClient
+        self, hass: HomeAssistant, entry: ConfigEntry, client: NativeOldPhoneKioskClient
     ) -> None:
+        kwargs = {}
+        if "config_entry" in inspect.signature(DataUpdateCoordinator.__init__).parameters:
+            kwargs["config_entry"] = entry
         super().__init__(
             hass,
             _LOGGER,
             name=DOMAIN,
             update_interval=DEFAULT_SCAN_INTERVAL,
+            **kwargs,
         )
         self.entry = entry
         self.client = client

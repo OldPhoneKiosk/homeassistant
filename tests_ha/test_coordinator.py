@@ -54,7 +54,7 @@ async def test_coordinator_indexes_devices_by_id(hass: HomeAssistant):
 
     client = _FakeClient([_device("dev-1", "Kitchen"), _device("dev-2", "Hallway")])
     coordinator = OldPhoneKioskCoordinator(hass, entry, client)
-    await coordinator.async_config_entry_first_refresh()
+    await coordinator.async_refresh()
 
     assert set(coordinator.data) == {"dev-1", "dev-2"}
     assert coordinator.data["dev-1"].name == "Kitchen"
