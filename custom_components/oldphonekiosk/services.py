@@ -15,6 +15,7 @@ from homeassistant.core import (
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers.network import get_url
 
 from .api import BridgeError, BridgeNotFoundError
 from .const import (
@@ -24,7 +25,6 @@ from .const import (
     ATTR_ROOM,
     ATTR_VIDEO_URL,
     CAMERA_MODES,
-    CONF_BRIDGE_URL,
     DOMAIN,
     SERVICE_PAIR_NEW_PANEL,
     SERVICE_REVOKE_PANEL,
@@ -72,6 +72,15 @@ START_STREAM_SCHEMA = vol.Schema(
 STOP_STREAM_SCHEMA = vol.Schema({vol.Required(ATTR_DEVICE_ID): cv.string})
 
 
+def _ha_base_url(hass: HomeAssistant) -> str:
+    """Best-effort HA base URL for QR payloads."""
+    try:
+        return get_url(hass, prefer_external=False).rstrip("/")
+    except Exception:  # noqa: BLE001 - fallback for tests/minimal HA config
+        base = getattr(hass.config.api, "base_url", None) or ""
+        return base.rstrip("/") or "http://homeassistant.local:8123"
+
+
 def _find_coordinator(
     hass: HomeAssistant, device_id: str
 ) -> OldPhoneKioskCoordinator | None:
@@ -102,17 +111,18 @@ async def _async_pair_new_panel(
 
     coordinator = _any_coordinator(hass)
     if coordinator is None:
-        raise ServiceValidationError("No OldPhoneKiosk Bridge is configured.")
+        raise ServiceValidationError("No OldPhoneKiosk backend is configured.")
 
     try:
         claim = await coordinator.client.async_create_claim(name, room)
     except BridgeError as err:
-        raise HomeAssistantError(f"Bridge provisioning failed: {err}") from err
+        raise HomeAssistantError(f"Panel provisioning failed: {err}") from err
 
-    bridge_url = coordinator.entry.data[CONF_BRIDGE_URL]
-    # QR carries a one-time claim token — never the device secret.
+    ha_url = _ha_base_url(hass)
+    # QR carries a one-time claim token — never the device secret. The URL is the
+    # Home Assistant root; the iOS app appends /api/oldphonekiosk/... routes.
     payload = build_claim_payload(
-        bridge_url=bridge_url,
+        bridge_url=ha_url,
         claim_token=claim.claim_token,
         name=name,
         room=room,
@@ -151,8 +161,8 @@ async def _async_revoke_panel(hass: HomeAssistant, call: ServiceCall) -> None:
     coordinator = _find_coordinator(hass, device_id)
     if coordinator is None:
         raise ServiceValidationError(
-            f"No configured OldPhoneKiosk Bridge knows device '{device_id}'. "
-            "Use the Bridge device id (see the panel's 'bridge_device_id' attribute)."
+            f"No configured OldPhoneKiosk backend knows device '{device_id}'. "
+            "Use the panel device id (see the panel's 'bridge_device_id' attribute)."
         )
 
     try:
@@ -177,7 +187,7 @@ async def _async_set_media(hass: HomeAssistant, call: ServiceCall) -> None:
     coordinator = _find_coordinator(hass, device_id)
     if coordinator is None:
         raise ServiceValidationError(
-            f"No configured OldPhoneKiosk Bridge knows device '{device_id}'."
+            f"No configured OldPhoneKiosk backend knows device '{device_id}'."
         )
 
     kwargs: dict = {}
@@ -199,7 +209,7 @@ async def _async_start_stream(hass: HomeAssistant, call: ServiceCall) -> None:
     coordinator = _find_coordinator(hass, device_id)
     if coordinator is None:
         raise ServiceValidationError(
-            f"No configured OldPhoneKiosk Bridge knows device '{device_id}'."
+            f"No configured OldPhoneKiosk backend knows device '{device_id}'."
         )
     try:
         await coordinator.client.async_start_stream(
@@ -215,7 +225,7 @@ async def _async_stop_stream(hass: HomeAssistant, call: ServiceCall) -> None:
     coordinator = _find_coordinator(hass, device_id)
     if coordinator is None:
         raise ServiceValidationError(
-            f"No configured OldPhoneKiosk Bridge knows device '{device_id}'."
+            f"No configured OldPhoneKiosk backend knows device '{device_id}'."
         )
     try:
         await coordinator.client.async_stop_stream(device_id)

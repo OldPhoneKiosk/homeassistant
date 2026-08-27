@@ -1,7 +1,7 @@
 pair_new_panel:
   name: Pair a new panel
   description: >-
-    Provision a new panel on the Bridge and return a pairing QR payload to scan in
+    Provision a new panel in Home Assistant and return a pairing QR payload to scan in
     the OldPhoneKiosk app. Also raises a persistent notification with the QR/payload.
   fields:
     name:
@@ -22,12 +22,12 @@ pair_new_panel:
 start_stream:
   name: Start panel stream
   description: >-
-    Start a media publisher session on the Bridge (go2rtc). Sets the viewer URL and
+    Start a media publisher session through Home Assistant/go2rtc. Sets the viewer URL and
     tells the panel to publish. Real publishing requires a device build with a
     WebRTC publisher; otherwise the panel reports the stream as "unsupported".
   fields:
     device_id:
-      name: Bridge device id
+      name: Panel device id
       required: true
       example: "b1e7c2a0-..."
       selector:
@@ -44,7 +44,7 @@ stop_stream:
   description: Stop the panel's media publisher session and clear the viewer URL.
   fields:
     device_id:
-      name: Bridge device id
+      name: Panel device id
       required: true
       example: "b1e7c2a0-..."
       selector:
@@ -53,12 +53,12 @@ stop_stream:
 set_media:
   name: Set panel media
   description: >-
-    Set a panel's media config on the Bridge: the video/WebRTC player URL (e.g. a
+    Set a panel's media config in Home Assistant: the video/WebRTC player URL (e.g. a
     go2rtc page) shown by the Lovelace card, and/or the camera mode.
   fields:
     device_id:
-      name: Bridge device id
-      description: The Bridge device id (see the panel's 'bridge_device_id' attribute).
+      name: Panel device id
+      description: The panel device id (see the panel's 'bridge_device_id' compatibility attribute).
       required: true
       example: "b1e7c2a0-..."
       selector:
@@ -80,14 +80,14 @@ set_media:
 revoke_panel:
   name: Revoke panel
   description: >-
-    Revoke and remove a panel from the OldPhoneKiosk Bridge (and from Home
-    Assistant). The panel must re-pair to reconnect.
+    Revoke and remove a panel from OldPhoneKiosk in Home Assistant. The panel must
+    re-pair to reconnect.
   fields:
     device_id:
-      name: Bridge device id
+      name: Panel device id
       description: >-
-        The Bridge device id (NOT the Home Assistant device/registry id). It is
-        shown as the 'bridge_device_id' attribute on any of the panel's entities.
+        The OldPhoneKiosk panel device id (NOT the Home Assistant device/registry id). It is
+        shown as the 'bridge_device_id' compatibility attribute on any of the panel's entities.
       required: true
       example: "b1e7c2a0-1234-4f56-8abc-0123456789ab"
       selector:
