@@ -36,13 +36,18 @@ DEFAULT_SCAN_INTERVAL = timedelta(seconds=15)
 SCREEN_PHOTOS = "photos"
 SCREEN_TASKS = "tasks"
 SCREEN_HOME = "home"
+SCREEN_ACTIONS = "actions"
+SCREEN_DASHBOARD = "dashboard"
 SCREEN_SLEEP = "sleep"
-SCREENS = [SCREEN_PHOTOS, SCREEN_TASKS, SCREEN_HOME, SCREEN_SLEEP]
+SCREENS = [SCREEN_PHOTOS, SCREEN_TASKS, SCREEN_HOME, SCREEN_ACTIONS, SCREEN_DASHBOARD, SCREEN_SLEEP]
 
 # Commands (mirror of Bridge PanelCommand)
 CMD_SHOW_PHOTOS = "show_photos"
 CMD_SHOW_TASKS = "show_tasks"
 CMD_SHOW_HOME = "show_home"
+CMD_SHOW_ACTIONS = "show_actions"
+CMD_SHOW_DASHBOARD = "show_dashboard"
+CMD_CONFIGURE_UI = "configure_ui"
 CMD_SLEEP = "sleep"
 CMD_WAKE = "wake"
 
@@ -51,6 +56,8 @@ SCREEN_TO_COMMAND = {
     SCREEN_PHOTOS: CMD_SHOW_PHOTOS,
     SCREEN_TASKS: CMD_SHOW_TASKS,
     SCREEN_HOME: CMD_SHOW_HOME,
+    SCREEN_ACTIONS: CMD_SHOW_ACTIONS,
+    SCREEN_DASHBOARD: CMD_SHOW_DASHBOARD,
     SCREEN_SLEEP: CMD_SLEEP,
 }
 
@@ -60,6 +67,7 @@ MANUFACTURER = "OldPhoneKiosk"
 SERVICE_REVOKE_PANEL = "revoke_panel"
 SERVICE_PAIR_NEW_PANEL = "pair_new_panel"
 SERVICE_SET_MEDIA = "set_media"
+SERVICE_SET_PANEL_UI = "set_panel_ui"
 SERVICE_START_STREAM = "start_stream"
 SERVICE_STOP_STREAM = "stop_stream"
 ATTR_DEVICE_ID = "device_id"  # Bridge device id (not the HA registry device id)
@@ -67,3 +75,7 @@ ATTR_NAME = "name"
 ATTR_ROOM = "room"
 ATTR_VIDEO_URL = "video_url"
 ATTR_CAMERA_MODE = "camera_mode"
+ATTR_DEFAULT_SCREEN = "default_screen"
+ATTR_ENABLED_SCREENS = "enabled_screens"
+ATTR_SHOW_BOTTOM_MENU = "show_bottom_menu"
+ATTR_DASHBOARD_URL = "dashboard_url"

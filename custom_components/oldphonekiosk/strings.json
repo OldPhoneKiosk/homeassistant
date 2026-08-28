@@ -25,6 +25,11 @@
       "sleep": {
         "name": "Sleep"
       }
+    },
+    "camera": {
+      "camera": {
+        "name": "Camera"
+      }
     }
   }
 }

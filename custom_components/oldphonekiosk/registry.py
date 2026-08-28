@@ -324,6 +324,8 @@ class Registry:
         intercom=None,
         stream=None,
         app_version: str | None = None,
+        set_video_url: bool = False,
+        video_url: str | None = None,
     ) -> PanelDevice:
         """Apply a heartbeat/state update from a device."""
         device = self.get_device(device_id)
@@ -342,6 +344,9 @@ class Registry:
             st.stream = stream
         if app_version is not None:
             st.app_version = app_version
+        if set_video_url:
+            device.media.video_url = video_url
+            self._store.update_media(device_id, video_url)
         st.last_seen = utcnow()
         st.online = True
         self._store.update_state(device_id, st)
