@@ -18,26 +18,26 @@ jobs:
   validate-json:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: .github/scripts/validate-json.sh
 
   hacs-layout:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: .github/scripts/check-hacs-layout.sh
 
   docs-frontmatter:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: .github/scripts/check-docs-frontmatter.py
 
   docs-freshness:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - run: .github/scripts/check-docs-freshness.sh "origin/${{ github.base_ref }}"
@@ -46,7 +46,7 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - run: .github/scripts/check-tests-freshness.sh "origin/${{ github.base_ref }}"
@@ -55,7 +55,7 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - run: .github/scripts/check-changelog-freshness.sh "origin/${{ github.base_ref }}"
@@ -63,5 +63,5 @@ jobs:
   markdown-links:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: .github/scripts/check-markdown-links.py
