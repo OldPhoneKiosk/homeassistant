@@ -4,6 +4,7 @@ All notable changes to the OldPhoneKiosk Home Assistant integration are document
 
 ## Unreleased
 
+- Added a Home Assistant camera entity backed by the panel-reported local MJPEG URL, and forward `start_stream` to online panels even without go2rtc configured.
 - Dynamically add panel entities after a new pairing claim/device appears, so a scanned QR no longer leaves the phone paired while Home Assistant still shows only the hub button.
 - Changed first hub setup so **Add Integration → OldPhoneKiosk** displays a pairing QR and creates the hub only after the phone/tablet connects.
 - Added the app icon to the HACS/custom integration package and README.

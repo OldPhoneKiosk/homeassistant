@@ -18,6 +18,8 @@ class PanelScreen(str, Enum):
 
     PHOTOS = "photos"
     TASKS = "tasks"
+    ACTIONS = "actions"
+    DASHBOARD = "dashboard"
     HOME = "home"
     SLEEP = "sleep"
 
@@ -36,6 +38,9 @@ class PanelCommand(str, Enum):
     SHOW_PHOTOS = "show_photos"
     SHOW_TASKS = "show_tasks"
     SHOW_HOME = "show_home"
+    SHOW_ACTIONS = "show_actions"
+    SHOW_DASHBOARD = "show_dashboard"
+    CONFIGURE_UI = "configure_ui"
     SLEEP = "sleep"
     WAKE = "wake"
     START_STREAM = "start_stream"
@@ -47,6 +52,8 @@ COMMAND_TARGET_SCREEN: dict[PanelCommand, PanelScreen] = {
     PanelCommand.SHOW_PHOTOS: PanelScreen.PHOTOS,
     PanelCommand.SHOW_TASKS: PanelScreen.TASKS,
     PanelCommand.SHOW_HOME: PanelScreen.HOME,
+    PanelCommand.SHOW_ACTIONS: PanelScreen.ACTIONS,
+    PanelCommand.SHOW_DASHBOARD: PanelScreen.DASHBOARD,
     PanelCommand.SLEEP: PanelScreen.SLEEP,
     # WAKE has no fixed target screen; device restores previous/home.
 }

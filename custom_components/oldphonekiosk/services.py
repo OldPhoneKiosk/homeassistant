@@ -20,7 +20,11 @@ from homeassistant.helpers.network import get_url
 from .api import BridgeError, BridgeNotFoundError
 from .const import (
     ATTR_CAMERA_MODE,
+    ATTR_DASHBOARD_URL,
+    ATTR_DEFAULT_SCREEN,
     ATTR_DEVICE_ID,
+    ATTR_ENABLED_SCREENS,
+    ATTR_SHOW_BOTTOM_MENU,
     ATTR_NAME,
     ATTR_ROOM,
     ATTR_VIDEO_URL,
@@ -29,9 +33,12 @@ from .const import (
     SERVICE_PAIR_NEW_PANEL,
     SERVICE_REVOKE_PANEL,
     SERVICE_SET_MEDIA,
+    SERVICE_SET_PANEL_UI,
     SERVICE_START_STREAM,
     SERVICE_STOP_STREAM,
+    SCREENS,
 )
+from .models import PanelCommand
 from .coordinator import OldPhoneKioskCoordinator
 from .pairing import (
     build_claim_payload,
@@ -66,6 +73,18 @@ START_STREAM_SCHEMA = vol.Schema(
     {
         vol.Required(ATTR_DEVICE_ID): cv.string,
         vol.Optional(ATTR_CAMERA_MODE): vol.In(CAMERA_MODES),
+    }
+)
+
+SET_PANEL_UI_SCHEMA = vol.Schema(
+    {
+        vol.Required(ATTR_DEVICE_ID): cv.string,
+        vol.Optional(ATTR_DEFAULT_SCREEN): vol.In([s for s in SCREENS if s != "sleep"]),
+        vol.Optional(ATTR_ENABLED_SCREENS): vol.All(
+            cv.ensure_list, [vol.In([s for s in SCREENS if s != "sleep"])]
+        ),
+        vol.Optional(ATTR_SHOW_BOTTOM_MENU): cv.boolean,
+        vol.Optional(ATTR_DASHBOARD_URL): vol.Any(None, cv.string),
     }
 )
 
@@ -222,6 +241,39 @@ async def _async_set_media(hass: HomeAssistant, call: ServiceCall) -> None:
     await coordinator.async_request_refresh()
 
 
+async def _async_set_panel_ui(hass: HomeAssistant, call: ServiceCall) -> None:
+    """Push kiosk navigation/default-screen/dashboard config to an online panel."""
+    device_id: str = call.data[ATTR_DEVICE_ID]
+    coordinator = _find_coordinator(hass, device_id)
+    if coordinator is None:
+        raise ServiceValidationError(
+            f"No configured OldPhoneKiosk backend knows device '{device_id}'."
+        )
+
+    params: dict[str, str] = {}
+    if ATTR_DEFAULT_SCREEN in call.data:
+        params[ATTR_DEFAULT_SCREEN] = call.data[ATTR_DEFAULT_SCREEN]
+    if ATTR_ENABLED_SCREENS in call.data:
+        params[ATTR_ENABLED_SCREENS] = ",".join(call.data[ATTR_ENABLED_SCREENS])
+    if ATTR_SHOW_BOTTOM_MENU in call.data:
+        params[ATTR_SHOW_BOTTOM_MENU] = "true" if call.data[ATTR_SHOW_BOTTOM_MENU] else "false"
+    if ATTR_DASHBOARD_URL in call.data:
+        params[ATTR_DASHBOARD_URL] = call.data[ATTR_DASHBOARD_URL] or ""
+
+    if not params:
+        raise ServiceValidationError("Set at least one panel UI option.")
+
+    try:
+        await coordinator.client.registry.send_command(
+            device_id,
+            PanelCommand.CONFIGURE_UI,
+            params=params,
+        )
+    except BridgeError as err:
+        raise HomeAssistantError(f"Bridge set_panel_ui failed: {err}") from err
+    await coordinator.async_request_refresh()
+
+
 async def _async_start_stream(hass: HomeAssistant, call: ServiceCall) -> None:
     device_id: str = call.data[ATTR_DEVICE_ID]
     coordinator = _find_coordinator(hass, device_id)
@@ -266,6 +318,9 @@ def async_setup_services(hass: HomeAssistant) -> None:
     async def _handle_set_media(call: ServiceCall) -> None:
         await _async_set_media(hass, call)
 
+    async def _handle_set_panel_ui(call: ServiceCall) -> None:
+        await _async_set_panel_ui(hass, call)
+
     async def _handle_start_stream(call: ServiceCall) -> None:
         await _async_start_stream(hass, call)
 
@@ -283,6 +338,12 @@ def async_setup_services(hass: HomeAssistant) -> None:
         SERVICE_SET_MEDIA,
         _handle_set_media,
         schema=SET_MEDIA_SCHEMA,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_SET_PANEL_UI,
+        _handle_set_panel_ui,
+        schema=SET_PANEL_UI_SCHEMA,
     )
     hass.services.async_register(
         DOMAIN, SERVICE_START_STREAM, _handle_start_stream, schema=START_STREAM_SCHEMA
@@ -305,5 +366,6 @@ def async_unload_services(hass: HomeAssistant) -> None:
         hass.services.async_remove(DOMAIN, SERVICE_REVOKE_PANEL)
         hass.services.async_remove(DOMAIN, SERVICE_PAIR_NEW_PANEL)
         hass.services.async_remove(DOMAIN, SERVICE_SET_MEDIA)
+        hass.services.async_remove(DOMAIN, SERVICE_SET_PANEL_UI)
         hass.services.async_remove(DOMAIN, SERVICE_START_STREAM)
         hass.services.async_remove(DOMAIN, SERVICE_STOP_STREAM)

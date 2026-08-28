@@ -147,7 +147,7 @@ class NativeOldPhoneKioskClient:
             if viewer is None:
                 device = self.registry.set_stream(
                     device_id,
-                    stream_state=StreamState.UNSUPPORTED,
+                    stream_state=StreamState.STARTING,
                     camera_mode=camera,
                 )
             else:
@@ -158,20 +158,25 @@ class NativeOldPhoneKioskClient:
                     video_url=viewer,
                     camera_mode=camera,
                 )
-                if self.registry.is_online(device_id):
-                    try:
-                        await self.registry.send_command(
-                            device_id,
-                            PanelCommand.START_STREAM,
-                            params={
-                                "stream_name": self._stream_name(device_id),
-                                "publish_url": publish,
-                                "viewer_url": viewer,
-                                "camera_mode": camera.value,
-                            },
-                        )
-                    except (DeviceOfflineError, asyncio.TimeoutError):
-                        pass
+            if self.registry.is_online(device_id):
+                params = {"camera_mode": camera.value}
+                if viewer:
+                    params.update(
+                        {
+                            "stream_name": self._stream_name(device_id),
+                            "viewer_url": viewer,
+                        }
+                    )
+                if publish:
+                    params["publish_url"] = publish
+                try:
+                    await self.registry.send_command(
+                        device_id,
+                        PanelCommand.START_STREAM,
+                        params=params,
+                    )
+                except (DeviceOfflineError, asyncio.TimeoutError):
+                    pass
         except UnknownDeviceError as exc:
             raise BridgeNotFoundError("unknown device") from exc
         return PanelDeviceData.from_device(device)
@@ -216,6 +221,8 @@ def handle_device_message(registry: Registry, device_id: str, raw: dict[str, Any
             intercom=enum_or_none(IntercomState, raw.get("intercom")),
             stream=enum_or_none(StreamState, raw.get("stream")),
             app_version=raw.get("appVersion"),
+            set_video_url="videoUrl" in raw,
+            video_url=raw.get("videoUrl"),
         )
     elif msg_type == "command_result":
         command_id = raw.get("id")

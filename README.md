@@ -80,6 +80,7 @@ No Bridge URL or API key is requested anymore.
 | `select.<panel>_screen` | select | active screen: photos / tasks / home / sleep |
 | `button.<panel>_wake` | button | wake the panel |
 | `button.<panel>_sleep` | button | put the panel to sleep |
+| `camera.<panel>_camera` | camera | local MJPEG camera stream published by the iOS app while streaming is active |
 
 ## Main services
 
@@ -112,7 +113,7 @@ Revokes and removes a panel. The phone must re-pair to reconnect.
 
 ### `oldphonekiosk.set_media`, `start_stream`, `stop_stream`
 
-These services set media/camera intent and stream state for future camera/intercom/dashboard flows. Real publishing depends on iOS app support and local WebRTC/go2rtc setup.
+These services control the panel camera stream. `start_stream` sends a command to the online iOS app; the app opens a foreground local MJPEG server and reports its `videoUrl` back to Home Assistant, which exposes it as `camera.<panel>_camera`. `stop_stream` stops the publisher and clears the camera URL.
 
 ## Reporting bugs and feature requests
 
