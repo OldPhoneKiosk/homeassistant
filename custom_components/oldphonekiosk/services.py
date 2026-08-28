@@ -102,17 +102,14 @@ def _any_coordinator(hass: HomeAssistant) -> OldPhoneKioskCoordinator | None:
     return None
 
 
-async def _async_pair_new_panel(
-    hass: HomeAssistant, call: ServiceCall
+async def async_create_pairing_response(
+    hass: HomeAssistant,
+    coordinator: OldPhoneKioskCoordinator,
+    *,
+    name: str,
+    room: str | None = None,
 ) -> ServiceResponse:
-    """Provision a new panel on the Bridge and return a scannable QR payload."""
-    name: str = call.data[ATTR_NAME]
-    room: str | None = call.data.get(ATTR_ROOM)
-
-    coordinator = _any_coordinator(hass)
-    if coordinator is None:
-        raise ServiceValidationError("No OldPhoneKiosk backend is configured.")
-
+    """Provision a new panel and surface the QR/payload in HA notifications."""
     try:
         claim = await coordinator.client.async_create_claim(name, room)
     except BridgeError as err:
@@ -134,7 +131,12 @@ async def _async_pair_new_panel(
 
     # Surface the QR (or the payload) to the user via a persistent notification.
     if qr_data_uri:
-        message = f"Scan this QR in the OldPhoneKiosk app to pair **{name}**:\n\n![pairing qr]({qr_data_uri})"
+        message = (
+            f"Scan this QR in the OldPhoneKiosk app to pair **{name}**.\n\n"
+            f"![pairing qr]({qr_data_uri})\n\n"
+            "If the phone cannot scan it, open **Settings → Pairing → Paste pairing payload** "
+            "in the iOS app and paste the payload from Developer Tools → Actions."
+        )
     else:
         message = (
             f"Pair **{name}** in the OldPhoneKiosk app with this payload "
@@ -152,6 +154,22 @@ async def _async_pair_new_panel(
         "payload": payload_json,
         "qr_svg_data_uri": qr_data_uri,
     }
+
+
+async def _async_pair_new_panel(
+    hass: HomeAssistant, call: ServiceCall
+) -> ServiceResponse:
+    """Provision a new panel on the Bridge and return a scannable QR payload."""
+    coordinator = _any_coordinator(hass)
+    if coordinator is None:
+        raise ServiceValidationError("No OldPhoneKiosk backend is configured.")
+
+    return await async_create_pairing_response(
+        hass,
+        coordinator,
+        name=call.data[ATTR_NAME],
+        room=call.data.get(ATTR_ROOM),
+    )
 
 
 async def _async_revoke_panel(hass: HomeAssistant, call: ServiceCall) -> None:

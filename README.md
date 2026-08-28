@@ -77,6 +77,10 @@ No Bridge URL or API key is requested anymore.
 
 ## Main services
 
+After installation, open the OldPhoneKiosk integration page and use the hub entity **Generate pairing QR**. Pressing that button creates a Home Assistant notification with a QR code that the iOS app can scan.
+
+For named/room-specific setup you can still call the service manually:
+
 ### `oldphonekiosk.pair_new_panel`
 
 ```yaml

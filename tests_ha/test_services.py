@@ -169,6 +169,34 @@ async def test_pair_new_panel_service_returns_payload(hass: HomeAssistant):
         assert response["qr_svg_data_uri"].startswith("data:image/svg+xml;base64,")
 
 
+async def test_pairing_button_creates_qr_notification(hass: HomeAssistant):
+    fake = _FakeClient()
+    entry = MockConfigEntry(domain=DOMAIN, data={CONF_BRIDGE_URL: "http://x", CONF_API_KEY: "k"})
+    entry.add_to_hass(hass)
+    with patch("custom_components.oldphonekiosk.BridgeClient", return_value=fake):
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+    state = hass.states.get("button.oldphonekiosk_generate_pairing_qr")
+    assert state is not None
+
+    with patch(
+        "custom_components.oldphonekiosk.services.persistent_notification.async_create"
+    ) as create_notification:
+        await hass.services.async_call(
+            "button",
+            "press",
+            {"entity_id": "button.oldphonekiosk_generate_pairing_qr"},
+            blocking=True,
+        )
+        await hass.async_block_till_done()
+
+    assert fake.provisioned == ("OldPhoneKiosk Panel", None)
+    create_notification.assert_called_once()
+    assert create_notification.call_args.kwargs["title"] == "OldPhoneKiosk — pair a panel"
+    assert create_notification.call_args.kwargs["notification_id"] == f"{DOMAIN}_pair_dev-new"
+
+
 async def test_set_media_service(hass: HomeAssistant):
     from custom_components.oldphonekiosk.const import (
         ATTR_CAMERA_MODE,
