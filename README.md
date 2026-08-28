@@ -1,5 +1,9 @@
 # OldPhoneKiosk — Home Assistant integration
 
+<p align="center">
+  <img src="icon.png" alt="OldPhoneKiosk icon" width="128" height="128">
+</p>
+
 [![Open your Home Assistant instance and add this repository to HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=OldPhoneKiosk&repository=homeassistant&category=integration)
 [![HA integration tests](https://github.com/OldPhoneKiosk/homeassistant/actions/workflows/tests.yml/badge.svg)](https://github.com/OldPhoneKiosk/homeassistant/actions/workflows/tests.yml)
 [![Repository checks](https://github.com/OldPhoneKiosk/homeassistant/actions/workflows/lint.yml/badge.svg)](https://github.com/OldPhoneKiosk/homeassistant/actions/workflows/lint.yml)
@@ -60,6 +64,8 @@ The QR carries a one-time claim token, not a long-lived device secret. The app r
 5. Add/download the integration in HACS.
 6. Restart Home Assistant.
 7. Add the integration: **Settings → Devices & Services → Add Integration → OldPhoneKiosk**.
+8. The Add hub flow shows a QR; scan it from the iOS app.
+9. Home Assistant creates the hub only after the phone/tablet connects.
 
 No Bridge URL or API key is requested anymore.
 
@@ -77,7 +83,9 @@ No Bridge URL or API key is requested anymore.
 
 ## Main services
 
-After installation, open the OldPhoneKiosk integration page and use the hub entity **Generate pairing QR**. Pressing that button creates a Home Assistant notification with a QR code that the iOS app can scan.
+For the first device, use **Settings → Devices & Services → Add Integration → OldPhoneKiosk**. The flow shows a QR code and does not create the hub until the iOS app scans and connects.
+
+After the hub exists, open the OldPhoneKiosk integration page and use the hub entity **Generate pairing QR** to add more panels. Pressing that button creates a Home Assistant notification with a QR code that the iOS app can scan.
 
 For named/room-specific setup you can still call the service manually:
 

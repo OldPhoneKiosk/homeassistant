@@ -300,6 +300,16 @@ class Registry:
             if not fut.done():
                 fut.set_exception(DeviceOfflineError(device_id))
 
+    def is_claim_pending(self, claim_token: str) -> bool:
+        """Return true when a claim token still exists and has not expired."""
+        claim = self._store.get_claim(claim_token)
+        if claim is None:
+            return False
+        if claim.is_expired():
+            self._delete_claim_and_orphan(claim)
+            return False
+        return True
+
     def is_online(self, device_id: str) -> bool:
         return device_id in self._connections
 

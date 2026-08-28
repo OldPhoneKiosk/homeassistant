@@ -158,7 +158,11 @@ class DeviceStore:
                     device.room,
                     device.model,
                     device.ios_version,
-                    json.dumps(device.capabilities.model_dump()),
+                    json.dumps(
+                        device.capabilities.model_dump()
+                        if hasattr(device.capabilities, "model_dump")
+                        else device.capabilities.dict()
+                    ),
                     secret_hash,
                     device.created_at.isoformat(),
                     st.battery,

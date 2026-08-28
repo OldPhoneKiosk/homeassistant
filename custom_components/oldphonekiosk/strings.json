@@ -1,31 +1,30 @@
 {
   "config": {
     "step": {
-      "user": {
-        "title": "OldPhoneKiosk",
-        "description": "Enable the Home Assistant-native OldPhoneKiosk backend. No external bridge service is required.",
-        "data": {}
+      "pair": {
+        "title": "Pair your first OldPhoneKiosk panel",
+        "description": "Open the OldPhoneKiosk iOS app and scan this QR code. After the app connects, come back here and press Submit.\n\n![OldPhoneKiosk pairing QR]({qr_svg_data_uri})\n\nIf the QR is not visible in your Home Assistant theme, use the iOS fallback: Settings → Pairing → Paste pairing payload, then paste this payload:\n\n```json\n{payload}\n```"
       }
     },
+    "error": {
+      "waiting_for_phone": "Waiting for the phone/tablet to scan the QR and connect. Leave this screen open, scan from the app, then press Submit again.",
+      "not_connected": "The QR was scanned or expired, but the phone/tablet is not connected yet. If needed, restart the flow and scan the new QR."
+    },
     "abort": {
-      "already_configured": "OldPhoneKiosk is already configured."
+      "already_configured": "OldPhoneKiosk is already configured. Add more panels from the integration page or remove the existing entry first."
     }
   },
   "entity": {
-    "binary_sensor": {
-      "online": { "name": "Online" }
-    },
-    "sensor": {
-      "battery": { "name": "Battery" },
-      "last_seen": { "name": "Last seen" },
-      "app_version": { "name": "App version" }
-    },
-    "select": {
-      "screen": { "name": "Screen" }
-    },
     "button": {
-      "wake": { "name": "Wake" },
-      "sleep": { "name": "Sleep" }
+      "generate_pairing_qr": {
+        "name": "Generate pairing QR"
+      },
+      "wake": {
+        "name": "Wake"
+      },
+      "sleep": {
+        "name": "Sleep"
+      }
     }
   }
 }
