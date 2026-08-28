@@ -4,6 +4,8 @@ All notable changes to the OldPhoneKiosk Home Assistant integration are document
 
 ## Unreleased
 
+- Changed first hub setup so **Add Integration → OldPhoneKiosk** displays a pairing QR and creates the hub only after the phone/tablet connects.
+- Added the app icon to the HACS/custom integration package and README.
 - Added a hub-level **Generate pairing QR** button entity so users can start pairing from the integration page instead of Developer Tools.
 - Added HACS custom repository metadata and one-click My Home Assistant install button.
 - Moved pairing/device backend into the Home Assistant integration, removing the external Bridge requirement.

@@ -11,16 +11,15 @@ Pairing starts in Home Assistant and finishes on the iPhone.
 
 ## Pair a new panel
 
-1. Open **Settings → Devices & Services → OldPhoneKiosk**.
-2. In the hub entities, press **Generate pairing QR**.
-3. Home Assistant creates a pending device and a one-time claim token.
-4. Open the Home Assistant notification created by OldPhoneKiosk.
-5. Scan the QR in the iOS app.
-6. The app redeems the claim against Home Assistant.
-7. Home Assistant returns the device id and device secret.
-8. The app stores the secret in Keychain.
-9. The app asks HA for a short-lived WebSocket token and connects.
+1. Open **Settings → Devices & Services → Add Integration → OldPhoneKiosk**.
+2. Home Assistant shows a pairing QR before creating the hub.
+3. Open the OldPhoneKiosk iOS app and scan the QR.
+4. The app redeems the claim against Home Assistant.
+5. Home Assistant returns the device id and device secret.
+6. The app stores the secret in Keychain and opens its WebSocket connection.
+7. Only then does Home Assistant finish the flow and create the OldPhoneKiosk hub/panel.
 
+After the hub exists, add more panels from **Settings → Devices & Services → OldPhoneKiosk → Generate pairing QR**.
 For a custom name/room, call service `oldphonekiosk.pair_new_panel` from Developer Tools → Actions and provide `name`/`room`.
 
 ## QR payload

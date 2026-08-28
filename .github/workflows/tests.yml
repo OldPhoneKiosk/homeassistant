@@ -46,7 +46,7 @@ jobs:
       - run: python -m pip install --upgrade pip
       - name: Install HA harness (newest PHACC compatible with 3.12)
         run: |
-          pip install "pytest-homeassistant-custom-component<0.14"
+          pip install "pytest-homeassistant-custom-component<0.14" "qrcode>=7.4"
           python -c "from homeassistant.const import __version__ as v; print('Home Assistant', v)"
           python -c "import pytest_homeassistant_custom_component as p; print('PHACC', p.__version__ if hasattr(p,'__version__') else 'n/a')"
       - name: Compile custom component

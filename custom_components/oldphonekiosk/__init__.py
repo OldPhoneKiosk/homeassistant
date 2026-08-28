@@ -3,20 +3,15 @@
 from __future__ import annotations
 
 import inspect
-import secrets
-
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 
+from .backend import ensure_backend
 from .const import DOMAIN
 from .coordinator import OldPhoneKioskCoordinator
-from .http import DATA_REGISTRY, DATA_WS_TOKENS, async_register_http_views
 from .native_client import NativeOldPhoneKioskClient as BridgeClient
-from .registry import Registry
 from .services import async_setup_services, async_unload_services
-from .store import DeviceStore
-from .wstoken import WsTokenService
 
 PLATFORMS: list[Platform] = [
     Platform.BINARY_SENSOR,
@@ -24,23 +19,6 @@ PLATFORMS: list[Platform] = [
     Platform.SELECT,
     Platform.BUTTON,
 ]
-
-
-def _ensure_backend(hass: HomeAssistant) -> Registry:
-    """Create the in-process backend once per HA process."""
-    domain_data = hass.data.setdefault(DOMAIN, {})
-    registry = domain_data.get(DATA_REGISTRY)
-    if registry is not None:
-        return registry
-    db_path = hass.config.path("oldphonekiosk/oldphonekiosk.db")
-    store = DeviceStore(db_path)
-    registry = Registry(store)
-    registry.purge_expired_claims()
-    domain_data[DATA_REGISTRY] = registry
-    domain_data[DATA_WS_TOKENS] = WsTokenService(secrets.token_urlsafe(32))
-    if getattr(hass, "http", None) is not None:
-        async_register_http_views(hass)
-    return registry
 
 
 async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -60,7 +38,7 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up OldPhoneKiosk from a config entry."""
-    registry = _ensure_backend(hass)
+    registry = ensure_backend(hass)
     client = BridgeClient(registry)
     coordinator = OldPhoneKioskCoordinator(hass, entry, client)
     await coordinator.async_config_entry_first_refresh()

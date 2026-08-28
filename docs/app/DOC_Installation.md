@@ -26,6 +26,8 @@ The `OldPhoneKiosk/homeassistant` repository is public so HACS can download it w
 7. Download **OldPhoneKiosk** in HACS.
 8. Restart Home Assistant.
 9. Go to **Settings → Devices & Services → Add Integration → OldPhoneKiosk**.
+10. The Add hub flow shows a pairing QR; keep it open and scan it from the iOS app.
+11. Home Assistant creates the OldPhoneKiosk hub only after the phone/tablet connects.
 
 No Bridge URL and no API key are required.
 
