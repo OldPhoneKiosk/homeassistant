@@ -30,7 +30,25 @@ The QR carries a one-time claim token, not the long-lived device secret. The app
 | `button.<panel>_wake` | button | Wake command |
 | `button.<panel>_sleep` | button | Sleep command |
 
-## Install/dev
+## Install
+
+### HACS custom repository
+
+[![Open your Home Assistant instance and add this repository to HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=OldPhoneKiosk&repository=homeassistant&category=integration)
+
+1. Make sure [HACS](https://hacs.xyz/) is installed in Home Assistant.
+2. Click the button above.
+3. Pick your Home Assistant instance when My Home Assistant asks.
+4. HACS opens the custom repository dialog with:
+   - repository: `OldPhoneKiosk/homeassistant`
+   - category: `Integration`
+5. Add/download the integration in HACS.
+6. Restart Home Assistant.
+7. Add the integration: **Settings → Devices & Services → Add Integration → OldPhoneKiosk**.
+
+No Bridge URL or API key is requested anymore.
+
+### Manual/dev install
 
 Copy the component into your HA config:
 
@@ -40,8 +58,6 @@ cp -r custom_components/oldphonekiosk <HA_CONFIG>/custom_components/oldphonekios
 
 Restart Home Assistant, then add the integration:
 **Settings → Devices & Services → Add Integration → OldPhoneKiosk**.
-
-No Bridge URL or API key is requested anymore.
 
 ## Services
 
