@@ -7,12 +7,16 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# Same explicit-minimum permission style as proxy_sembot: checkout only needs repository read access.
+permissions:
+  contents: read
+
 concurrency:
   group: ha-tests-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  # Fast, HA-free unit tests (Bridge API client + parsing). testpaths=["tests"].
+  # Fast, HA-free unit tests for pure protocol/security/store/client logic.
   fast-tests:
     runs-on: ubuntu-latest
     strategy:
@@ -26,15 +30,12 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - run: python -m pip install --upgrade pip
       - run: pip install -e '.[dev]'
-      - run: pytest -q
+      - name: Compile custom component
+        run: python -m compileall -q custom_components/oldphonekiosk
+      - name: Fast tests
+        run: pytest -q
 
-  # Full Home Assistant runtime harness (config_flow / coordinator / service).
-  # Runs on Python 3.12 with the newest pytest-homeassistant-custom-component that
-  # resolves there (pip backtracks past HA lines that require 3.13). The component
-  # keeps a ConfigFlowResult compat shim so it loads across HA versions.
-  #
-  # The integration package is NOT installed here on purpose: HA pins its own httpx
-  # and the component is imported from the repo via sys.path (tests_ha/conftest.py).
+  # Full Home Assistant runtime harness: config_flow, coordinator, services and HA service registry behavior.
   ha-harness:
     runs-on: ubuntu-latest
     steps:
@@ -48,4 +49,7 @@ jobs:
           pip install "pytest-homeassistant-custom-component<0.14"
           python -c "from homeassistant.const import __version__ as v; print('Home Assistant', v)"
           python -c "import pytest_homeassistant_custom_component as p; print('PHACC', p.__version__ if hasattr(p,'__version__') else 'n/a')"
-      - run: pytest tests_ha -q
+      - name: Compile custom component
+        run: python -m compileall -q custom_components/oldphonekiosk
+      - name: HA harness tests
+        run: pytest tests_ha -q

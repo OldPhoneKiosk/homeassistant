@@ -1,0 +1,73 @@
+name: Bug report
+description: Report something that is broken in the OldPhoneKiosk Home Assistant integration
+title: "Bug: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Do not paste Home Assistant tokens, active QR claim tokens, device secrets, or private home details.
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: Describe the problem in a few sentences.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Install via HACS
+        2. Add integration
+        3. Call oldphonekiosk.pair_new_panel
+        4. Scan QR in iOS app
+    validations:
+      required: true
+  - type: input
+    id: ha_version
+    attributes:
+      label: Home Assistant version
+      placeholder: "2026.8.x"
+    validations:
+      required: true
+  - type: input
+    id: integration_version
+    attributes:
+      label: OldPhoneKiosk integration version or commit
+      placeholder: "v0.1.0 or commit SHA"
+    validations:
+      required: true
+  - type: dropdown
+    id: install_method
+    attributes:
+      label: Installation method
+      options:
+        - HACS custom repository
+        - Manual copy to custom_components
+        - Development checkout
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: ios_build
+    attributes:
+      label: iOS app build/version
+      description: If the issue involves pairing or device connectivity.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Redact secrets and tokens.
+      render: text
+  - type: textarea
+    id: extra
+    attributes:
+      label: Additional context

@@ -1,69 +1,83 @@
 # OldPhoneKiosk — Home Assistant integration
 
-Custom integration that contains the OldPhoneKiosk backend **inside Home Assistant**. There is no separate Bridge service/process: pairing, device registry, short-lived WebSocket tokens, commands, and device state are owned by the HA integration.
+[![Open your Home Assistant instance and add this repository to HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=OldPhoneKiosk&repository=homeassistant&category=integration)
+[![HA integration tests](https://github.com/OldPhoneKiosk/homeassistant/actions/workflows/tests.yml/badge.svg)](https://github.com/OldPhoneKiosk/homeassistant/actions/workflows/tests.yml)
+[![Repository checks](https://github.com/OldPhoneKiosk/homeassistant/actions/workflows/lint.yml/badge.svg)](https://github.com/OldPhoneKiosk/homeassistant/actions/workflows/lint.yml)
 
-Protocol: see [`_p/docs/protocol-foundation.md`](../_p/docs/protocol-foundation.md).
+OldPhoneKiosk turns an old iPhone into a local Home Assistant wall panel: a dashboard/control surface that can be paired, monitored, woken, put to sleep, and directed from Home Assistant.
+
+This repository is the **public Home Assistant integration package**. It installs through HACS and contains the backend that runs inside Home Assistant. The companion iOS app lives in a separate repository and can stay private.
+
+## What it does
+
+- pairs an iPhone panel with Home Assistant using a one-time QR claim token,
+- stores panel credentials and state inside the Home Assistant config directory,
+- exposes panel status as Home Assistant entities,
+- lets automations/services send commands to a panel,
+- serves device API and WebSocket routes directly from Home Assistant,
+- removes the need for a separate Bridge/server process.
 
 ## Architecture
 
 ```text
-iPhone OldPhoneKiosk app  →  Home Assistant custom_components/oldphonekiosk
+Home Assistant + this custom integration
+        │
+        │ admin actions: normal Home Assistant auth
+        │ device actions: device secret + short-lived WS token
+        ▼
+iPhone OldPhoneKiosk app
 ```
 
 Device-facing routes are served by Home Assistant:
 
-- `POST /api/oldphonekiosk/pairing/claim/redeem`
-- `POST /api/oldphonekiosk/devices/{device_id}/ws-token`
-- `GET  /api/oldphonekiosk/ws/device/{device_id}?token=...`
+| Route | Purpose |
+| --- | --- |
+| `POST /api/oldphonekiosk/pairing/claim/redeem` | iPhone redeems a one-time QR claim and receives device credentials |
+| `POST /api/oldphonekiosk/devices/{device_id}/ws-token` | paired device asks for a short-lived WebSocket token |
+| `GET /api/oldphonekiosk/ws/device/{device_id}?token=...` | panel WebSocket for state updates and commands |
 
-The QR carries a one-time claim token, not the long-lived device secret. The app redeems the claim once, stores its device secret in Keychain, then uses short-lived WS tokens for WebSocket connections.
+The QR carries a one-time claim token, not a long-lived device secret. The app redeems the claim once, stores the device secret in Keychain, then uses short-lived WebSocket tokens for live connections.
 
-## Entities per panel
+## Documentation
 
-| Entity | Type | Purpose |
-| ------ | ---- | ------- |
-| `binary_sensor.<panel>_online` | connectivity | Panel online |
-| `sensor.<panel>_battery` | battery % | Battery level |
-| `sensor.<panel>_last_seen` | timestamp | Last heartbeat |
-| `sensor.<panel>_app_version` | text | iOS app version |
-| `select.<panel>_screen` | select | photos / tasks / home / sleep |
-| `button.<panel>_wake` | button | Wake command |
-| `button.<panel>_sleep` | button | Sleep command |
+- [Overview](docs/app/DOC_Overview.md)
+- [Installation with HACS](docs/app/DOC_Installation.md)
+- [Pairing and security model](docs/app/DOC_Pairing.md)
+- [Home Assistant entities and services](docs/app/DOC_HomeAssistant.md)
+- [Troubleshooting](docs/app/DOC_Troubleshooting.md)
+- [Reporting bugs and requesting features](docs/app/DOC_BugReporting.md)
+- [Developer guide](docs/development/DOC_Development.md)
+- [CI and release checks](docs/development/DOC_CI.md)
 
-## Install
-
-### HACS custom repository
+## Install through HACS
 
 [![Open your Home Assistant instance and add this repository to HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=OldPhoneKiosk&repository=homeassistant&category=integration)
 
 1. Make sure [HACS](https://hacs.xyz/) is installed in Home Assistant.
 2. Click the button above.
 3. Pick your Home Assistant instance when My Home Assistant asks.
-4. HACS opens the custom repository dialog with:
-   - repository: `OldPhoneKiosk/homeassistant`
-   - category: `Integration`
+4. HACS opens the custom repository dialog with repository `OldPhoneKiosk/homeassistant` and category `Integration`.
 5. Add/download the integration in HACS.
 6. Restart Home Assistant.
 7. Add the integration: **Settings → Devices & Services → Add Integration → OldPhoneKiosk**.
 
 No Bridge URL or API key is requested anymore.
 
-### Manual/dev install
+## Entities per panel
 
-Copy the component into your HA config:
+| Entity | Type | Purpose |
+| ------ | ---- | ------- |
+| `binary_sensor.<panel>_online` | connectivity | Panel online/offline |
+| `sensor.<panel>_battery` | battery % | Battery level |
+| `sensor.<panel>_last_seen` | timestamp | Last heartbeat from the iPhone |
+| `sensor.<panel>_app_version` | text | iOS app version |
+| `select.<panel>_screen` | select | active screen: photos / tasks / home / sleep |
+| `button.<panel>_wake` | button | wake the panel |
+| `button.<panel>_sleep` | button | put the panel to sleep |
 
-```bash
-cp -r custom_components/oldphonekiosk <HA_CONFIG>/custom_components/oldphonekiosk
-```
-
-Restart Home Assistant, then add the integration:
-**Settings → Devices & Services → Add Integration → OldPhoneKiosk**.
-
-## Services
+## Main services
 
 ### `oldphonekiosk.pair_new_panel`
-
-Provisions a **new** panel in Home Assistant and returns a pairing QR payload to scan in the OldPhoneKiosk app. The QR carries a **one-time claim token**; the app redeems it at Home Assistant for its credentials. A persistent notification with the QR image (or raw payload) is also raised.
 
 ```yaml
 service: oldphonekiosk.pair_new_panel
@@ -72,42 +86,9 @@ data:
   room: Kitchen
 ```
 
-Response (service supports response data):
-
-```yaml
-device_id: "b1e7c2a0-..."
-payload: '{"type":"claim","bridge_url":"http://homeassistant.local:8123","claim_token":"...","version":1,...}'
-qr_svg_data_uri: "data:image/svg+xml;base64,..."   # present when qrcode is installed
-```
-
-`bridge_url` is kept in the payload for compatibility with the current iOS app model, but it now points to the Home Assistant base URL. It must be reachable from the phone.
-
-### `oldphonekiosk.start_stream` / `oldphonekiosk.stop_stream`
-
-Start/stop a media publisher session through Home Assistant/go2rtc. `start_stream` takes `device_id` (+ optional `camera_mode`), sets the viewer URL, and tells the panel to publish. Real publishing needs a device build with a WebRTC publisher — otherwise the panel reports the stream as `unsupported`.
-
-```yaml
-service: oldphonekiosk.start_stream
-data: { device_id: b1e7c2a0-..., camera_mode: front }
-```
-
-### `oldphonekiosk.set_media`
-
-Sets a panel's **media config** in Home Assistant: the `video_url` (a WebRTC/go2rtc player page the Lovelace card renders) and/or the `camera_mode`.
-
-```yaml
-service: oldphonekiosk.set_media
-data:
-  device_id: b1e7c2a0-...
-  video_url: "http://homeassistant.local:1984/stream.html?src=front_door"
-  camera_mode: front                 # off | front | back | dual
-```
-
-Every panel entity exposes `bridge_device_id` (compatibility name), `video_url`, `camera_mode`, and `intercom` as state attributes, so the Lovelace card can read them.
+Returns `device_id`, raw QR `payload`, and `qr_svg_data_uri` when QR rendering is available. The payload keeps the compatibility field `bridge_url`, but it points to Home Assistant.
 
 ### `oldphonekiosk.revoke_panel`
-
-Revokes and removes a panel from OldPhoneKiosk in Home Assistant. The panel must re-pair to reconnect.
 
 ```yaml
 service: oldphonekiosk.revoke_panel
@@ -115,40 +96,42 @@ data:
   device_id: b1e7c2a0-1234-4f56-8abc-0123456789ab
 ```
 
-Errors: an unknown/unconfigured id raises a validation error.
+Revokes and removes a panel. The phone must re-pair to reconnect.
+
+### `oldphonekiosk.set_media`, `start_stream`, `stop_stream`
+
+These services set media/camera intent and stream state for future camera/intercom/dashboard flows. Real publishing depends on iOS app support and local WebRTC/go2rtc setup.
+
+## Reporting bugs and feature requests
+
+Use GitHub Issues:
+
+- [Report a bug](https://github.com/OldPhoneKiosk/homeassistant/issues/new?template=bug_report.yml)
+- [Request a feature](https://github.com/OldPhoneKiosk/homeassistant/issues/new?template=feature_request.yml)
+
+Include HA version, integration version/commit, installation method, iOS app build, relevant logs, and reproduction steps. Do not paste secrets, tokens, QR payloads with active claim tokens, or full device secrets.
 
 ## Tests
-
-Fast unit tests and Home Assistant harness tests:
 
 ```bash
 cd homeassistant
 python3.11 -m venv .venv-ha
 . .venv-ha/bin/activate
 pip install -e '.[ha-test]'
+python -m compileall -q custom_components/oldphonekiosk
 pytest -q tests tests_ha
 ```
 
-The HA custom integration itself must be Python because Home Assistant integrations run in HA's Python runtime. A Go implementation would have to be a separate add-on/sidecar process, which this project intentionally avoids.
+CI runs the same checks plus repository hygiene checks for JSON, HACS layout, documentation frontmatter, changelog freshness, test freshness, and Markdown links.
 
 ## Layout
 
 ```text
-custom_components/oldphonekiosk/
-  __init__.py       # backend setup, storage, platform forwarding, services
-  http.py           # HA-served pairing/ws-token/websocket routes
-  native_client.py  # in-process backend facade used by HA coordinator/services
-  registry.py       # paired device registry, commands, online state
-  store.py          # SQLite persistence under <HA_CONFIG>/oldphonekiosk/
-  security.py       # device secret hashing
-  wstoken.py        # short-lived WebSocket token signing/verification
-  models.py         # device, claim, state and command models
-  protocol.py       # wire protocol helpers
-  pairing.py        # QR payload build + SVG QR
-  coordinator.py    # DataUpdateCoordinator over the in-process backend
-  entity.py         # shared base entity / device_info
-  services.py       # pair/revoke/media/stream service handlers
-  services.yaml     # service schemas shown in the HA UI
-  binary_sensor.py sensor.py select.py button.py
-  strings.json translations/en.json
+custom_components/oldphonekiosk/  # Home Assistant integration
+docs/app/                         # user/operator docs, DOC_*.md
+docs/development/                 # development and CI docs, DOC_*.md
+.github/workflows/                # tests and repository checks
+.github/scripts/                  # local/CI quality gates
 ```
+
+The HA custom integration itself must be Python because Home Assistant integrations run in HA's Python runtime. A Go implementation would have to be a separate add-on/sidecar process, which this project intentionally avoids.
