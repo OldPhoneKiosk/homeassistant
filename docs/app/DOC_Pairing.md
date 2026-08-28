@@ -20,6 +20,7 @@ Pairing starts in Home Assistant and finishes on the iPhone.
 7. Only then does Home Assistant finish the flow and create the OldPhoneKiosk hub/panel.
 
 After the hub exists, add more panels from **Settings → Devices & Services → OldPhoneKiosk → Generate pairing QR**.
+When the QR is generated, Home Assistant provisions the pending panel and dynamically adds its online/battery/screen/wake/sleep entities to the existing hub; after the iOS app scans and connects, those entities update from the phone heartbeat.
 For a custom name/room, call service `oldphonekiosk.pair_new_panel` from Developer Tools → Actions and provide `name`/`room`.
 
 ## QR payload

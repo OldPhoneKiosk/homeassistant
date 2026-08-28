@@ -65,6 +65,24 @@ class _FakeClient:
         from custom_components.oldphonekiosk.api import PanelClaim
 
         self.provisioned = (name, room)
+        self._devices.append(
+            PanelDeviceData(
+                device_id="dev-new",
+                name=name,
+                room=room,
+                model=None,
+                online=False,
+                battery=None,
+                brightness=None,
+                screen=None,
+                camera_mode="off",
+                intercom="idle",
+                stream="idle",
+                video_url=None,
+                app_version=None,
+                last_seen=None,
+            )
+        )
         return PanelClaim(
             claim_token="claim-abc",
             device_id="dev-new",
@@ -195,6 +213,12 @@ async def test_pairing_button_creates_qr_notification(hass: HomeAssistant):
     create_notification.assert_called_once()
     assert create_notification.call_args.kwargs["title"] == "OldPhoneKiosk — pair a panel"
     assert create_notification.call_args.kwargs["notification_id"] == f"{DOMAIN}_pair_dev-new"
+
+    assert hass.states.get("binary_sensor.oldphonekiosk_panel_online") is not None
+    assert hass.states.get("select.oldphonekiosk_panel_screen") is not None
+    assert hass.states.get("button.oldphonekiosk_panel_wake") is not None
+    assert hass.states.get("button.oldphonekiosk_panel_sleep") is not None
+    assert hass.states.get("sensor.oldphonekiosk_panel_battery") is not None
 
 
 async def test_set_media_service(hass: HomeAssistant):

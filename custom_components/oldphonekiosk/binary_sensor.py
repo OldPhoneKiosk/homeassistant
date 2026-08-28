@@ -7,7 +7,7 @@ from homeassistant.components.binary_sensor import (
     BinarySensorEntity,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
@@ -21,10 +21,22 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     coordinator: OldPhoneKioskCoordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities(
-        OnlineBinarySensor(coordinator, device_id)
-        for device_id in coordinator.data
-    )
+    known_devices = set(coordinator.data or {})
+
+    def _entities(device_ids: set[str]):
+        return [OnlineBinarySensor(coordinator, device_id) for device_id in device_ids]
+
+    async_add_entities(_entities(known_devices))
+
+    @callback
+    def _async_add_new_devices() -> None:
+        new_devices = set(coordinator.data or {}) - known_devices
+        if not new_devices:
+            return
+        known_devices.update(new_devices)
+        async_add_entities(_entities(new_devices))
+
+    entry.async_on_unload(coordinator.async_add_listener(_async_add_new_devices))
 
 
 class OnlineBinarySensor(OldPhoneKioskEntity, BinarySensorEntity):

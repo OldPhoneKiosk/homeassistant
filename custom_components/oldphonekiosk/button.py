@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from homeassistant.components.button import ButtonEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -25,13 +25,28 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     coordinator: OldPhoneKioskCoordinator = hass.data[DOMAIN][entry.entry_id]
+    known_devices = set(coordinator.data or {})
+
+    def _panel_entities(device_ids: set[str]):
+        return [
+            PanelCommandButton(coordinator, device_id, key, name, command)
+            for device_id in device_ids
+            for key, name, command in BUTTONS
+        ]
+
     entities: list[ButtonEntity] = [HubPairingButton(coordinator, entry)]
-    entities.extend(
-        PanelCommandButton(coordinator, device_id, key, name, command)
-        for device_id in coordinator.data
-        for key, name, command in BUTTONS
-    )
+    entities.extend(_panel_entities(known_devices))
     async_add_entities(entities)
+
+    @callback
+    def _async_add_new_devices() -> None:
+        new_devices = set(coordinator.data or {}) - known_devices
+        if not new_devices:
+            return
+        known_devices.update(new_devices)
+        async_add_entities(_panel_entities(new_devices))
+
+    entry.async_on_unload(coordinator.async_add_listener(_async_add_new_devices))
 
 
 class HubPairingButton(ButtonEntity):

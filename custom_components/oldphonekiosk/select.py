@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from homeassistant.components.select import SelectEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN, SCREEN_TO_COMMAND, SCREENS
@@ -18,9 +18,22 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     coordinator: OldPhoneKioskCoordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities(
-        ScreenSelect(coordinator, device_id) for device_id in coordinator.data
-    )
+    known_devices = set(coordinator.data or {})
+
+    def _entities(device_ids: set[str]):
+        return [ScreenSelect(coordinator, device_id) for device_id in device_ids]
+
+    async_add_entities(_entities(known_devices))
+
+    @callback
+    def _async_add_new_devices() -> None:
+        new_devices = set(coordinator.data or {}) - known_devices
+        if not new_devices:
+            return
+        known_devices.update(new_devices)
+        async_add_entities(_entities(new_devices))
+
+    entry.async_on_unload(coordinator.async_add_listener(_async_add_new_devices))
 
 
 class ScreenSelect(OldPhoneKioskEntity, SelectEntity):
