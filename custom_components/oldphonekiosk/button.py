@@ -1,15 +1,17 @@
-"""Wake/Sleep buttons for OldPhoneKiosk panels."""
+"""Buttons for OldPhoneKiosk hub actions and paired panels."""
 
 from __future__ import annotations
 
 from homeassistant.components.button import ButtonEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import CMD_SLEEP, CMD_WAKE, DOMAIN
 from .coordinator import OldPhoneKioskCoordinator
 from .entity import OldPhoneKioskEntity
+from .services import async_create_pairing_response
 
 BUTTONS = (
     ("wake", "Wake", CMD_WAKE),
@@ -23,11 +25,41 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     coordinator: OldPhoneKioskCoordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities(
+    entities: list[ButtonEntity] = [HubPairingButton(coordinator, entry)]
+    entities.extend(
         PanelCommandButton(coordinator, device_id, key, name, command)
         for device_id in coordinator.data
         for key, name, command in BUTTONS
     )
+    async_add_entities(entities)
+
+
+class HubPairingButton(ButtonEntity):
+    """Hub-level button that generates the next pairing QR notification."""
+
+    _attr_has_entity_name = True
+    _attr_name = "Generate pairing QR"
+    _attr_translation_key = "generate_pairing_qr"
+
+    def __init__(self, coordinator: OldPhoneKioskCoordinator, entry: ConfigEntry) -> None:
+        self.coordinator = coordinator
+        self._entry = entry
+        self._attr_unique_id = f"{entry.entry_id}_generate_pairing_qr"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, entry.entry_id)},
+            name=entry.title or "OldPhoneKiosk",
+            manufacturer="OldPhoneKiosk",
+            model="Home Assistant hub",
+        )
+
+    async def async_press(self) -> None:
+        """Create a default pairing claim and show the QR in notifications."""
+        await async_create_pairing_response(
+            self.coordinator.hass,
+            self.coordinator,
+            name="OldPhoneKiosk Panel",
+            room=None,
+        )
 
 
 class PanelCommandButton(OldPhoneKioskEntity, ButtonEntity):

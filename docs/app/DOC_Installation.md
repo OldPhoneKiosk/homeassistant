@@ -29,6 +29,16 @@ The `OldPhoneKiosk/homeassistant` repository is public so HACS can download it w
 
 No Bridge URL and no API key are required.
 
+## Pair the first phone/tablet
+
+1. Open **Settings → Devices & Services → OldPhoneKiosk**.
+2. Select the OldPhoneKiosk hub/device.
+3. Press the **Generate pairing QR** button entity.
+4. Open the Home Assistant notification that appears.
+5. In the iOS app, tap **Scan pairing QR** and scan the QR from the notification.
+
+If you need a custom panel name or room, use **Developer Tools → Actions → `oldphonekiosk.pair_new_panel`** instead.
+
 ## Manual custom repository fallback
 
 If the button does not open your HA instance, open **HACS → Integrations → Custom repositories**, add `https://github.com/OldPhoneKiosk/homeassistant`, choose category **Integration**, then download and restart HA.
