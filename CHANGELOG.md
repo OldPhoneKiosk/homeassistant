@@ -4,6 +4,10 @@ All notable changes to the OldPhoneKiosk Home Assistant integration are document
 
 ## Unreleased
 
+## 0.1.11 - 2026-08-29
+
+- Removed the unused Home and Actions screens from Home Assistant screen selectors; normal kiosk navigation now offers Photos, Tasks and Dashboard only.
+
 ## 0.1.10 - 2026-08-29
 
 - Pairing now prefers Home Assistant's configured Local/Internal URL when sending the connection URL to the phone, preventing newly paired devices from saving an unreachable fallback URL and staying stuck on “Connecting”.

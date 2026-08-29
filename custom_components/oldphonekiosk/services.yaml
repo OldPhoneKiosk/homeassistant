@@ -95,14 +95,14 @@ set_panel_ui:
       required: false
       selector:
         select:
-          options: ["photos", "tasks", "actions", "dashboard", "home"]
+          options: ["photos", "tasks", "dashboard"]
     enabled_screens:
       name: Enabled screens
       required: false
       selector:
         select:
           multiple: true
-          options: ["photos", "tasks", "actions", "dashboard", "home"]
+          options: ["photos", "tasks", "dashboard"]
     show_bottom_menu:
       name: Show bottom menu
       required: false
