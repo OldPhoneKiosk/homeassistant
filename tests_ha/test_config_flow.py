@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import inspect
 import json
 
 from types import SimpleNamespace
@@ -162,6 +163,23 @@ async def test_zeroconf_flow_confirms_and_pushes_claim(monkeypatch, hass: HomeAs
     assert payload["claim_token"]
 
 
+def _existing_entry_kwargs() -> dict:
+    kwargs = {
+        "version": 2,
+        "minor_version": 1,
+        "domain": DOMAIN,
+        "title": "OldPhoneKiosk",
+        "data": {},
+        "source": config_entries.SOURCE_USER,
+        "options": {},
+        "unique_id": DOMAIN,
+        "entry_id": "opk-entry",
+    }
+    if "discovery_keys" in inspect.signature(config_entries.ConfigEntry).parameters:
+        kwargs["discovery_keys"] = {}
+    return kwargs
+
+
 async def test_zeroconf_flow_adds_panel_to_existing_hub(monkeypatch, hass: HomeAssistant):
     session = _FakeSession()
     monkeypatch.setattr(
@@ -169,17 +187,7 @@ async def test_zeroconf_flow_adds_panel_to_existing_hub(monkeypatch, hass: HomeA
         lambda hass: session,
     )
     await hass.config_entries.async_add(
-        config_entries.ConfigEntry(
-            version=2,
-            minor_version=1,
-            domain=DOMAIN,
-            title="OldPhoneKiosk",
-            data={},
-            source=config_entries.SOURCE_USER,
-            options={},
-            unique_id=DOMAIN,
-            entry_id="opk-entry",
-        )
+        config_entries.ConfigEntry(**_existing_entry_kwargs())
     )
 
     result = await hass.config_entries.flow.async_init(
