@@ -19,8 +19,8 @@ def ensure_backend(hass: HomeAssistant) -> Registry:
     """Create the in-process backend once per Home Assistant process.
 
     The backend may be needed before the config entry exists: the config flow can
-    generate a QR claim, the phone redeems it via HTTP, and only then does the
-    flow create the integration entry.
+    generate a pairing-code claim, the phone redeems it via HTTP, and only then
+    does the flow create the integration entry.
     """
     domain_data = hass.data.setdefault(DOMAIN, {})
     registry = domain_data.get(DATA_REGISTRY)

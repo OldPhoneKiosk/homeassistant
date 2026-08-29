@@ -2,30 +2,27 @@
 category: app
 title: Pairing and device security
 author: system
-description: How Home Assistant creates one-time QR claims and how the iPhone connects without receiving HA admin credentials
+description: How Home Assistant creates one-time pairing codes and how the iPhone connects without receiving HA admin credentials
 ---
 
 # Pairing and device security
 
-Pairing starts in Home Assistant and finishes on the iPhone.
+Pairing starts in Home Assistant and finishes on the iPhone/iPad.
 
-## Pair a new panel
+## Pair over Wi‑Fi
 
-1. Open **Settings → Devices & Services → Add Integration → OldPhoneKiosk**.
-2. Home Assistant shows a pairing QR before creating the hub.
-3. Open the OldPhoneKiosk iOS app and scan the QR.
-4. The app redeems the claim against Home Assistant.
-5. Home Assistant returns the device id and device secret.
-6. The app stores the secret in Keychain and opens its WebSocket connection.
-7. Only then does Home Assistant finish the flow and create the OldPhoneKiosk hub/panel.
+1. Install/update the OldPhoneKiosk Home Assistant plugin.
+2. Open the OldPhoneKiosk iOS app.
+3. Press **Pair over Wi‑Fi**. The app advertises itself on the local network for 15 minutes using Bonjour.
+4. In Home Assistant, confirm the discovered OldPhoneKiosk device.
+5. Home Assistant pushes a one-time claim to the phone/tablet.
+6. The app redeems the claim against Home Assistant.
+7. Home Assistant returns the device id and device secret.
+8. The app stores the secret in Keychain and opens its WebSocket connection.
 
-After the hub exists, add more panels from **Settings → Devices & Services → OldPhoneKiosk → Generate pairing QR**.
-When the QR is generated, Home Assistant provisions the pending panel and dynamically adds its online/battery/screen/wake/sleep entities to the existing hub; after the iOS app scans and connects, those entities update from the phone heartbeat.
-For a custom name/room, call service `oldphonekiosk.pair_new_panel` from Developer Tools → Actions and provide `name`/`room`.
+## 10-digit code fallback
 
-## QR payload
-
-The QR payload contains payload type/version, Home Assistant base URL, one-time claim token, expiry timestamp and optional panel metadata. The compatibility field is currently named `bridge_url` because older iOS model code used that name; in this architecture it points to Home Assistant.
+If Wi‑Fi discovery is unavailable, call service `oldphonekiosk.pair_new_panel` or press the hub button **Generate pairing code**. Home Assistant shows a one-time 10-digit code. Type that code in the iOS app to redeem the claim and connect.
 
 ## What the phone never receives
 

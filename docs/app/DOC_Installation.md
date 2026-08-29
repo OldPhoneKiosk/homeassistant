@@ -11,7 +11,7 @@ The recommended installation method is HACS as a custom repository.
 
 ## Before you start
 
-You need Home Assistant with HACS installed, network access from Home Assistant to GitHub, and an iPhone that can reach the Home Assistant base URL from the same network or through your configured external HA URL.
+You need Home Assistant with HACS installed, network access from Home Assistant to GitHub, and an iPhone/iPad that can reach the Home Assistant base URL from the same network or through your configured external HA URL.
 
 The `OldPhoneKiosk/homeassistant` repository is public so HACS can download it without a private GitHub token.
 
@@ -26,18 +26,18 @@ The `OldPhoneKiosk/homeassistant` repository is public so HACS can download it w
 7. Download **OldPhoneKiosk** in HACS.
 8. Restart Home Assistant.
 9. Go to **Settings → Devices & Services → Add Integration → OldPhoneKiosk**.
-10. The Add hub flow shows a pairing QR; keep it open and scan it from the iOS app.
-11. Home Assistant creates the OldPhoneKiosk hub only after the phone/tablet connects.
+10. Open the iOS app and press **Pair over Wi‑Fi**.
+11. Confirm the discovered phone/tablet in Home Assistant.
+12. Home Assistant creates the OldPhoneKiosk hub only after the phone/tablet connects.
 
 No Bridge URL and no API key are required.
 
-## Pair the first phone/tablet
+## Pair additional phones/tablets
 
 1. Open **Settings → Devices & Services → OldPhoneKiosk**.
 2. Select the OldPhoneKiosk hub/device.
-3. Press the **Generate pairing QR** button entity.
-4. Open the Home Assistant notification that appears.
-5. In the iOS app, tap **Scan pairing QR** and scan the QR from the notification.
+3. Press the **Generate pairing code** button entity.
+4. Type the one-time 10-digit code in the iOS app.
 
 If you need a custom panel name or room, use **Developer Tools → Actions → `oldphonekiosk.pair_new_panel`** instead.
 

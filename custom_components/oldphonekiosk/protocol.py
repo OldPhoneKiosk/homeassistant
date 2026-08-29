@@ -49,7 +49,7 @@ class PairingApproveResponse(BaseModel):
 
 
 # --------------------------------------------------------------------------
-# One-time claim tokens (QR pairing without the secret on screen)
+# One-time claim tokens (10-digit code / Wi‑Fi pairing without the secret on screen)
 # --------------------------------------------------------------------------
 
 

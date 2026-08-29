@@ -55,7 +55,7 @@ class ProvisionedPanel:
 
 @dataclass(slots=True)
 class PanelClaim:
-    """A one-time claim token for QR pairing (no secret)."""
+    """A one-time claim token for pairing (no secret)."""
 
     claim_token: str
     device_id: str
@@ -232,7 +232,7 @@ class BridgeClient:
     async def async_create_claim(
         self, name: str, room: str | None = None
     ) -> PanelClaim:
-        """Provision a device and get a one-time claim token (for a QR code)."""
+        """Provision a device and get a one-time claim token (the pairing code)."""
         resp = await self._request(
             "POST", ENDPOINT_CLAIM_CREATE, json={"name": name, "room": room}
         )
@@ -248,8 +248,8 @@ class BridgeClient:
     ) -> ProvisionedPanel:
         """Provision a new panel: start pairing, then approve, returning credentials.
 
-        Home Assistant performs both steps (it holds the API key) so it can encode
-        the resulting per-device credentials into a pairing QR code.
+        Home Assistant performs both steps (it holds the API key) so it can hand
+        the resulting per-device credentials to the panel during pairing.
         """
         start = await self._request(
             "POST",

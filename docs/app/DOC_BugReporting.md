@@ -15,7 +15,7 @@ Open: [Bug report](https://github.com/OldPhoneKiosk/homeassistant/issues/new?tem
 
 Include what you were trying to do, what happened, what you expected, reproduction steps, Home Assistant version, OldPhoneKiosk integration version/commit, installation method, iOS app build/version, and relevant HA logs.
 
-Do not include active QR tokens, device secrets, full access tokens or screenshots with private home data unless redacted.
+Do not include active pairing codes, device secrets, full access tokens or screenshots with private home data unless redacted.
 
 ## Request a feature
 

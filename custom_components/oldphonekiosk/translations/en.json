@@ -8,18 +8,18 @@
       },
       "pair": {
         "title": "Pair a phone or tablet",
-        "description": "Scan this one-time QR code in the OldPhoneKiosk app.\n\n![Pairing QR]({qr_svg_data_uri})\n\nManual payload, if needed:\n```json\n{payload}\n```",
+        "description": "In the OldPhoneKiosk app, open **Pairing** and enter this one-time code:\n\n## {pairing_code}\n\nThen press Submit once the app connects.",
         "data": {}
       },
       "confirm_discovered": {
         "title": "Pair {name}",
-        "description": "OldPhoneKiosk found a nearby phone/tablet that is waiting for Home Assistant.\n\nDevice: **{name}**\nModel: **{model}**\niOS: **{ios}**\nApp: **{app_version}**\nAddress: **{host}**\n\nSubmit to confirm this is the device and send it a one-time pairing claim. No code entry or QR scan is required.",
+        "description": "OldPhoneKiosk found a nearby phone/tablet that is waiting for Home Assistant.\n\nDevice: **{name}**\nModel: **{model}**\niOS: **{ios}**\nApp: **{app_version}**\nAddress: **{host}**\n\nSubmit to confirm this is the device and send it a one-time pairing claim. No manual code entry is required for this Wi‑Fi flow.",
         "data": {}
       }
     },
     "error": {
-      "waiting_for_phone": "Waiting for the phone/tablet to scan the QR and connect.",
-      "not_connected": "The claim was used, but the phone/tablet is not connected yet.",
+      "waiting_for_phone": "Waiting for the phone/tablet to enter the code and connect.",
+      "not_connected": "The code was used, but the phone/tablet is not connected yet.",
       "cannot_connect": "Home Assistant could not reach the discovered phone/tablet. Keep the app open on the same local network and try again."
     },
     "abort": {
@@ -41,6 +41,7 @@
       "screen": { "name": "Screen" }
     },
     "button": {
+      "generate_pairing_code": { "name": "Generate pairing code" },
       "wake": { "name": "Wake" },
       "sleep": { "name": "Sleep" }
     }

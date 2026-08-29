@@ -50,16 +50,16 @@ async def async_setup_entry(
 
 
 class HubPairingButton(ButtonEntity):
-    """Hub-level button that generates the next pairing QR notification."""
+    """Hub-level button that generates the next one-time pairing code notification."""
 
     _attr_has_entity_name = True
-    _attr_name = "Generate pairing QR"
-    _attr_translation_key = "generate_pairing_qr"
+    _attr_name = "Generate pairing code"
+    _attr_translation_key = "generate_pairing_code"
 
     def __init__(self, coordinator: OldPhoneKioskCoordinator, entry: ConfigEntry) -> None:
         self.coordinator = coordinator
         self._entry = entry
-        self._attr_unique_id = f"{entry.entry_id}_generate_pairing_qr"
+        self._attr_unique_id = f"{entry.entry_id}_generate_pairing_code"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
             name=entry.title or "OldPhoneKiosk",
@@ -68,7 +68,7 @@ class HubPairingButton(ButtonEntity):
         )
 
     async def async_press(self) -> None:
-        """Create a default pairing claim and show the QR in notifications."""
+        """Create a default pairing claim and show the code in notifications."""
         await async_create_pairing_response(
             self.coordinator.hass,
             self.coordinator,

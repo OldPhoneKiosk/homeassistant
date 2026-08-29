@@ -156,7 +156,7 @@ class Claim(BaseModel):
 
     Holds no secret: the device is provisioned with an unknown secret at claim
     creation, and the secret is (re)issued only on redeem via rotation — so no
-    plaintext secret ever reaches the QR, the logs, or the database."""
+    plaintext secret ever reaches the pairing code, the logs, or the database."""
 
     claim_token: str
     device_id: str

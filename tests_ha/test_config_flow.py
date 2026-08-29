@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import inspect
-import json
 
 from types import SimpleNamespace
 
@@ -19,9 +18,8 @@ class _FakeConnection:
         pass
 
 
-def _payload_from_form(result) -> dict:
-    payload = result["description_placeholders"]["payload"]
-    return json.loads(payload)
+def _pairing_code_from_form(result) -> str:
+    return result["description_placeholders"]["pairing_code"]
 
 
 async def _start_pairing_flow(hass: HomeAssistant):
@@ -30,22 +28,19 @@ async def _start_pairing_flow(hass: HomeAssistant):
     )
     assert result["type"] == data_entry_flow.FlowResultType.FORM
     assert result["step_id"] == "pair"
-    assert result["description_placeholders"]["payload"]
+    assert result["description_placeholders"]["pairing_code"]
     return result
 
 
-async def test_flow_shows_pairing_qr_before_creating_entry(hass: HomeAssistant):
+async def test_flow_shows_pairing_code_before_creating_entry(hass: HomeAssistant):
     result = await _start_pairing_flow(hass)
 
-    payload = _payload_from_form(result)
-    assert payload["version"] == 1
-    assert payload["type"] == "claim"
-    assert payload["bridge_url"] == "http://homeassistant.local:8123"
-    assert payload["claim_token"]
-    assert payload["name"] == "OldPhoneKiosk Panel"
-    assert result["description_placeholders"]["qr_svg_data_uri"].startswith(
-        "data:image/svg+xml;base64,"
-    )
+    code = _pairing_code_from_form(result)
+    # The manual backup is a one-time 10-digit numeric code (no QR, no payload JSON).
+    assert code.isdigit()
+    assert len(code) == 10
+    assert "qr_svg_data_uri" not in result["description_placeholders"]
+    assert "payload" not in result["description_placeholders"]
 
     assert len(hass.config_entries.async_entries(DOMAIN)) == 0
 
@@ -65,10 +60,10 @@ async def test_flow_waits_until_phone_connects(hass: HomeAssistant):
 
 async def test_flow_creates_native_entry_after_phone_connection(hass: HomeAssistant):
     result = await _start_pairing_flow(hass)
-    payload = _payload_from_form(result)
+    code = _pairing_code_from_form(result)
     registry = hass.data[DOMAIN][DATA_REGISTRY]
 
-    creds = registry.redeem_claim(payload["claim_token"])
+    creds = registry.redeem_claim(code)
     registry.register_connection(creds.device_id, _FakeConnection())
 
     created = await hass.config_entries.flow.async_configure(
@@ -82,9 +77,9 @@ async def test_flow_creates_native_entry_after_phone_connection(hass: HomeAssist
 
 async def test_flow_is_single_instance_after_created_entry(hass: HomeAssistant):
     result = await _start_pairing_flow(hass)
-    payload = _payload_from_form(result)
+    code = _pairing_code_from_form(result)
     registry = hass.data[DOMAIN][DATA_REGISTRY]
-    creds = registry.redeem_claim(payload["claim_token"])
+    creds = registry.redeem_claim(code)
     registry.register_connection(creds.device_id, _FakeConnection())
 
     first = await hass.config_entries.flow.async_configure(

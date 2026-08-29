@@ -26,8 +26,12 @@ ENDPOINT_CLAIM_CREATE = "/api/pairing/claim/create"
 # Camera modes (mirror of Bridge CameraState)
 CAMERA_MODES = ["off", "front", "back", "dual"]
 
-# Pairing QR payload
+# Pairing payload version (shared with the iOS PairingPayload schema)
 PAIRING_PAYLOAD_VERSION = 1
+
+# One-time pairing code: a numeric claim token the user types into the app as the
+# manual backup to Wi‑Fi (zeroconf) discovery. QR pairing has been removed.
+PAIRING_CODE_LENGTH = 10
 
 # Polling
 DEFAULT_SCAN_INTERVAL = timedelta(seconds=15)

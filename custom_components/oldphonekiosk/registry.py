@@ -75,12 +75,14 @@ class Registry:
         pairing_code_length: int = 6,
         command_timeout_seconds: float = 10.0,
         claim_ttl_seconds: int = 600,
+        claim_code_length: int = 10,
     ) -> None:
         self._store = store
         self._pairing_ttl = pairing_ttl_seconds
         self._pairing_code_length = pairing_code_length
         self._command_timeout = command_timeout_seconds
         self._claim_ttl = claim_ttl_seconds
+        self._claim_code_length = claim_code_length
 
         self._pending: dict[str, PairingRequest] = {}  # pairing_code -> request
         # Cache of persisted devices, loaded offline at startup.
@@ -172,7 +174,7 @@ class Registry:
         return device, secret
 
     # ------------------------------------------------------------------
-    # One-time claim tokens (QR pairing without the secret on screen)
+    # One-time claim tokens (10-digit code / Wi‑Fi pairing without the secret on screen)
     # ------------------------------------------------------------------
 
     def create_claim(
@@ -186,10 +188,12 @@ class Registry:
     ) -> Claim:
         """Provision a device and issue a one-time, persisted claim token.
 
-        No secret is stored in the claim: the device's initial secret is unknown to
-        everyone (its plaintext is discarded), and the real secret is issued only on
-        redeem via rotation. The QR carries just the token; the claim survives a
-        restart within its TTL (see ADR 0004).
+        The token is a short numeric pairing code (``claim_code_length`` digits) so
+        the user can read it from Home Assistant and type it into the app, or it can
+        be pushed to a discovered phone over the local network. No secret is stored
+        in the claim: the device's initial secret is unknown to everyone (its
+        plaintext is discarded), and the real secret is issued only on redeem via
+        rotation. The claim survives a restart within its TTL (see ADR 0004).
         """
         device, _discarded_secret = self._create_device(
             name=name,
@@ -198,9 +202,9 @@ class Registry:
             ios_version=ios_version,
             capabilities=capabilities,
         )
-        token = secrets.token_urlsafe(24)
+        token = _numeric_code(self._claim_code_length)
         while self._store.get_claim(token) is not None:
-            token = secrets.token_urlsafe(24)
+            token = _numeric_code(self._claim_code_length)
         claim = Claim(
             claim_token=token,
             device_id=device.device_id,

@@ -18,14 +18,12 @@ dependencies = [
 dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.23",
-    "qrcode>=7.4",  # pairing QR (SVG factory; no Pillow needed)
 ]
 # Full Home Assistant runtime harness (config_flow/coordinator/service tests in
 # tests_ha/). Pinned to the last release that still targets Python 3.11
 # (HA 2024.1.4). Install into a SEPARATE venv from `dev` — see README.
 ha-test = [
     "pytest-homeassistant-custom-component==0.13.90",
-    "qrcode>=7.4",
 ]
 
 [tool.setuptools]

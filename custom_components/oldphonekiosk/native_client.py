@@ -20,7 +20,7 @@ _UNSET = object()
 
 @dataclass(slots=True)
 class PanelClaim:
-    """A one-time claim token for QR pairing (no secret)."""
+    """A one-time claim token for pairing (no secret)."""
 
     claim_token: str
     device_id: str

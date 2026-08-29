@@ -1,10 +1,8 @@
-"""Pairing QR payload helpers (pure, HA-free)."""
+"""Pairing payload helpers (pure, HA-free)."""
 
 from __future__ import annotations
 
 import json
-
-import pytest
 
 import opk_pairing as pairing
 
@@ -60,13 +58,6 @@ def test_payload_to_json_is_stable_and_parseable():
     assert json.loads(text)["device_id"] == "d"
 
 
-def test_qr_data_uri_when_qrcode_available():
-    pytest.importorskip("qrcode")
-    text = pairing.payload_to_json(
-        pairing.build_pairing_payload(
-            bridge_url="http://h", device_id="d", device_secret="s"
-        )
-    )
-    uri = pairing.payload_to_qr_svg_data_uri(text)
-    assert uri is not None
-    assert uri.startswith("data:image/svg+xml;base64,")
+def test_no_qr_helper_exists():
+    # QR pairing has been removed; only payload builders remain.
+    assert not hasattr(pairing, "payload_to_qr_svg_data_uri")

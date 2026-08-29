@@ -1,8 +1,8 @@
 pair_new_panel:
   name: Pair a new panel
   description: >-
-    Provision a new panel in Home Assistant and return a pairing QR payload to scan in
-    the OldPhoneKiosk app. Also raises a persistent notification with the QR/payload.
+    Provision a new panel in Home Assistant and return a one-time 10-digit pairing code
+    to enter in the OldPhoneKiosk app. Also raises a persistent notification with the code.
   fields:
     name:
       name: Panel name

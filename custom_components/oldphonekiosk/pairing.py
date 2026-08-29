@@ -1,13 +1,12 @@
-"""Pairing QR payload helpers (Home-Assistant-independent, unit-testable).
+"""Pairing payload helpers (Home-Assistant-independent, unit-testable).
 
-Builds the `PairingPayload` the panel app scans (see iOS `PairingPayload`) and,
-if the optional `qrcode` library is available, renders it as an SVG data URI (SVG
-avoids a Pillow dependency).
+Builds the `PairingPayload` the panel app consumes (see iOS `PairingPayload`).
+Pairing is done over Wi‑Fi (zeroconf) discovery or a one-time numeric pairing
+code — there is no QR code.
 """
 
 from __future__ import annotations
 
-import base64
 import json
 from typing import Any
 
@@ -43,9 +42,10 @@ def build_claim_payload(
     name: str | None = None,
     room: str | None = None,
 ) -> dict[str, Any]:
-    """Assemble a QR payload carrying a one-time claim token (no device secret).
+    """Assemble a payload carrying a one-time claim token (no device secret).
 
-    The device redeems the token at the Bridge for its credentials.
+    Pushed to a discovered phone over the local network; the device redeems the
+    token at the Bridge for its credentials.
     """
     payload: dict[str, Any] = {
         "version": PAIRING_PAYLOAD_VERSION,
@@ -61,25 +61,5 @@ def build_claim_payload(
 
 
 def payload_to_json(payload: dict[str, Any]) -> str:
-    """Serialize the payload as compact, stable JSON (the QR contents)."""
+    """Serialize the payload as compact, stable JSON (pushed to a discovered app)."""
     return json.dumps(payload, separators=(",", ":"), sort_keys=True)
-
-
-def payload_to_qr_svg_data_uri(payload_json: str) -> str | None:
-    """Render the payload JSON as a QR code SVG data URI, or None if `qrcode`
-    is not installed. SVG keeps this Pillow-free."""
-    try:
-        import qrcode
-        import qrcode.image.svg
-    except ImportError:
-        return None
-
-    import io
-
-    image = qrcode.make(
-        payload_json, image_factory=qrcode.image.svg.SvgPathImage
-    )
-    buffer = io.BytesIO()
-    image.save(buffer)
-    encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
-    return f"data:image/svg+xml;base64,{encoded}"

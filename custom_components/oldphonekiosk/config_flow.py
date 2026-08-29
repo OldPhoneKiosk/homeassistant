@@ -18,7 +18,7 @@ except ImportError:  # HA < 2024.4
 
 from .backend import ensure_backend
 from .const import DOMAIN
-from .pairing import build_claim_payload, payload_to_json, payload_to_qr_svg_data_uri
+from .pairing import build_claim_payload, payload_to_json
 from .registry import Registry
 
 _LOGGER = logging.getLogger(__name__)
@@ -35,14 +35,12 @@ class OldPhoneKioskConfigFlow(ConfigFlow, domain=DOMAIN):
     _registry: Registry
     _claim_token: str | None = None
     _device_id: str | None = None
-    _payload_json: str | None = None
-    _qr_data_uri: str | None = None
     _discovered_panel: dict[str, Any] | None = None
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Start hub setup by showing a QR, not by creating an empty hub."""
+        """Start hub setup by showing a pairing code, not an empty hub."""
         await self.async_set_unique_id(DOMAIN)
         self._abort_if_unique_id_configured()
         self._ensure_pairing_claim()
@@ -51,7 +49,7 @@ class OldPhoneKioskConfigFlow(ConfigFlow, domain=DOMAIN):
     async def async_step_pair(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Finish setup only after the phone has scanned and connected."""
+        """Finish setup only after the phone has redeemed the code and connected."""
         await self.async_set_unique_id(DOMAIN)
         self._abort_if_unique_id_configured()
         self._ensure_pairing_claim()
@@ -138,7 +136,7 @@ class OldPhoneKioskConfigFlow(ConfigFlow, domain=DOMAIN):
         return self.async_abort(reason="pairing_sent")
 
     def _ensure_pairing_claim(self) -> None:
-        """Create the backend and one QR claim for this config-flow run."""
+        """Create the backend and one pairing-code claim for this config-flow run."""
         if self._claim_token is not None:
             return
 
@@ -146,14 +144,6 @@ class OldPhoneKioskConfigFlow(ConfigFlow, domain=DOMAIN):
         claim = self._registry.create_claim(name=DEFAULT_PANEL_NAME)
         self._claim_token = claim.claim_token
         self._device_id = claim.device_id
-
-        payload = build_claim_payload(
-            bridge_url=self._ha_base_url(),
-            claim_token=claim.claim_token,
-            name=DEFAULT_PANEL_NAME,
-        )
-        self._payload_json = payload_to_json(payload)
-        self._qr_data_uri = payload_to_qr_svg_data_uri(self._payload_json)
 
     async def _push_claim_to_discovered_panel(self, panel: dict[str, Any]) -> bool:
         self._registry = ensure_backend(self.hass)
@@ -180,14 +170,13 @@ class OldPhoneKioskConfigFlow(ConfigFlow, domain=DOMAIN):
     def _show_pairing_form(
         self, errors: dict[str, str] | None = None
     ) -> ConfigFlowResult:
-        assert self._payload_json is not None
+        assert self._claim_token is not None
         return self.async_show_form(
             step_id="pair",
             data_schema=vol.Schema({}),
             errors=errors or {},
             description_placeholders={
-                "qr_svg_data_uri": self._qr_data_uri or "",
-                "payload": self._payload_json,
+                "pairing_code": self._claim_token,
             },
         )
 

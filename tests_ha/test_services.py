@@ -149,9 +149,7 @@ async def test_revoke_panel_unknown_device_raises(hass: HomeAssistant):
         )
 
 
-async def test_pair_new_panel_service_returns_payload(hass: HomeAssistant):
-    import json
-
+async def test_pair_new_panel_service_returns_pairing_code(hass: HomeAssistant):
     fake = _FakeClient()
     entry = MockConfigEntry(
         domain=DOMAIN,
@@ -174,21 +172,13 @@ async def test_pair_new_panel_service_returns_payload(hass: HomeAssistant):
 
     assert fake.provisioned == ("Kitchen", "Kitchen")
     assert response["device_id"] == "dev-new"
-    payload = json.loads(response["payload"])
-    assert payload["version"] == 1
-    assert payload["type"] == "claim"
-    assert payload["bridge_url"].startswith("http://")
-    assert payload["bridge_url"].endswith(":8123")
-    assert payload["claim_token"] == "claim-abc"
-    assert payload["name"] == "Kitchen"
-    # The QR must NOT carry the device secret.
-    assert "device_secret" not in payload
-    # QR image is included when the qrcode lib is available (SVG data URI).
-    if response.get("qr_svg_data_uri") is not None:
-        assert response["qr_svg_data_uri"].startswith("data:image/svg+xml;base64,")
+    # The service returns a one-time pairing code (the claim token), no QR/payload.
+    assert response["pairing_code"] == "claim-abc"
+    assert "payload" not in response
+    assert "qr_svg_data_uri" not in response
 
 
-async def test_pairing_button_creates_qr_notification(hass: HomeAssistant):
+async def test_pairing_button_creates_code_notification(hass: HomeAssistant):
     fake = _FakeClient()
     entry = MockConfigEntry(domain=DOMAIN, data={CONF_BRIDGE_URL: "http://x", CONF_API_KEY: "k"})
     entry.add_to_hass(hass)
@@ -196,7 +186,7 @@ async def test_pairing_button_creates_qr_notification(hass: HomeAssistant):
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
-    state = hass.states.get("button.oldphonekiosk_generate_pairing_qr")
+    state = hass.states.get("button.oldphonekiosk_generate_pairing_code")
     assert state is not None
 
     with patch(
@@ -205,7 +195,7 @@ async def test_pairing_button_creates_qr_notification(hass: HomeAssistant):
         await hass.services.async_call(
             "button",
             "press",
-            {"entity_id": "button.oldphonekiosk_generate_pairing_qr"},
+            {"entity_id": "button.oldphonekiosk_generate_pairing_code"},
             blocking=True,
         )
         await hass.async_block_till_done()

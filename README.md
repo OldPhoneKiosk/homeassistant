@@ -14,7 +14,7 @@ This repository is the **public Home Assistant integration package**. It install
 
 ## What it does
 
-- pairs an iPhone panel with Home Assistant using a one-time QR claim token,
+- pairs an iPhone/iPad panel with Home Assistant using Wi‑Fi discovery or a one-time 10-digit code,
 - stores panel credentials and state inside the Home Assistant config directory,
 - exposes panel status as Home Assistant entities,
 - lets automations/services send commands to a panel,
@@ -29,18 +29,18 @@ Home Assistant + this custom integration
         │ admin actions: normal Home Assistant auth
         │ device actions: device secret + short-lived WS token
         ▼
-iPhone OldPhoneKiosk app
+iPhone/iPad OldPhoneKiosk app
 ```
 
 Device-facing routes are served by Home Assistant:
 
 | Route | Purpose |
 | --- | --- |
-| `POST /api/oldphonekiosk/pairing/claim/redeem` | iPhone redeems a one-time QR claim and receives device credentials |
+| `POST /api/oldphonekiosk/pairing/claim/redeem` | iPhone/iPad redeems a one-time claim code and receives device credentials |
 | `POST /api/oldphonekiosk/devices/{device_id}/ws-token` | paired device asks for a short-lived WebSocket token |
 | `GET /api/oldphonekiosk/ws/device/{device_id}?token=...` | panel WebSocket for state updates and commands |
 
-The QR carries a one-time claim token, not a long-lived device secret. The app redeems the claim once, stores the device secret in Keychain, then uses short-lived WebSocket tokens for live connections.
+The pairing code is one-time and short-lived; it is not a long-lived device secret. The app redeems the claim once, stores the device secret in Keychain, then uses short-lived WebSocket tokens for live connections.
 
 ## Documentation
 
@@ -64,8 +64,8 @@ The QR carries a one-time claim token, not a long-lived device secret. The app r
 5. Add/download the integration in HACS.
 6. Restart Home Assistant.
 7. Add the integration: **Settings → Devices & Services → Add Integration → OldPhoneKiosk**.
-8. The Add hub flow shows a QR; scan it from the iOS app.
-9. Home Assistant creates the hub only after the phone/tablet connects.
+8. Open the iOS app and press **Pair over Wi‑Fi**; Home Assistant should discover the phone/tablet.
+9. Confirm the discovered device. Home Assistant creates the hub only after the phone/tablet connects.
 
 No Bridge URL or API key is requested anymore.
 
@@ -84,9 +84,9 @@ No Bridge URL or API key is requested anymore.
 
 ## Main services
 
-For the first device, use **Settings → Devices & Services → Add Integration → OldPhoneKiosk**. The flow shows a QR code and does not create the hub until the iOS app scans and connects.
+For the first device, use **Settings → Devices & Services → Add Integration → OldPhoneKiosk**. The iOS app can advertise itself for 15 minutes; Home Assistant shows a discovered device that you confirm.
 
-After the hub exists, open the OldPhoneKiosk integration page and use the hub entity **Generate pairing QR** to add more panels. Pressing that button creates a Home Assistant notification with a QR code that the iOS app can scan.
+After the hub exists, open the OldPhoneKiosk integration page and use the hub entity **Generate pairing code** to add more panels. Pressing that button creates a Home Assistant notification with a one-time 10-digit code to type in the iOS app.
 
 For named/room-specific setup you can still call the service manually:
 
@@ -99,7 +99,7 @@ data:
   room: Kitchen
 ```
 
-Returns `device_id`, raw QR `payload`, and `qr_svg_data_uri` when QR rendering is available. The payload keeps the compatibility field `bridge_url`, but it points to Home Assistant.
+Returns `device_id` and `pairing_code`.
 
 ### `oldphonekiosk.revoke_panel`
 
@@ -122,7 +122,7 @@ Use GitHub Issues:
 - [Report a bug](https://github.com/OldPhoneKiosk/homeassistant/issues/new?template=bug_report.yml)
 - [Request a feature](https://github.com/OldPhoneKiosk/homeassistant/issues/new?template=feature_request.yml)
 
-Include HA version, integration version/commit, installation method, iOS app build, relevant logs, and reproduction steps. Do not paste secrets, tokens, QR payloads with active claim tokens, or full device secrets.
+Include HA version, integration version/commit, installation method, iOS app build, relevant logs, and reproduction steps. Do not paste secrets, active pairing codes, full device secrets, or full Home Assistant tokens.
 
 ## Tests
 

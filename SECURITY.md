@@ -4,7 +4,7 @@ OldPhoneKiosk pairs a physical/mobile device with Home Assistant, so credential 
 
 ## Do not publish sensitive details
 
-Do not open a public issue with Home Assistant long-lived access tokens, active QR claim tokens, device secrets, full unredacted Home Assistant logs containing private URLs or device identifiers, or exploit steps for authentication bypasses.
+Do not open a public issue with Home Assistant long-lived access tokens, active pairing codes, device secrets, full unredacted Home Assistant logs containing private URLs or device identifiers, or exploit steps for authentication bypasses.
 
 ## Supported version
 

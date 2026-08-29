@@ -27,7 +27,7 @@ Common state attributes include the durable panel id, camera/media/intercom stat
 
 ### `oldphonekiosk.pair_new_panel`
 
-Creates a pending panel and returns a QR payload.
+Creates a pending panel and returns a one-time 10-digit pairing code.
 
 ```yaml
 service: oldphonekiosk.pair_new_panel

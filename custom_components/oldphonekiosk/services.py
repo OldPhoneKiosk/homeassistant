@@ -15,7 +15,6 @@ from homeassistant.core import (
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
-from homeassistant.helpers.network import get_url
 
 from .api import BridgeError, BridgeNotFoundError
 from .const import (
@@ -40,11 +39,6 @@ from .const import (
 )
 from .models import PanelCommand
 from .coordinator import OldPhoneKioskCoordinator
-from .pairing import (
-    build_claim_payload,
-    payload_to_json,
-    payload_to_qr_svg_data_uri,
-)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -91,15 +85,6 @@ SET_PANEL_UI_SCHEMA = vol.Schema(
 STOP_STREAM_SCHEMA = vol.Schema({vol.Required(ATTR_DEVICE_ID): cv.string})
 
 
-def _ha_base_url(hass: HomeAssistant) -> str:
-    """Best-effort HA base URL for QR payloads."""
-    try:
-        return get_url(hass, prefer_external=False).rstrip("/")
-    except Exception:  # noqa: BLE001 - fallback for tests/minimal HA config
-        base = getattr(hass.config.api, "base_url", None) or ""
-        return base.rstrip("/") or "http://homeassistant.local:8123"
-
-
 def _find_coordinator(
     hass: HomeAssistant, device_id: str
 ) -> OldPhoneKioskCoordinator | None:
@@ -128,39 +113,24 @@ async def async_create_pairing_response(
     name: str,
     room: str | None = None,
 ) -> ServiceResponse:
-    """Provision a new panel and surface the QR/payload in HA notifications."""
+    """Provision a new panel and surface the one-time pairing code in HA."""
     try:
         claim = await coordinator.client.async_create_claim(name, room)
     except BridgeError as err:
         raise HomeAssistantError(f"Panel provisioning failed: {err}") from err
 
-    ha_url = _ha_base_url(hass)
-    # QR carries a one-time claim token — never the device secret. The URL is the
-    # Home Assistant root; the iOS app appends /api/oldphonekiosk/... routes.
-    payload = build_claim_payload(
-        bridge_url=ha_url,
-        claim_token=claim.claim_token,
-        name=name,
-        room=room,
-    )
-    payload_json = payload_to_json(payload)
-    qr_data_uri = payload_to_qr_svg_data_uri(payload_json)
+    pairing_code = claim.claim_token
 
     await coordinator.async_request_refresh()
 
-    # Surface the QR (or the payload) to the user via a persistent notification.
-    if qr_data_uri:
-        message = (
-            f"Scan this QR in the OldPhoneKiosk app to pair **{name}**.\n\n"
-            f"![pairing qr]({qr_data_uri})\n\n"
-            "If the phone cannot scan it, open **Settings → Pairing → Paste pairing payload** "
-            "in the iOS app and paste the payload from Developer Tools → Actions."
-        )
-    else:
-        message = (
-            f"Pair **{name}** in the OldPhoneKiosk app with this payload "
-            f"(install `qrcode` for an image):\n\n```\n{payload_json}\n```"
-        )
+    # Surface the one-time pairing code to the user via a persistent notification.
+    message = (
+        f"To pair **{name}**, open the OldPhoneKiosk app on the phone/tablet, go to "
+        f"**Pairing**, and enter this one-time code:\n\n"
+        f"## `{pairing_code}`\n\n"
+        "The code expires shortly and can be used once. The app only needs your "
+        "Home Assistant address — never your admin token."
+    )
     persistent_notification.async_create(
         hass,
         message,
@@ -170,15 +140,14 @@ async def async_create_pairing_response(
 
     return {
         "device_id": claim.device_id,
-        "payload": payload_json,
-        "qr_svg_data_uri": qr_data_uri,
+        "pairing_code": pairing_code,
     }
 
 
 async def _async_pair_new_panel(
     hass: HomeAssistant, call: ServiceCall
 ) -> ServiceResponse:
-    """Provision a new panel on the Bridge and return a scannable QR payload."""
+    """Provision a new panel and return a one-time 10-digit pairing code."""
     coordinator = _any_coordinator(hass)
     if coordinator is None:
         raise ServiceValidationError("No OldPhoneKiosk backend is configured.")
