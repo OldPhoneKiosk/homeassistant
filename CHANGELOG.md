@@ -4,6 +4,13 @@ All notable changes to the OldPhoneKiosk Home Assistant integration are document
 
 ## Unreleased
 
+## 0.1.8 - 2026-08-29
+
+- Added HA-first per-panel select controls for Dashboard, Task list, Sound and Photo source on the device page, so users can pick from Home Assistant resources instead of typing raw values.
+- Dashboard options are discovered from Lovelace dashboards with safe defaults, Task list options come from `todo.*` entities, and Sound/Photo source options are discovered best-effort from `media_source` (including local media / Google Photos where HA exposes them).
+- Kept advanced `Custom dashboard URL`, `Custom task source`, `Custom photo source` and `Custom sound` text entities as fallback configuration controls.
+- Resolved selected `media-source://...` sound files to playable URLs when pressing **Play sound**, so the iOS receiver gets a URL it can actually play.
+
 ## 0.1.7 - 2026-08-29
 
 - Added per-panel Home Assistant device-page controls: Dashboard URL text entity plus Start camera / Stop camera buttons, so users do not need Developer Tools service calls for common panel setup.
