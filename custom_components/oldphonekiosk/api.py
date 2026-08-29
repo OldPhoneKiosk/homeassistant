@@ -84,6 +84,8 @@ class PanelDeviceData:
     task_source: str | None = None
     photo_source: str | None = None
     sound: str | None = None
+    enabled_screens: str | None = None
+    show_bottom_menu: bool | None = None
 
     @classmethod
     def from_json(cls, data: dict[str, Any]) -> "PanelDeviceData":
@@ -108,6 +110,8 @@ class PanelDeviceData:
             task_source=media.get("task_source"),
             photo_source=media.get("photo_source"),
             sound=media.get("sound"),
+            enabled_screens=media.get("enabled_screens"),
+            show_bottom_menu=media.get("show_bottom_menu"),
         )
 
 

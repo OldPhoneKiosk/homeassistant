@@ -148,6 +148,7 @@ async def async_setup_entry(
         entities: list[SelectEntity] = []
         for device_id in device_ids:
             entities.append(ScreenSelect(coordinator, device_id))
+            entities.append(VisibleScreensSelect(coordinator, device_id))
             entities.append(DashboardSelect(coordinator, device_id))
             entities.append(TaskListSelect(coordinator, device_id))
             entities.append(SoundSelect(coordinator, device_id))
@@ -187,6 +188,45 @@ class ScreenSelect(OldPhoneKioskEntity, SelectEntity):
         command = SCREEN_TO_COMMAND[option]
         await self.coordinator.client.async_send_command(self._device_id, command)
         await self.coordinator.async_request_refresh()
+
+
+class VisibleScreensSelect(OldPhoneKioskEntity, SelectEntity):
+    """Pick the enabled screen set exposed in the app's bottom navigation."""
+
+    _attr_translation_key = "visible_screens"
+    _attr_name = "Visible screens"
+    _attr_icon = "mdi:view-dashboard-outline"
+    _attr_options = [
+        "dashboard",
+        "tasks,dashboard",
+        "photos,tasks,dashboard",
+        "photos,tasks,dashboard,sleep",
+    ]
+
+    def __init__(self, coordinator, device_id) -> None:
+        super().__init__(coordinator, device_id)
+        self._attr_unique_id = f"{device_id}_visible_screens"
+        self._selected: str | None = None
+
+    @property
+    def current_option(self) -> str | None:
+        if self._selected:
+            return self._selected
+        device = self.device
+        stored = getattr(device, "enabled_screens", None) if device else None
+        return stored or "photos,tasks,dashboard"
+
+    async def async_select_option(self, option: str) -> None:
+        screens = [screen.strip() for screen in option.split(",") if screen.strip()]
+        self._selected = ",".join(screens)
+        await self.coordinator.client.async_set_panel_ui(self._device_id, enabled_screens=screens)
+        self.async_write_ha_state()
+        await self.coordinator.async_request_refresh()
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        self._selected = None
+        super()._handle_coordinator_update()
 
 
 class _SourceSelect(OldPhoneKioskEntity, SelectEntity):

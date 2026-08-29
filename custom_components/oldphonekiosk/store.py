@@ -26,7 +26,7 @@ from .models import (
 )
 
 # Current schema version. Bump when adding a migration below.
-SCHEMA_VERSION = 5
+SCHEMA_VERSION = 6
 
 # Migration to version 1: the devices table. IF NOT EXISTS makes it idempotent so
 # pre-migration databases (created before user_version tracking) upgrade cleanly.
@@ -78,6 +78,11 @@ ALTER TABLE devices ADD COLUMN task_source TEXT;
 ALTER TABLE devices ADD COLUMN photo_source TEXT;
 ALTER TABLE devices ADD COLUMN sound TEXT;
 """
+# Migration to version 6: HA-owned navigation controls.
+_MIGRATION_6 = """
+ALTER TABLE devices ADD COLUMN enabled_screens TEXT;
+ALTER TABLE devices ADD COLUMN show_bottom_menu INTEGER;
+"""
 
 
 def _configure_connection(conn: sqlite3.Connection, db_path: str) -> None:
@@ -111,6 +116,8 @@ def _migrate(conn: sqlite3.Connection) -> None:
         conn.executescript(_MIGRATION_4)
     if version < 5:
         conn.executescript(_MIGRATION_5)
+    if version < 6:
+        conn.executescript(_MIGRATION_6)
     conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
     conn.commit()
 
@@ -163,8 +170,8 @@ class DeviceStore:
                     device_id, name, room, model, ios_version, capabilities,
                     secret_hash, created_at, battery, brightness, screen, camera,
                     app_version, last_seen, video_url, dashboard_url, intercom,
-                    task_source, photo_source, sound
-                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                    task_source, photo_source, sound, enabled_screens, show_bottom_menu
+                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                 ON CONFLICT(device_id) DO UPDATE SET
                     name=excluded.name, room=excluded.room, model=excluded.model,
                     ios_version=excluded.ios_version, capabilities=excluded.capabilities,
@@ -195,6 +202,8 @@ class DeviceStore:
                     device.media.task_source,
                     device.media.photo_source,
                     device.media.sound,
+                    device.media.enabled_screens,
+                    None if device.media.show_bottom_menu is None else int(device.media.show_bottom_menu),
                 ),
             )
             self._conn.commit()
@@ -228,7 +237,8 @@ class DeviceStore:
             self._conn.execute(
                 """
                 UPDATE devices SET
-                    video_url=?, dashboard_url=?, task_source=?, photo_source=?, sound=?
+                    video_url=?, dashboard_url=?, task_source=?, photo_source=?, sound=?,
+                    enabled_screens=?, show_bottom_menu=?
                 WHERE device_id=?
                 """,
                 (
@@ -237,6 +247,8 @@ class DeviceStore:
                     media.task_source,
                     media.photo_source,
                     media.sound,
+                    media.enabled_screens,
+                    None if media.show_bottom_menu is None else int(media.show_bottom_menu),
                     device_id,
                 ),
             )
@@ -329,6 +341,8 @@ class DeviceStore:
         task_source = row["task_source"] if "task_source" in keys else None
         photo_source = row["photo_source"] if "photo_source" in keys else None
         sound = row["sound"] if "sound" in keys else None
+        enabled_screens = row["enabled_screens"] if "enabled_screens" in keys else None
+        show_bottom_menu = row["show_bottom_menu"] if "show_bottom_menu" in keys else None
         state = DeviceState(
             online=False,  # never persisted true; requires a live connection
             battery=row["battery"],
@@ -353,6 +367,8 @@ class DeviceStore:
                 task_source=task_source,
                 photo_source=photo_source,
                 sound=sound,
+                enabled_screens=enabled_screens,
+                show_bottom_menu=None if show_bottom_menu is None else bool(show_bottom_menu),
             ),
             created_at=_dt(row["created_at"]) or datetime.now().astimezone(),
         )

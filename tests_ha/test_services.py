@@ -112,12 +112,10 @@ class _FakeClient:
         self.ui_calls.append({"device_id": device_id, **kwargs})
         current = self._devices[0]
         changes = {}
-        if kwargs.get("dashboard_url") is not None:
-            changes["dashboard_url"] = kwargs.get("dashboard_url")
-        if kwargs.get("task_source") is not None:
-            changes["task_source"] = kwargs.get("task_source")
-        if kwargs.get("photo_source") is not None:
-            changes["photo_source"] = kwargs.get("photo_source")
+        for key in ("dashboard_url", "task_source", "photo_source", "enabled_screens", "show_bottom_menu"):
+            if kwargs.get(key) is not None:
+                value = kwargs.get(key)
+                changes[key] = ",".join(value) if key == "enabled_screens" and isinstance(value, list) else value
         self._devices[0] = replace(current, **changes)
         return self._devices[0]
 
@@ -267,9 +265,13 @@ async def test_pairing_button_creates_code_notification(hass: HomeAssistant):
     assert hass.states.get("text.kitchen_custom_sound") is not None
     # HA-first source pickers: primary UX is the select controls on the device page.
     assert hass.states.get("select.kitchen_dashboard") is not None
+    assert hass.states.get("select.kitchen_visible_screens") is not None
     assert hass.states.get("select.kitchen_task_list") is not None
     assert hass.states.get("select.kitchen_sound") is not None
     assert hass.states.get("select.kitchen_photo_source") is not None
+    assert hass.states.get("switch.kitchen_bottom_menu") is not None
+    assert hass.states.get("number.kitchen_screen_brightness") is not None
+    assert hass.states.get("number.kitchen_device_volume") is not None
     assert hass.states.get("camera.kitchen_camera") is not None
     assert hass.states.get("sensor.oldphonekiosk_panel_battery") is not None
 
@@ -503,6 +505,48 @@ async def test_source_selects_apply_from_ha_resources(hass: HomeAssistant):
     assert hass.states.get("select.kitchen_task_list").state == "todo.kitchen"
     assert hass.states.get("select.kitchen_sound").state == "1013"
     assert "todo.kitchen" in hass.states.get("select.kitchen_task_list").attributes["options"]
+
+
+async def test_device_page_navigation_and_device_level_controls(hass: HomeAssistant):
+    fake = _FakeClient()
+    entry = MockConfigEntry(
+        domain=DOMAIN, data={CONF_BRIDGE_URL: "http://x", CONF_API_KEY: "k"}
+    )
+    entry.add_to_hass(hass)
+    with patch("custom_components.oldphonekiosk.BridgeClient", return_value=fake):
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+    await hass.services.async_call(
+        "switch",
+        "turn_off",
+        {"entity_id": "switch.kitchen_bottom_menu"},
+        blocking=True,
+    )
+    await hass.services.async_call(
+        "select",
+        "select_option",
+        {"entity_id": "select.kitchen_visible_screens", "option": "tasks,dashboard"},
+        blocking=True,
+    )
+    await hass.services.async_call(
+        "number",
+        "set_value",
+        {"entity_id": "number.kitchen_screen_brightness", "value": 42},
+        blocking=True,
+    )
+    await hass.services.async_call(
+        "number",
+        "set_value",
+        {"entity_id": "number.kitchen_device_volume", "value": 35},
+        blocking=True,
+    )
+    await hass.async_block_till_done()
+
+    assert any(c.get("show_bottom_menu") is False for c in fake.ui_calls)
+    assert any(c.get("enabled_screens") == ["tasks", "dashboard"] for c in fake.ui_calls)
+    assert ("dev-1", "set_brightness", {"level": "0.420", "percent": "42"}) in fake.command_calls
+    assert ("dev-1", "set_volume", {"level": "0.350", "percent": "35"}) in fake.command_calls
 
 
 async def test_dashboard_select_offers_lovelace_view_tabs(hass: HomeAssistant):

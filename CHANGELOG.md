@@ -4,6 +4,11 @@ All notable changes to the OldPhoneKiosk Home Assistant integration are document
 
 ## Unreleased
 
+## 0.1.16 - 2026-08-29
+
+- Added HA device-page controls for bottom menu, visible screen set, screen brightness, and device volume.
+- Removed the injected HA WebView CSS/JS chrome hider that could blank dashboards; kiosk mode now relies on the `hide_header`/`hide_sidebar` query flags.
+
 ## 0.1.15 - 2026-08-29
 
 - Added write-back task actions from the phone to HA `todo.*`: completing a task and adding a new task now flow through Home Assistant to the selected Notion-backed todo list, then refresh the phone snapshot.

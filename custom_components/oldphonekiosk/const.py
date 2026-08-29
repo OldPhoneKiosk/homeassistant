@@ -57,6 +57,8 @@ CMD_SLEEP = "sleep"
 CMD_WAKE = "wake"
 CMD_BEEP = "beep"
 CMD_PLAY_SOUND = "play_sound"
+CMD_SET_BRIGHTNESS = "set_brightness"
+CMD_SET_VOLUME = "set_volume"
 CMD_START_INTERCOM = "start_intercom"
 CMD_STOP_INTERCOM = "stop_intercom"
 

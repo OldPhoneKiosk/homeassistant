@@ -392,6 +392,8 @@ class Registry:
         task_source: str | None | object = _UNSET,
         photo_source: str | None | object = _UNSET,
         sound: str | None | object = _UNSET,
+        enabled_screens: str | None | object = _UNSET,
+        show_bottom_menu: bool | None | object = _UNSET,
     ) -> PanelDevice:
         """Persist the HA-owned per-panel UI sources (dashboard/tasks/photos/sound).
 
@@ -407,6 +409,10 @@ class Registry:
             device.media.photo_source = photo_source or None
         if sound is not _UNSET:
             device.media.sound = sound or None
+        if enabled_screens is not _UNSET:
+            device.media.enabled_screens = str(enabled_screens) if enabled_screens else None
+        if show_bottom_menu is not _UNSET:
+            device.media.show_bottom_menu = bool(show_bottom_menu) if show_bottom_menu is not None else None
         self._store.update_media(device_id, device.media)
         return device
 

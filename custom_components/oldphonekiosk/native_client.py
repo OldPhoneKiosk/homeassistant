@@ -49,6 +49,8 @@ class PanelDeviceData:
     task_source: str | None = None
     photo_source: str | None = None
     sound: str | None = None
+    enabled_screens: str | None = None
+    show_bottom_menu: bool | None = None
 
     @classmethod
     def from_device(cls, device: PanelDevice) -> "PanelDeviceData":
@@ -72,6 +74,8 @@ class PanelDeviceData:
             task_source=device.media.task_source,
             photo_source=device.media.photo_source,
             sound=device.media.sound,
+            enabled_screens=device.media.enabled_screens,
+            show_bottom_menu=device.media.show_bottom_menu,
         )
 
 
@@ -148,13 +152,17 @@ class NativeOldPhoneKioskClient:
             params["task_source"] = task_source
         if photo_source is not None:
             params["photo_source"] = photo_source
-        config_kwargs: dict[str, str] = {}
+        config_kwargs: dict[str, Any] = {}
         if dashboard_url is not None:
             config_kwargs["dashboard_url"] = dashboard_url
         if task_source is not None:
             config_kwargs["task_source"] = task_source
         if photo_source is not None:
             config_kwargs["photo_source"] = photo_source
+        if enabled_screens is not None:
+            config_kwargs["enabled_screens"] = ",".join(enabled_screens)
+        if show_bottom_menu is not None:
+            config_kwargs["show_bottom_menu"] = show_bottom_menu
         try:
             device = self.registry.set_media_config(device_id, **config_kwargs)
             if self.registry.is_online(device_id):
@@ -198,6 +206,14 @@ class NativeOldPhoneKioskClient:
             params["sound"] = sound
         return await self.async_send_command(
             device_id, PanelCommand.PLAY_SOUND.value, params=params or None
+        )
+
+    async def async_set_device_level(self, device_id: str, command: str, level: float) -> dict[str, Any]:
+        level = max(0.0, min(1.0, float(level)))
+        return await self.async_send_command(
+            device_id,
+            command,
+            params={"level": f"{level:.3f}", "percent": str(round(level * 100))},
         )
 
     async def async_start_intercom(

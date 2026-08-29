@@ -48,6 +48,8 @@ class PanelCommand(str, Enum):
     STOP_STREAM = "stop_stream"
     BEEP = "beep"
     PLAY_SOUND = "play_sound"
+    SET_BRIGHTNESS = "set_brightness"
+    SET_VOLUME = "set_volume"
     START_INTERCOM = "start_intercom"
     STOP_INTERCOM = "stop_intercom"
 
@@ -112,6 +114,8 @@ class DeviceMedia(BaseModel):
     task_source: str | None = None
     photo_source: str | None = None
     sound: str | None = None
+    enabled_screens: str | None = None
+    show_bottom_menu: bool | None = None
 
 
 class DeviceState(BaseModel):

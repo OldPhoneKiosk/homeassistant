@@ -30,7 +30,7 @@ class OldPhoneKioskEntity(CoordinatorEntity[OldPhoneKioskCoordinator]):
         return super().available and self.device is not None
 
     @property
-    def extra_state_attributes(self) -> dict[str, str | None]:
+    def extra_state_attributes(self) -> dict[str, str | bool | None]:
         # Expose the panel device id (for revoke_panel) plus media/camera/intercom
         # so the Lovelace card can read them from any panel entity.
         device = self.device
@@ -41,6 +41,8 @@ class OldPhoneKioskEntity(CoordinatorEntity[OldPhoneKioskCoordinator]):
             "task_source": device.task_source if device else None,
             "photo_source": device.photo_source if device else None,
             "sound": device.sound if device else None,
+            "enabled_screens": device.enabled_screens if device else None,
+            "show_bottom_menu": device.show_bottom_menu if device else None,
             "camera_mode": device.camera_mode if device else None,
             "intercom": device.intercom if device else None,
             "stream": device.stream if device else None,
