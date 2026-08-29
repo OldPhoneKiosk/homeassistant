@@ -85,7 +85,7 @@ class OldPhoneKioskConfigFlow(ConfigFlow, domain=DOMAIN):
             "id": instance_id,
             "host": host,
             "port": port,
-            "name": _txt(props, "name") or DEFAULT_PANEL_NAME,
+            "name": _txt(props, "name") or _instance_name(discovery_info) or DEFAULT_PANEL_NAME,
             "model": _txt(props, "model") or "iOS device",
             "ios": _txt(props, "ios") or "unknown",
             "app_version": _txt(props, "version") or "unknown",
@@ -195,3 +195,22 @@ def _txt(props: dict[Any, Any], key: str) -> str | None:
     if value is None:
         return None
     return str(value)
+
+
+def _instance_name(discovery_info: Any) -> str | None:
+    """Extract a human device name from a Bonjour instance name fallback."""
+    raw = getattr(discovery_info, "name", None)
+    if not raw:
+        return None
+    name = str(raw)
+    for suffix in (
+        "._oldphonekiosk._tcp.local.",
+        "._oldphonekiosk._tcp.local",
+        "._oldphonekiosk._tcp.",
+        "._oldphonekiosk._tcp",
+    ):
+        if name.endswith(suffix):
+            name = name[: -len(suffix)]
+            break
+    name = name.strip()
+    return name or None

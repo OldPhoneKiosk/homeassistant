@@ -175,6 +175,33 @@ def _existing_entry_kwargs() -> dict:
     return kwargs
 
 
+async def test_zeroconf_flow_uses_bonjour_instance_name_when_txt_name_missing(monkeypatch, hass: HomeAssistant):
+    session = _FakeSession()
+    monkeypatch.setattr(
+        "custom_components.oldphonekiosk.config_flow.async_get_clientsession",
+        lambda hass: session,
+    )
+    discovered = _discovered_panel()
+    discovered.name = "Tomasz iPad._oldphonekiosk._tcp.local."
+    discovered.properties = {
+        key: value for key, value in discovered.properties.items() if key != "name"
+    }
+
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={"source": config_entries.SOURCE_ZEROCONF},
+        data=discovered,
+    )
+
+    assert result["type"] == data_entry_flow.FlowResultType.FORM
+    assert result["description_placeholders"]["name"] == "Tomasz iPad"
+    created = await hass.config_entries.flow.async_configure(
+        result["flow_id"], user_input={},
+    )
+    assert created["type"] == data_entry_flow.FlowResultType.CREATE_ENTRY
+    assert session.posts[0][1]["name"] == "Tomasz iPad"
+
+
 async def test_zeroconf_flow_adds_panel_to_existing_hub(monkeypatch, hass: HomeAssistant):
     session = _FakeSession()
     monkeypatch.setattr(

@@ -10,6 +10,7 @@ All notable changes to the OldPhoneKiosk Home Assistant integration are document
 - Dashboard options are discovered from Lovelace dashboards with safe defaults, Task list options come from `todo.*` entities, and Sound/Photo source options are discovered best-effort from `media_source` (including local media / Google Photos where HA exposes them).
 - Kept advanced `Custom dashboard URL`, `Custom task source`, `Custom photo source` and `Custom sound` text entities as fallback configuration controls.
 - Resolved selected `media-source://...` sound files to playable URLs when pressing **Play sound**, so the iOS receiver gets a URL it can actually play.
+- Discovery now prefers the real phone/tablet name from Bonjour, falling back to the Bonjour instance name before using a generic panel name.
 
 ## 0.1.7 - 2026-08-29
 
