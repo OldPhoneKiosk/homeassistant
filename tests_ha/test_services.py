@@ -526,6 +526,8 @@ async def test_dashboard_select_offers_lovelace_view_tabs(hass: HomeAssistant):
 
     state = hass.states.get("select.kitchen_dashboard")
     assert state is not None
+    assert "/lovelace" not in state.attributes["options"]
+    assert "/lovelace/0" not in state.attributes["options"]
     assert "/lovelace/ada" in state.attributes["options"]
     assert "/lovelace/tomas" in state.attributes["options"]
     assert "/lovelace/oscar" in state.attributes["options"]
@@ -543,6 +545,33 @@ async def test_dashboard_select_offers_lovelace_view_tabs(hass: HomeAssistant):
         "default_screen": "dashboard",
         "dashboard_url": "http://homeassistant.local:8123/lovelace/dashboard",
     } in fake.ui_calls
+
+
+async def test_dashboard_select_does_not_keep_stale_lovelace_home_when_views_exist(
+    hass: HomeAssistant,
+):
+    """A stale /lovelace/0 selection should not remain the picker option when views exist."""
+    hass.config.internal_url = "http://homeassistant.local:8123"
+
+    class _FakeLovelaceDashboard:
+        async def async_load(self, force):
+            return {"views": [{"title": "Tomas", "path": "tomas"}]}
+
+    hass.data["lovelace"] = {"dashboards": {None: _FakeLovelaceDashboard()}}
+    fake = _FakeClient()
+    fake._devices[0] = replace(fake._devices[0], dashboard_url="http://homeassistant.local:8123/lovelace/0")
+    entry = MockConfigEntry(
+        domain=DOMAIN, data={CONF_BRIDGE_URL: "http://x", CONF_API_KEY: "k"}
+    )
+    entry.add_to_hass(hass)
+    with patch("custom_components.oldphonekiosk.BridgeClient", return_value=fake):
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+    state = hass.states.get("select.kitchen_dashboard")
+    assert state is not None
+    assert state.state == "unknown"
+    assert state.attributes["options"] == ["/lovelace/tomas"]
 
 
 async def test_play_sound_button_resolves_media_source_sound(hass: HomeAssistant, monkeypatch):

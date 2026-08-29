@@ -4,6 +4,10 @@ All notable changes to the OldPhoneKiosk Home Assistant integration are document
 
 ## Unreleased
 
+## 0.1.12 - 2026-08-29
+
+- When Lovelace view/tab URLs are discoverable, the Dashboard select now exposes the concrete tab URLs only and avoids the default `/lovelace` / `/lovelace/0` Home target that caused panels to refresh back to Home.
+
 ## 0.1.11 - 2026-08-29
 
 - Removed the unused Home and Actions screens from Home Assistant screen selectors; normal kiosk navigation now offers Photos, Tasks and Dashboard only.

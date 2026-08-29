@@ -89,7 +89,14 @@ def _dashboard_base_path(url_path: str | None) -> str:
     return f"/lovelace/{url_path}"
 
 
+def _looks_like_default_lovelace_home(url: str) -> bool:
+    """Return true for Lovelace root/home URLs that commonly resolve to /lovelace/0."""
+    normalized = url.strip().rstrip("/")
+    return normalized.endswith("/lovelace") or normalized.endswith("/lovelace/0")
+
+
 async def _dashboard_view_urls(hass: HomeAssistant) -> list[str]:
+
     """Best-effort dashboard + view/tab URLs from loaded Lovelace configs."""
     data = hass.data.get("lovelace")
     dashboards = None
@@ -103,8 +110,6 @@ async def _dashboard_view_urls(hass: HomeAssistant) -> list[str]:
     urls: list[str] = []
     for url_path, dashboard in dashboards.items():
         base_path = _dashboard_base_path(url_path)
-        if base_path not in urls:
-            urls.append(base_path)
         async_load = getattr(dashboard, "async_load", None)
         if async_load is None:
             continue
@@ -241,6 +246,32 @@ class DashboardSelect(_SourceSelect):
     _attr_translation_key = "dashboard"
     _attr_name = "Dashboard"
     _attr_icon = "mdi:view-dashboard"
+
+    @property
+    def options(self) -> list[str]:
+        """Prefer concrete Lovelace view URLs over dashboard roots.
+
+        Home Assistant redirects the default dashboard root ``/lovelace`` to the
+        first view (often ``/lovelace/0`` / Home). When concrete view/tab URLs
+        are known, expose only those so a HA picker change cannot send the
+        phone back to Home by accident.
+        """
+        opts: list[str] = []
+        source = self._discovered_extra or self._discovered()
+        for option in source:
+            if option and option not in opts:
+                opts.append(option)
+        for current in (self._stored(), self._selected):
+            if (
+                current
+                and current not in opts
+                and not (
+                    self._discovered_extra
+                    and _looks_like_default_lovelace_home(current)
+                )
+            ):
+                opts.append(current)
+        return opts
 
     def _discovered(self) -> list[str]:
         return _dashboard_urls(self.hass) or DEFAULT_DASHBOARD_URLS
