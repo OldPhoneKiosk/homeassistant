@@ -26,7 +26,7 @@ from .models import (
 )
 
 # Current schema version. Bump when adding a migration below.
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 
 # Migration to version 1: the devices table. IF NOT EXISTS makes it idempotent so
 # pre-migration databases (created before user_version tracking) upgrade cleanly.
@@ -71,6 +71,14 @@ _MIGRATION_4 = """
 ALTER TABLE devices ADD COLUMN dashboard_url TEXT;
 """
 
+# Migration to version 5: HA-owned per-panel UI sources controlled from the device
+# page: the tasks list/source, the photos feed/source, and the play_sound target.
+_MIGRATION_5 = """
+ALTER TABLE devices ADD COLUMN task_source TEXT;
+ALTER TABLE devices ADD COLUMN photo_source TEXT;
+ALTER TABLE devices ADD COLUMN sound TEXT;
+"""
+
 
 def _configure_connection(conn: sqlite3.Connection, db_path: str) -> None:
     """Apply production-oriented PRAGMAs.
@@ -101,6 +109,8 @@ def _migrate(conn: sqlite3.Connection) -> None:
         conn.executescript(_MIGRATION_3)
     if version < 4:
         conn.executescript(_MIGRATION_4)
+    if version < 5:
+        conn.executescript(_MIGRATION_5)
     conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
     conn.commit()
 
@@ -152,8 +162,9 @@ class DeviceStore:
                 INSERT INTO devices (
                     device_id, name, room, model, ios_version, capabilities,
                     secret_hash, created_at, battery, brightness, screen, camera,
-                    app_version, last_seen, video_url, dashboard_url, intercom
-                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                    app_version, last_seen, video_url, dashboard_url, intercom,
+                    task_source, photo_source, sound
+                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                 ON CONFLICT(device_id) DO UPDATE SET
                     name=excluded.name, room=excluded.room, model=excluded.model,
                     ios_version=excluded.ios_version, capabilities=excluded.capabilities,
@@ -181,6 +192,9 @@ class DeviceStore:
                     device.media.video_url,
                     device.media.dashboard_url,
                     st.intercom.value if st.intercom else None,
+                    device.media.task_source,
+                    device.media.photo_source,
+                    device.media.sound,
                 ),
             )
             self._conn.commit()
@@ -208,12 +222,23 @@ class DeviceStore:
             )
             self._conn.commit()
 
-    def update_media(self, device_id: str, video_url: str | None, dashboard_url: str | None = None) -> None:
-        """Persist the per-device media/UI config."""
+    def update_media(self, device_id: str, media: DeviceMedia) -> None:
+        """Persist the full per-device media/UI config (HA is the source of truth)."""
         with self._lock:
             self._conn.execute(
-                "UPDATE devices SET video_url=?, dashboard_url=? WHERE device_id=?",
-                (video_url, dashboard_url, device_id),
+                """
+                UPDATE devices SET
+                    video_url=?, dashboard_url=?, task_source=?, photo_source=?, sound=?
+                WHERE device_id=?
+                """,
+                (
+                    media.video_url,
+                    media.dashboard_url,
+                    media.task_source,
+                    media.photo_source,
+                    media.sound,
+                    device_id,
+                ),
             )
             self._conn.commit()
 
@@ -300,6 +325,10 @@ class DeviceStore:
         keys = row.keys()
         intercom_raw = row["intercom"] if "intercom" in keys else None
         video_url = row["video_url"] if "video_url" in keys else None
+        dashboard_url = row["dashboard_url"] if "dashboard_url" in keys else None
+        task_source = row["task_source"] if "task_source" in keys else None
+        photo_source = row["photo_source"] if "photo_source" in keys else None
+        sound = row["sound"] if "sound" in keys else None
         state = DeviceState(
             online=False,  # never persisted true; requires a live connection
             battery=row["battery"],
@@ -318,6 +347,12 @@ class DeviceStore:
             ios_version=row["ios_version"],
             capabilities=DeviceCapabilities(**json.loads(row["capabilities"])),
             state=state,
-            media=DeviceMedia(video_url=video_url),
+            media=DeviceMedia(
+                video_url=video_url,
+                dashboard_url=dashboard_url,
+                task_source=task_source,
+                photo_source=photo_source,
+                sound=sound,
+            ),
             created_at=_dt(row["created_at"]) or datetime.now().astimezone(),
         )

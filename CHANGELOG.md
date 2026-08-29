@@ -5,6 +5,9 @@ All notable changes to the OldPhoneKiosk Home Assistant integration are document
 ## Unreleased
 
 - Added per-panel Home Assistant device-page controls: Dashboard URL text entity plus Start camera / Stop camera buttons, so users do not need Developer Tools service calls for common panel setup.
+- Made Home Assistant the full source of truth for every panel: added device-page **Task source** and **Photo source** text entities (feeding the tasks/photos screens via `configure_ui`), a **Sound** text entity plus **Play sound** and **Beep** buttons, and **Start intercom** / **Stop intercom** buttons. Split the camera control into **Start front camera** / **Start back camera** / **Stop camera**. All controls are bound to the phone's Home Assistant device.
+- Added matching `beep`, `play_sound`, `start_intercom`, `stop_intercom` services and documented the previously missing `set_panel_ui` service (now also taking `task_source` / `photo_source`). The `play_sound` contract accepts a system-sound id, a bundled sound name, or a remote `url`; the intercom contract carries `audio_url` / `stream_url` for a future live-audio build (honest MVP: the panel reflects ringing/talking state, no live capture/streaming yet).
+- Persisted the per-panel dashboard/tasks/photos/sound config (schema v5) so it survives a restart, and fixed the dashboard URL not being restored on reload.
 
 ## 0.1.6 - 2026-08-29
 

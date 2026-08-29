@@ -50,6 +50,8 @@ class _FakeClient:
         self.media_calls: list[dict] = []
         self.stream_calls: list[tuple] = []
         self.ui_calls: list[dict] = []
+        self.sound_calls: list[tuple] = []
+        self.action_calls: list[tuple] = []
 
     async def async_get_devices(self) -> list[PanelDeviceData]:
         return list(self._devices)
@@ -104,8 +106,36 @@ class _FakeClient:
     async def async_set_panel_ui(self, device_id, **kwargs):
         self.ui_calls.append({"device_id": device_id, **kwargs})
         current = self._devices[0]
-        self._devices[0] = replace(current, dashboard_url=kwargs.get("dashboard_url"))
+        changes = {}
+        if kwargs.get("dashboard_url") is not None:
+            changes["dashboard_url"] = kwargs.get("dashboard_url")
+        if kwargs.get("task_source") is not None:
+            changes["task_source"] = kwargs.get("task_source")
+        if kwargs.get("photo_source") is not None:
+            changes["photo_source"] = kwargs.get("photo_source")
+        self._devices[0] = replace(current, **changes)
         return self._devices[0]
+
+    async def async_set_sound(self, device_id, sound):
+        self.sound_calls.append((device_id, sound))
+        self._devices[0] = replace(self._devices[0], sound=sound)
+        return self._devices[0]
+
+    async def async_beep(self, device_id):
+        self.action_calls.append(("beep", device_id))
+        return {"id": "c", "status": "completed", "success": True}
+
+    async def async_play_sound(self, device_id, *, sound=None, url=None):
+        self.action_calls.append(("play_sound", device_id, sound, url))
+        return {"id": "c", "status": "completed", "success": True}
+
+    async def async_start_intercom(self, device_id, *, mode=None, audio_url=None, stream_url=None):
+        self.action_calls.append(("start_intercom", device_id, mode, audio_url, stream_url))
+        return {"id": "c", "status": "completed", "success": True}
+
+    async def async_stop_intercom(self, device_id):
+        self.action_calls.append(("stop_intercom", device_id))
+        return {"id": "c", "status": "completed", "success": True}
 
     async def close(self) -> None:
         pass
@@ -219,9 +249,17 @@ async def test_pairing_button_creates_code_notification(hass: HomeAssistant):
     assert hass.states.get("select.oldphonekiosk_panel_screen") is not None
     assert hass.states.get("button.oldphonekiosk_panel_wake") is not None
     assert hass.states.get("button.oldphonekiosk_panel_sleep") is not None
-    assert hass.states.get("button.kitchen_start_camera") is not None
+    assert hass.states.get("button.kitchen_start_front_camera") is not None
+    assert hass.states.get("button.kitchen_start_back_camera") is not None
     assert hass.states.get("button.kitchen_stop_camera") is not None
+    assert hass.states.get("button.kitchen_beep") is not None
+    assert hass.states.get("button.kitchen_play_sound") is not None
+    assert hass.states.get("button.kitchen_start_intercom") is not None
+    assert hass.states.get("button.kitchen_stop_intercom") is not None
     assert hass.states.get("text.kitchen_dashboard_url") is not None
+    assert hass.states.get("text.kitchen_task_source") is not None
+    assert hass.states.get("text.kitchen_photo_source") is not None
+    assert hass.states.get("text.kitchen_sound") is not None
     assert hass.states.get("camera.kitchen_camera") is not None
     assert hass.states.get("sensor.oldphonekiosk_panel_battery") is not None
 
@@ -311,7 +349,7 @@ async def test_device_page_controls_start_camera_and_set_dashboard_url(hass: Hom
     await hass.services.async_call(
         "button",
         "press",
-        {"entity_id": "button.kitchen_start_camera"},
+        {"entity_id": "button.kitchen_start_front_camera"},
         blocking=True,
     )
     await hass.services.async_call(
@@ -335,3 +373,117 @@ async def test_device_page_controls_start_camera_and_set_dashboard_url(hass: Hom
         hass.states.get("text.kitchen_dashboard_url").state
         == "http://homeassistant.local:8123/lovelace/kitchen"
     )
+
+
+async def test_start_back_camera_button(hass: HomeAssistant):
+    fake = _FakeClient()
+    entry = MockConfigEntry(
+        domain=DOMAIN, data={CONF_BRIDGE_URL: "http://x", CONF_API_KEY: "k"}
+    )
+    entry.add_to_hass(hass)
+    with patch("custom_components.oldphonekiosk.BridgeClient", return_value=fake):
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+    await hass.services.async_call(
+        "button", "press", {"entity_id": "button.kitchen_start_back_camera"}, blocking=True
+    )
+    await hass.async_block_till_done()
+    assert fake.stream_calls == [("start", "dev-1", "back")]
+
+
+async def test_task_photo_sound_text_and_action_buttons(hass: HomeAssistant):
+    fake = _FakeClient()
+    entry = MockConfigEntry(
+        domain=DOMAIN, data={CONF_BRIDGE_URL: "http://x", CONF_API_KEY: "k"}
+    )
+    entry.add_to_hass(hass)
+    with patch("custom_components.oldphonekiosk.BridgeClient", return_value=fake):
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+    # Text sources push configure_ui (tasks/photos) and persist the sound target.
+    await hass.services.async_call(
+        "text", "set_value",
+        {"entity_id": "text.kitchen_task_source", "value": "todo.kitchen"},
+        blocking=True,
+    )
+    await hass.services.async_call(
+        "text", "set_value",
+        {"entity_id": "text.kitchen_photo_source", "value": "album.family"},
+        blocking=True,
+    )
+    await hass.services.async_call(
+        "text", "set_value",
+        {"entity_id": "text.kitchen_sound", "value": "1007"},
+        blocking=True,
+    )
+    await hass.async_block_till_done()
+
+    assert fake.ui_calls[-2]["task_source"] == "todo.kitchen"
+    assert fake.ui_calls[-1]["photo_source"] == "album.family"
+    assert fake.sound_calls == [("dev-1", "1007")]
+    assert hass.states.get("text.kitchen_task_source").state == "todo.kitchen"
+    assert hass.states.get("text.kitchen_photo_source").state == "album.family"
+    assert hass.states.get("text.kitchen_sound").state == "1007"
+
+    # Action buttons dispatch beep / play_sound / start+stop intercom.
+    for entity in (
+        "button.kitchen_beep",
+        "button.kitchen_play_sound",
+        "button.kitchen_start_intercom",
+        "button.kitchen_stop_intercom",
+    ):
+        await hass.services.async_call(
+            "button", "press", {"entity_id": entity}, blocking=True
+        )
+    await hass.async_block_till_done()
+
+    kinds = [call[0] for call in fake.action_calls]
+    assert kinds == ["beep", "play_sound", "start_intercom", "stop_intercom"]
+
+
+async def test_play_sound_and_intercom_services(hass: HomeAssistant):
+    from custom_components.oldphonekiosk.const import (
+        SERVICE_BEEP,
+        SERVICE_PLAY_SOUND,
+        SERVICE_START_INTERCOM,
+        SERVICE_STOP_INTERCOM,
+    )
+
+    fake = _FakeClient()
+    entry = MockConfigEntry(
+        domain=DOMAIN, data={CONF_BRIDGE_URL: "http://x", CONF_API_KEY: "k"}
+    )
+    entry.add_to_hass(hass)
+    with patch("custom_components.oldphonekiosk.BridgeClient", return_value=fake):
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+    assert hass.services.has_service(DOMAIN, SERVICE_BEEP)
+    assert hass.services.has_service(DOMAIN, SERVICE_PLAY_SOUND)
+    assert hass.services.has_service(DOMAIN, SERVICE_START_INTERCOM)
+    assert hass.services.has_service(DOMAIN, SERVICE_STOP_INTERCOM)
+
+    await hass.services.async_call(
+        DOMAIN, SERVICE_BEEP, {ATTR_DEVICE_ID: "dev-1"}, blocking=True
+    )
+    await hass.services.async_call(
+        DOMAIN, SERVICE_PLAY_SOUND,
+        {ATTR_DEVICE_ID: "dev-1", "url": "http://ha/local/chime.mp3"},
+        blocking=True,
+    )
+    await hass.services.async_call(
+        DOMAIN, SERVICE_START_INTERCOM,
+        {ATTR_DEVICE_ID: "dev-1", "mode": "talk"},
+        blocking=True,
+    )
+    await hass.services.async_call(
+        DOMAIN, SERVICE_STOP_INTERCOM, {ATTR_DEVICE_ID: "dev-1"}, blocking=True
+    )
+    await hass.async_block_till_done()
+
+    assert fake.action_calls[0] == ("beep", "dev-1")
+    assert fake.action_calls[1] == ("play_sound", "dev-1", None, "http://ha/local/chime.mp3")
+    assert fake.action_calls[2] == ("start_intercom", "dev-1", "talk", None, None)
+    assert fake.action_calls[3] == ("stop_intercom", "dev-1")

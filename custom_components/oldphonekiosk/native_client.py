@@ -46,6 +46,9 @@ class PanelDeviceData:
     dashboard_url: str | None
     app_version: str | None
     last_seen: datetime | None
+    task_source: str | None = None
+    photo_source: str | None = None
+    sound: str | None = None
 
     @classmethod
     def from_device(cls, device: PanelDevice) -> "PanelDeviceData":
@@ -66,6 +69,9 @@ class PanelDeviceData:
             dashboard_url=device.media.dashboard_url,
             app_version=state.app_version,
             last_seen=state.last_seen,
+            task_source=device.media.task_source,
+            photo_source=device.media.photo_source,
+            sound=device.media.sound,
         )
 
 
@@ -96,9 +102,13 @@ class NativeOldPhoneKioskClient:
         except UnknownDeviceError as exc:
             raise BridgeNotFoundError("unknown device") from exc
 
-    async def async_send_command(self, device_id: str, command: str) -> dict[str, Any]:
+    async def async_send_command(
+        self, device_id: str, command: str, params: dict[str, str] | None = None
+    ) -> dict[str, Any]:
         try:
-            cmd, result = await self.registry.send_command(device_id, PanelCommand(command))
+            cmd, result = await self.registry.send_command(
+                device_id, PanelCommand(command), params=params
+            )
         except UnknownDeviceError as exc:
             raise BridgeNotFoundError("unknown device") from exc
         except DeviceOfflineError:
@@ -122,6 +132,8 @@ class NativeOldPhoneKioskClient:
         enabled_screens: list[str] | None = None,
         show_bottom_menu: bool | None = None,
         dashboard_url: str | None = None,
+        task_source: str | None = None,
+        photo_source: str | None = None,
     ) -> PanelDeviceData:
         params: dict[str, str] = {}
         if default_screen is not None:
@@ -132,8 +144,19 @@ class NativeOldPhoneKioskClient:
             params["show_bottom_menu"] = "true" if show_bottom_menu else "false"
         if dashboard_url is not None:
             params["dashboard_url"] = dashboard_url
+        if task_source is not None:
+            params["task_source"] = task_source
+        if photo_source is not None:
+            params["photo_source"] = photo_source
+        config_kwargs: dict[str, str] = {}
+        if dashboard_url is not None:
+            config_kwargs["dashboard_url"] = dashboard_url
+        if task_source is not None:
+            config_kwargs["task_source"] = task_source
+        if photo_source is not None:
+            config_kwargs["photo_source"] = photo_source
         try:
-            device = self.registry.set_dashboard_url(device_id, dashboard_url)
+            device = self.registry.set_media_config(device_id, **config_kwargs)
             if self.registry.is_online(device_id):
                 try:
                     await self.registry.send_command(device_id, PanelCommand.CONFIGURE_UI, params=params)
@@ -142,6 +165,69 @@ class NativeOldPhoneKioskClient:
         except UnknownDeviceError as exc:
             raise BridgeNotFoundError("unknown device") from exc
         return PanelDeviceData.from_device(device)
+
+    async def async_set_sound(self, device_id: str, sound: str | None) -> PanelDeviceData:
+        """Persist the HA-owned sound target for the play_sound button (no dispatch)."""
+        try:
+            device = self.registry.set_media_config(device_id, sound=sound)
+        except UnknownDeviceError as exc:
+            raise BridgeNotFoundError("unknown device") from exc
+        return PanelDeviceData.from_device(device)
+
+    async def async_beep(self, device_id: str) -> dict[str, Any]:
+        """Ask the panel to emit a short beep + haptic (attention ping)."""
+        return await self.async_send_command(device_id, PanelCommand.BEEP.value)
+
+    async def async_play_sound(
+        self,
+        device_id: str,
+        *,
+        sound: str | None = None,
+        url: str | None = None,
+    ) -> dict[str, Any]:
+        """Play a sound on the panel: a system/bundle name/id, or a remote audio URL.
+
+        When neither is supplied the panel's persisted ``sound`` config is used.
+        """
+        params: dict[str, str] = {}
+        if url:
+            params["url"] = url
+        if sound is None and not url:
+            sound = self.registry.get_device(device_id).media.sound
+        if sound:
+            params["sound"] = sound
+        return await self.async_send_command(
+            device_id, PanelCommand.PLAY_SOUND.value, params=params or None
+        )
+
+    async def async_start_intercom(
+        self,
+        device_id: str,
+        *,
+        mode: str | None = None,
+        audio_url: str | None = None,
+        stream_url: str | None = None,
+    ) -> dict[str, Any]:
+        """Open an intercom session on the panel.
+
+        Honest MVP: the panel reflects the intercom state (ringing/talking) in its
+        UI. The protocol already carries ``audio_url``/``stream_url`` so a later
+        build can pull/publish real audio without a wire change.
+        """
+        params: dict[str, str] = {}
+        if mode:
+            params["mode"] = mode
+        if audio_url:
+            params["audio_url"] = audio_url
+        if stream_url:
+            params["stream_url"] = stream_url
+        return await self.async_send_command(
+            device_id, PanelCommand.START_INTERCOM.value, params=params or None
+        )
+
+    async def async_stop_intercom(self, device_id: str) -> dict[str, Any]:
+        """Close the intercom session on the panel (back to idle)."""
+        return await self.async_send_command(device_id, PanelCommand.STOP_INTERCOM.value)
 
     async def async_set_media(
         self,

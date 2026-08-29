@@ -45,6 +45,10 @@ class PanelCommand(str, Enum):
     WAKE = "wake"
     START_STREAM = "start_stream"
     STOP_STREAM = "stop_stream"
+    BEEP = "beep"
+    PLAY_SOUND = "play_sound"
+    START_INTERCOM = "start_intercom"
+    STOP_INTERCOM = "stop_intercom"
 
 
 # Screen a command drives the panel to, when applicable.
@@ -90,10 +94,23 @@ class DeviceCapabilities(BaseModel):
 
 
 class DeviceMedia(BaseModel):
-    """Per-device media/UI configuration stored per panel."""
+    """Per-device media/UI configuration stored per panel.
+
+    All fields are Home-Assistant-owned (source of truth) and pushed to the panel
+    via ``configure_ui``/``play_sound``:
+
+    - ``video_url``: viewer/player URL for the Lovelace camera card.
+    - ``dashboard_url``: dashboard the panel shows on the ``dashboard`` screen.
+    - ``task_source``: task list id / URL feeding the ``tasks`` screen.
+    - ``photo_source``: photo feed id / URL feeding the ``photos`` screen.
+    - ``sound``: the sound name/id/URL the ``play_sound`` button dispatches.
+    """
 
     video_url: str | None = None
     dashboard_url: str | None = None
+    task_source: str | None = None
+    photo_source: str | None = None
+    sound: str | None = None
 
 
 class DeviceState(BaseModel):

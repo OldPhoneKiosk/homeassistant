@@ -81,6 +81,9 @@ class PanelDeviceData:
     dashboard_url: str | None
     app_version: str | None
     last_seen: datetime | None
+    task_source: str | None = None
+    photo_source: str | None = None
+    sound: str | None = None
 
     @classmethod
     def from_json(cls, data: dict[str, Any]) -> "PanelDeviceData":
@@ -102,6 +105,9 @@ class PanelDeviceData:
             dashboard_url=media.get("dashboard_url"),
             app_version=state.get("app_version"),
             last_seen=_parse_dt(state.get("last_seen")),
+            task_source=media.get("task_source"),
+            photo_source=media.get("photo_source"),
+            sound=media.get("sound"),
         )
 
 

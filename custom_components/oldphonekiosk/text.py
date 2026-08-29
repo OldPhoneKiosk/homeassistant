@@ -1,4 +1,10 @@
-"""Editable per-panel text fields for OldPhoneKiosk."""
+"""Editable per-panel text fields for OldPhoneKiosk.
+
+Home Assistant is the source of truth for every panel UI source: the dashboard
+URL, the tasks list/source, the photos feed/source, and the play_sound target.
+Each field persists on the panel's HA device and (except the sound target) pushes
+a ``configure_ui`` update to the online panel so it applies immediately.
+"""
 
 from __future__ import annotations
 
@@ -21,7 +27,13 @@ async def async_setup_entry(
     known_devices = set(coordinator.data or {})
 
     def _entities(device_ids: set[str]):
-        return [DashboardUrlText(coordinator, device_id) for device_id in device_ids]
+        entities: list[TextEntity] = []
+        for device_id in device_ids:
+            entities.append(DashboardUrlText(coordinator, device_id))
+            entities.append(TaskSourceText(coordinator, device_id))
+            entities.append(PhotoSourceText(coordinator, device_id))
+            entities.append(SoundText(coordinator, device_id))
+        return entities
 
     async_add_entities(_entities(known_devices))
 
@@ -36,30 +48,42 @@ async def async_setup_entry(
     entry.async_on_unload(coordinator.async_add_listener(_async_add_new_devices))
 
 
-class DashboardUrlText(OldPhoneKioskEntity, TextEntity):
-    """Dashboard URL pushed to one phone/tablet panel."""
+class _PanelText(OldPhoneKioskEntity, TextEntity):
+    """Base for a per-panel text field backed by the device media config."""
 
-    _attr_translation_key = "dashboard_url"
-    _attr_name = "Dashboard URL"
-    _attr_icon = "mdi:view-dashboard"
     _attr_native_min = 0
     _attr_native_max = 2048
+    _key = ""
 
     def __init__(self, coordinator: OldPhoneKioskCoordinator, device_id: str) -> None:
         super().__init__(coordinator, device_id)
-        self._attr_unique_id = f"{device_id}_dashboard_url"
+        self._attr_unique_id = f"{device_id}_{self._key}"
         self._attr_native_value = None
+
+    def _device_value(self) -> str | None:  # pragma: no cover - overridden
+        return None
 
     @property
     def native_value(self) -> str | None:
-        device = self.device
-        return self._attr_native_value or (device.dashboard_url if device else None)
+        return self._attr_native_value or self._device_value()
 
     @callback
     def _handle_coordinator_update(self) -> None:
-        device = self.device
-        self._attr_native_value = device.dashboard_url if device else None
+        self._attr_native_value = self._device_value()
         self.async_write_ha_state()
+
+
+class DashboardUrlText(_PanelText):
+    """Dashboard URL pushed to one phone/tablet panel."""
+
+    _key = "dashboard_url"
+    _attr_translation_key = "dashboard_url"
+    _attr_name = "Dashboard URL"
+    _attr_icon = "mdi:view-dashboard"
+
+    def _device_value(self) -> str | None:
+        device = self.device
+        return device.dashboard_url if device else None
 
     async def async_set_value(self, value: str) -> None:
         dashboard_url = value.strip()
@@ -69,5 +93,73 @@ class DashboardUrlText(OldPhoneKioskEntity, TextEntity):
             dashboard_url=dashboard_url,
         )
         self._attr_native_value = dashboard_url or None
+        self.async_write_ha_state()
+        await self.coordinator.async_request_refresh()
+
+
+class TaskSourceText(_PanelText):
+    """Task list id / source URL feeding the panel's tasks screen."""
+
+    _key = "task_source"
+    _attr_translation_key = "task_source"
+    _attr_name = "Task source"
+    _attr_icon = "mdi:format-list-checks"
+
+    def _device_value(self) -> str | None:
+        device = self.device
+        return device.task_source if device else None
+
+    async def async_set_value(self, value: str) -> None:
+        task_source = value.strip()
+        await self.coordinator.client.async_set_panel_ui(
+            self._device_id, task_source=task_source
+        )
+        self._attr_native_value = task_source or None
+        self.async_write_ha_state()
+        await self.coordinator.async_request_refresh()
+
+
+class PhotoSourceText(_PanelText):
+    """Photo feed id / source URL feeding the panel's photos screen."""
+
+    _key = "photo_source"
+    _attr_translation_key = "photo_source"
+    _attr_name = "Photo source"
+    _attr_icon = "mdi:image-multiple"
+
+    def _device_value(self) -> str | None:
+        device = self.device
+        return device.photo_source if device else None
+
+    async def async_set_value(self, value: str) -> None:
+        photo_source = value.strip()
+        await self.coordinator.client.async_set_panel_ui(
+            self._device_id, photo_source=photo_source
+        )
+        self._attr_native_value = photo_source or None
+        self.async_write_ha_state()
+        await self.coordinator.async_request_refresh()
+
+
+class SoundText(_PanelText):
+    """Sound name/id/URL the panel's Play sound button dispatches.
+
+    Setting it only persists the target (source of truth); the Play sound button
+    (or the play_sound service) is what actually tells the panel to play it.
+    """
+
+    _key = "sound"
+    _attr_translation_key = "sound"
+    _attr_name = "Sound"
+    _attr_icon = "mdi:music-note"
+
+    def _device_value(self) -> str | None:
+        device = self.device
+        return device.sound if device else None
+
+    async def async_set_value(self, value: str) -> None:
+        sound = value.strip()
+        await self.coordinator.client.async_set_sound(self._device_id, sound or None)
+        self._attr_native_value = sound or None
         self.async_write_ha_state()
         await self.coordinator.async_request_refresh()

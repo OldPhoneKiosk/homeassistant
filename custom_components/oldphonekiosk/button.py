@@ -14,12 +14,21 @@ from .entity import OldPhoneKioskEntity
 from .services import async_create_pairing_response
 
 BUTTONS = (
-    ("wake", "Wake", CMD_WAKE),
-    ("sleep", "Sleep", CMD_SLEEP),
+    ("wake", "Wake", CMD_WAKE, "mdi:white-balance-sunny"),
+    ("sleep", "Sleep", CMD_SLEEP, "mdi:power-sleep"),
 )
+# Camera controls: front/back start + stop, all bound to the same panel HA device.
 STREAM_BUTTONS = (
-    ("start_camera", "Start camera"),
-    ("stop_camera", "Stop camera"),
+    ("start_front_camera", "Start front camera", "front", "mdi:camera-front"),
+    ("start_back_camera", "Start back camera", "back", "mdi:camera-rear"),
+    ("stop_camera", "Stop camera", None, "mdi:camera-off"),
+)
+# Action buttons dispatched through dedicated client helpers (not plain commands).
+ACTION_BUTTONS = (
+    ("beep", "Beep", "mdi:bullhorn"),
+    ("play_sound", "Play sound", "mdi:music-note"),
+    ("start_intercom", "Start intercom", "mdi:phone-in-talk"),
+    ("stop_intercom", "Stop intercom", "mdi:phone-hangup"),
 )
 
 
@@ -33,13 +42,17 @@ async def async_setup_entry(
 
     def _panel_entities(device_ids: set[str]):
         return [
-            PanelCommandButton(coordinator, device_id, key, name, command)
+            PanelCommandButton(coordinator, device_id, key, name, command, icon)
             for device_id in device_ids
-            for key, name, command in BUTTONS
+            for key, name, command, icon in BUTTONS
         ] + [
-            PanelStreamButton(coordinator, device_id, key, name)
+            PanelStreamButton(coordinator, device_id, key, name, camera_mode, icon)
             for device_id in device_ids
-            for key, name in STREAM_BUTTONS
+            for key, name, camera_mode, icon in STREAM_BUTTONS
+        ] + [
+            PanelActionButton(coordinator, device_id, key, name, icon)
+            for device_id in device_ids
+            for key, name, icon in ACTION_BUTTONS
         ]
 
     entities: list[ButtonEntity] = [HubPairingButton(coordinator, entry)]
@@ -86,12 +99,14 @@ class HubPairingButton(ButtonEntity):
 
 
 class PanelCommandButton(OldPhoneKioskEntity, ButtonEntity):
-    def __init__(self, coordinator, device_id, key, name, command) -> None:
+    def __init__(self, coordinator, device_id, key, name, command, icon=None) -> None:
         super().__init__(coordinator, device_id)
         self._command = command
         self._attr_unique_id = f"{device_id}_{key}"
         self._attr_translation_key = key
         self._attr_name = name
+        if icon:
+            self._attr_icon = icon
 
     async def async_press(self) -> None:
         await self.coordinator.client.async_send_command(self._device_id, self._command)
@@ -99,17 +114,43 @@ class PanelCommandButton(OldPhoneKioskEntity, ButtonEntity):
 
 
 class PanelStreamButton(OldPhoneKioskEntity, ButtonEntity):
-    def __init__(self, coordinator, device_id, key, name) -> None:
+    def __init__(self, coordinator, device_id, key, name, camera_mode, icon) -> None:
+        super().__init__(coordinator, device_id)
+        self._camera_mode = camera_mode  # None => stop
+        self._attr_unique_id = f"{device_id}_{key}"
+        self._attr_translation_key = key
+        self._attr_name = name
+        self._attr_icon = icon
+
+    async def async_press(self) -> None:
+        if self._camera_mode is not None:
+            await self.coordinator.client.async_start_stream(
+                self._device_id, camera_mode=self._camera_mode
+            )
+        else:
+            await self.coordinator.client.async_stop_stream(self._device_id)
+        await self.coordinator.async_request_refresh()
+
+
+class PanelActionButton(OldPhoneKioskEntity, ButtonEntity):
+    """Beep / play sound / intercom controls dispatched via client helpers."""
+
+    def __init__(self, coordinator, device_id, key, name, icon) -> None:
         super().__init__(coordinator, device_id)
         self._key = key
         self._attr_unique_id = f"{device_id}_{key}"
         self._attr_translation_key = key
         self._attr_name = name
-        self._attr_icon = "mdi:camera" if key == "start_camera" else "mdi:camera-off"
+        self._attr_icon = icon
 
     async def async_press(self) -> None:
-        if self._key == "start_camera":
-            await self.coordinator.client.async_start_stream(self._device_id, camera_mode="front")
-        else:
-            await self.coordinator.client.async_stop_stream(self._device_id)
+        client = self.coordinator.client
+        if self._key == "beep":
+            await client.async_beep(self._device_id)
+        elif self._key == "play_sound":
+            await client.async_play_sound(self._device_id)
+        elif self._key == "start_intercom":
+            await client.async_start_intercom(self._device_id)
+        elif self._key == "stop_intercom":
+            await client.async_stop_intercom(self._device_id)
         await self.coordinator.async_request_refresh()

@@ -77,6 +77,135 @@ set_media:
         select:
           options: ["off", "front", "back", "dual"]
 
+set_panel_ui:
+  name: Set panel UI
+  description: >-
+    Push Home-Assistant-owned kiosk navigation/config to a panel: the default and
+    enabled screens, bottom menu, dashboard URL, and the tasks/photos sources. Only
+    provided fields change; they persist and re-apply after a restart.
+  fields:
+    device_id:
+      name: Panel device id
+      required: true
+      example: "b1e7c2a0-..."
+      selector:
+        text:
+    default_screen:
+      name: Default screen
+      required: false
+      selector:
+        select:
+          options: ["photos", "tasks", "actions", "dashboard", "home"]
+    enabled_screens:
+      name: Enabled screens
+      required: false
+      selector:
+        select:
+          multiple: true
+          options: ["photos", "tasks", "actions", "dashboard", "home"]
+    show_bottom_menu:
+      name: Show bottom menu
+      required: false
+      selector:
+        boolean:
+    dashboard_url:
+      name: Dashboard URL
+      description: Dashboard the panel shows on the dashboard screen (empty to clear).
+      required: false
+      selector:
+        text:
+    task_source:
+      name: Task source
+      description: Task list id or URL feeding the tasks screen (empty to clear).
+      required: false
+      selector:
+        text:
+    photo_source:
+      name: Photo source
+      description: Photo feed id or URL feeding the photos screen (empty to clear).
+      required: false
+      selector:
+        text:
+
+beep:
+  name: Beep panel
+  description: Play a short attention beep + haptic on the panel.
+  fields:
+    device_id:
+      name: Panel device id
+      required: true
+      example: "b1e7c2a0-..."
+      selector:
+        text:
+
+play_sound:
+  name: Play sound
+  description: >-
+    Play a sound on the panel. Provide a system sound id, a bundled sound name, or a
+    remote audio URL. With neither, the panel's stored Sound value is used.
+  fields:
+    device_id:
+      name: Panel device id
+      required: true
+      example: "b1e7c2a0-..."
+      selector:
+        text:
+    sound:
+      name: Sound
+      description: System sound id (e.g. 1007), or a bundled sound name.
+      required: false
+      selector:
+        text:
+    url:
+      name: Audio URL
+      description: A remote/local audio URL to play (audio_url).
+      required: false
+      example: "http://homeassistant.local:8123/local/chime.mp3"
+      selector:
+        text:
+
+start_intercom:
+  name: Start intercom
+  description: >-
+    Open an intercom session on the panel. Honest MVP: the panel reflects the
+    intercom state (ringing/talking) in its UI; live audio capture/streaming is not
+    yet implemented, but audio_url/stream_url are carried for a future build.
+  fields:
+    device_id:
+      name: Panel device id
+      required: true
+      example: "b1e7c2a0-..."
+      selector:
+        text:
+    mode:
+      name: Mode
+      description: "ring (incoming) or talk (channel open). Default: talk."
+      required: false
+      selector:
+        select:
+          options: ["ring", "talk"]
+    audio_url:
+      name: Audio URL
+      required: false
+      selector:
+        text:
+    stream_url:
+      name: Stream URL
+      required: false
+      selector:
+        text:
+
+stop_intercom:
+  name: Stop intercom
+  description: Close the intercom session on the panel (back to idle).
+  fields:
+    device_id:
+      name: Panel device id
+      required: true
+      example: "b1e7c2a0-..."
+      selector:
+        text:
+
 revoke_panel:
   name: Revoke panel
   description: >-

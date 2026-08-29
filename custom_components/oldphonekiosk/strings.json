@@ -25,16 +25,40 @@
       "sleep": {
         "name": "Sleep"
       },
-      "start_camera": {
-        "name": "Start camera"
+      "start_front_camera": {
+        "name": "Start front camera"
+      },
+      "start_back_camera": {
+        "name": "Start back camera"
       },
       "stop_camera": {
         "name": "Stop camera"
+      },
+      "beep": {
+        "name": "Beep"
+      },
+      "play_sound": {
+        "name": "Play sound"
+      },
+      "start_intercom": {
+        "name": "Start intercom"
+      },
+      "stop_intercom": {
+        "name": "Stop intercom"
       }
     },
     "text": {
       "dashboard_url": {
         "name": "Dashboard URL"
+      },
+      "task_source": {
+        "name": "Task source"
+      },
+      "photo_source": {
+        "name": "Photo source"
+      },
+      "sound": {
+        "name": "Sound"
       }
     },
     "camera": {

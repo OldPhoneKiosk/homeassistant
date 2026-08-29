@@ -18,22 +18,33 @@ from homeassistant.helpers import device_registry as dr
 
 from .api import BridgeError, BridgeNotFoundError
 from .const import (
+    ATTR_AUDIO_URL,
     ATTR_CAMERA_MODE,
     ATTR_DASHBOARD_URL,
     ATTR_DEFAULT_SCREEN,
     ATTR_DEVICE_ID,
     ATTR_ENABLED_SCREENS,
+    ATTR_INTERCOM_MODE,
+    ATTR_PHOTO_SOURCE,
     ATTR_SHOW_BOTTOM_MENU,
+    ATTR_SOUND,
+    ATTR_SOUND_URL,
+    ATTR_STREAM_URL,
+    ATTR_TASK_SOURCE,
     ATTR_NAME,
     ATTR_ROOM,
     ATTR_VIDEO_URL,
     CAMERA_MODES,
     DOMAIN,
+    SERVICE_BEEP,
     SERVICE_PAIR_NEW_PANEL,
+    SERVICE_PLAY_SOUND,
     SERVICE_REVOKE_PANEL,
     SERVICE_SET_MEDIA,
     SERVICE_SET_PANEL_UI,
+    SERVICE_START_INTERCOM,
     SERVICE_START_STREAM,
+    SERVICE_STOP_INTERCOM,
     SERVICE_STOP_STREAM,
     SCREENS,
 )
@@ -79,10 +90,33 @@ SET_PANEL_UI_SCHEMA = vol.Schema(
         ),
         vol.Optional(ATTR_SHOW_BOTTOM_MENU): cv.boolean,
         vol.Optional(ATTR_DASHBOARD_URL): vol.Any(None, cv.string),
+        vol.Optional(ATTR_TASK_SOURCE): vol.Any(None, cv.string),
+        vol.Optional(ATTR_PHOTO_SOURCE): vol.Any(None, cv.string),
     }
 )
 
 STOP_STREAM_SCHEMA = vol.Schema({vol.Required(ATTR_DEVICE_ID): cv.string})
+
+BEEP_SCHEMA = vol.Schema({vol.Required(ATTR_DEVICE_ID): cv.string})
+
+PLAY_SOUND_SCHEMA = vol.Schema(
+    {
+        vol.Required(ATTR_DEVICE_ID): cv.string,
+        vol.Optional(ATTR_SOUND): cv.string,
+        vol.Optional(ATTR_SOUND_URL): cv.string,
+    }
+)
+
+START_INTERCOM_SCHEMA = vol.Schema(
+    {
+        vol.Required(ATTR_DEVICE_ID): cv.string,
+        vol.Optional(ATTR_INTERCOM_MODE): vol.In(["ring", "talk"]),
+        vol.Optional(ATTR_AUDIO_URL): cv.string,
+        vol.Optional(ATTR_STREAM_URL): cv.string,
+    }
+)
+
+STOP_INTERCOM_SCHEMA = vol.Schema({vol.Required(ATTR_DEVICE_ID): cv.string})
 
 
 def _find_coordinator(
@@ -228,6 +262,10 @@ async def _async_set_panel_ui(hass: HomeAssistant, call: ServiceCall) -> None:
         params[ATTR_SHOW_BOTTOM_MENU] = "true" if call.data[ATTR_SHOW_BOTTOM_MENU] else "false"
     if ATTR_DASHBOARD_URL in call.data:
         params[ATTR_DASHBOARD_URL] = call.data[ATTR_DASHBOARD_URL] or ""
+    if ATTR_TASK_SOURCE in call.data:
+        params[ATTR_TASK_SOURCE] = call.data[ATTR_TASK_SOURCE] or ""
+    if ATTR_PHOTO_SOURCE in call.data:
+        params[ATTR_PHOTO_SOURCE] = call.data[ATTR_PHOTO_SOURCE] or ""
 
     if not params:
         raise ServiceValidationError("Set at least one panel UI option.")
@@ -239,9 +277,76 @@ async def _async_set_panel_ui(hass: HomeAssistant, call: ServiceCall) -> None:
             enabled_screens=call.data.get(ATTR_ENABLED_SCREENS),
             show_bottom_menu=call.data.get(ATTR_SHOW_BOTTOM_MENU),
             dashboard_url=call.data.get(ATTR_DASHBOARD_URL) if ATTR_DASHBOARD_URL in call.data else None,
+            task_source=call.data.get(ATTR_TASK_SOURCE) if ATTR_TASK_SOURCE in call.data else None,
+            photo_source=call.data.get(ATTR_PHOTO_SOURCE) if ATTR_PHOTO_SOURCE in call.data else None,
         )
     except BridgeError as err:
         raise HomeAssistantError(f"Bridge set_panel_ui failed: {err}") from err
+    await coordinator.async_request_refresh()
+
+
+async def _async_beep(hass: HomeAssistant, call: ServiceCall) -> None:
+    device_id: str = call.data[ATTR_DEVICE_ID]
+    coordinator = _find_coordinator(hass, device_id)
+    if coordinator is None:
+        raise ServiceValidationError(
+            f"No configured OldPhoneKiosk backend knows device '{device_id}'."
+        )
+    try:
+        await coordinator.client.async_beep(device_id)
+    except BridgeError as err:
+        raise HomeAssistantError(f"Bridge beep failed: {err}") from err
+    await coordinator.async_request_refresh()
+
+
+async def _async_play_sound(hass: HomeAssistant, call: ServiceCall) -> None:
+    device_id: str = call.data[ATTR_DEVICE_ID]
+    coordinator = _find_coordinator(hass, device_id)
+    if coordinator is None:
+        raise ServiceValidationError(
+            f"No configured OldPhoneKiosk backend knows device '{device_id}'."
+        )
+    try:
+        await coordinator.client.async_play_sound(
+            device_id,
+            sound=call.data.get(ATTR_SOUND),
+            url=call.data.get(ATTR_SOUND_URL),
+        )
+    except BridgeError as err:
+        raise HomeAssistantError(f"Bridge play_sound failed: {err}") from err
+    await coordinator.async_request_refresh()
+
+
+async def _async_start_intercom(hass: HomeAssistant, call: ServiceCall) -> None:
+    device_id: str = call.data[ATTR_DEVICE_ID]
+    coordinator = _find_coordinator(hass, device_id)
+    if coordinator is None:
+        raise ServiceValidationError(
+            f"No configured OldPhoneKiosk backend knows device '{device_id}'."
+        )
+    try:
+        await coordinator.client.async_start_intercom(
+            device_id,
+            mode=call.data.get(ATTR_INTERCOM_MODE),
+            audio_url=call.data.get(ATTR_AUDIO_URL),
+            stream_url=call.data.get(ATTR_STREAM_URL),
+        )
+    except BridgeError as err:
+        raise HomeAssistantError(f"Bridge start_intercom failed: {err}") from err
+    await coordinator.async_request_refresh()
+
+
+async def _async_stop_intercom(hass: HomeAssistant, call: ServiceCall) -> None:
+    device_id: str = call.data[ATTR_DEVICE_ID]
+    coordinator = _find_coordinator(hass, device_id)
+    if coordinator is None:
+        raise ServiceValidationError(
+            f"No configured OldPhoneKiosk backend knows device '{device_id}'."
+        )
+    try:
+        await coordinator.client.async_stop_intercom(device_id)
+    except BridgeError as err:
+        raise HomeAssistantError(f"Bridge stop_intercom failed: {err}") from err
     await coordinator.async_request_refresh()
 
 
@@ -298,6 +403,18 @@ def async_setup_services(hass: HomeAssistant) -> None:
     async def _handle_stop_stream(call: ServiceCall) -> None:
         await _async_stop_stream(hass, call)
 
+    async def _handle_beep(call: ServiceCall) -> None:
+        await _async_beep(hass, call)
+
+    async def _handle_play_sound(call: ServiceCall) -> None:
+        await _async_play_sound(hass, call)
+
+    async def _handle_start_intercom(call: ServiceCall) -> None:
+        await _async_start_intercom(hass, call)
+
+    async def _handle_stop_intercom(call: ServiceCall) -> None:
+        await _async_stop_intercom(hass, call)
+
     hass.services.async_register(
         DOMAIN,
         SERVICE_REVOKE_PANEL,
@@ -323,6 +440,18 @@ def async_setup_services(hass: HomeAssistant) -> None:
         DOMAIN, SERVICE_STOP_STREAM, _handle_stop_stream, schema=STOP_STREAM_SCHEMA
     )
     hass.services.async_register(
+        DOMAIN, SERVICE_BEEP, _handle_beep, schema=BEEP_SCHEMA
+    )
+    hass.services.async_register(
+        DOMAIN, SERVICE_PLAY_SOUND, _handle_play_sound, schema=PLAY_SOUND_SCHEMA
+    )
+    hass.services.async_register(
+        DOMAIN, SERVICE_START_INTERCOM, _handle_start_intercom, schema=START_INTERCOM_SCHEMA
+    )
+    hass.services.async_register(
+        DOMAIN, SERVICE_STOP_INTERCOM, _handle_stop_intercom, schema=STOP_INTERCOM_SCHEMA
+    )
+    hass.services.async_register(
         DOMAIN,
         SERVICE_PAIR_NEW_PANEL,
         _handle_pair_new_panel,
@@ -340,3 +469,7 @@ def async_unload_services(hass: HomeAssistant) -> None:
         hass.services.async_remove(DOMAIN, SERVICE_SET_PANEL_UI)
         hass.services.async_remove(DOMAIN, SERVICE_START_STREAM)
         hass.services.async_remove(DOMAIN, SERVICE_STOP_STREAM)
+        hass.services.async_remove(DOMAIN, SERVICE_BEEP)
+        hass.services.async_remove(DOMAIN, SERVICE_PLAY_SOUND)
+        hass.services.async_remove(DOMAIN, SERVICE_START_INTERCOM)
+        hass.services.async_remove(DOMAIN, SERVICE_STOP_INTERCOM)

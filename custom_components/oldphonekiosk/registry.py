@@ -31,6 +31,8 @@ from .models import (
 from .security import hash_secret, verify_secret
 from .store import DeviceStore
 
+_UNSET = object()
+
 
 class DeviceConnection(Protocol):
     """Minimal interface a device transport must satisfy."""
@@ -350,7 +352,7 @@ class Registry:
             st.app_version = app_version
         if set_video_url:
             device.media.video_url = video_url
-            self._store.update_media(device_id, video_url, device.media.dashboard_url)
+            self._store.update_media(device_id, device.media)
         st.last_seen = utcnow()
         st.online = True
         self._store.update_state(device_id, st)
@@ -374,15 +376,38 @@ class Registry:
             device.media.video_url = video_url
         if camera_mode is not None:
             device.state.camera = camera_mode
-        self._store.update_media(device_id, device.media.video_url, device.media.dashboard_url)
+        self._store.update_media(device_id, device.media)
         self._store.update_state(device_id, device.state)
         return device
 
     def set_dashboard_url(self, device_id: str, dashboard_url: str | None) -> PanelDevice:
         """Persist and expose the dashboard URL selected from the HA device page."""
+        return self.set_media_config(device_id, dashboard_url=dashboard_url)
+
+    def set_media_config(
+        self,
+        device_id: str,
+        *,
+        dashboard_url: str | None | object = _UNSET,
+        task_source: str | None | object = _UNSET,
+        photo_source: str | None | object = _UNSET,
+        sound: str | None | object = _UNSET,
+    ) -> PanelDevice:
+        """Persist the HA-owned per-panel UI sources (dashboard/tasks/photos/sound).
+
+        Only fields explicitly passed are changed; empty strings clear to ``None``.
+        HA is the source of truth, so these persist and survive a restart.
+        """
         device = self.get_device(device_id)
-        device.media.dashboard_url = dashboard_url or None
-        self._store.update_media(device_id, device.media.video_url, device.media.dashboard_url)
+        if dashboard_url is not _UNSET:
+            device.media.dashboard_url = dashboard_url or None
+        if task_source is not _UNSET:
+            device.media.task_source = task_source or None
+        if photo_source is not _UNSET:
+            device.media.photo_source = photo_source or None
+        if sound is not _UNSET:
+            device.media.sound = sound or None
+        self._store.update_media(device_id, device.media)
         return device
 
     def set_stream(
@@ -405,7 +430,7 @@ class Registry:
             device.state.camera = camera_mode
         if set_video_url:
             device.media.video_url = video_url
-            self._store.update_media(device_id, video_url, device.media.dashboard_url)
+            self._store.update_media(device_id, device.media)
         self._store.update_state(device_id, device.state)
         return device
 
