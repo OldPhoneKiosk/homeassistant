@@ -5,10 +5,27 @@
         "title": "OldPhoneKiosk",
         "description": "Enable the Home Assistant-native OldPhoneKiosk backend. No external bridge service is required.",
         "data": {}
+      },
+      "pair": {
+        "title": "Pair a phone or tablet",
+        "description": "Scan this one-time QR code in the OldPhoneKiosk app.\n\n![Pairing QR]({qr_svg_data_uri})\n\nManual payload, if needed:\n```json\n{payload}\n```",
+        "data": {}
+      },
+      "confirm_discovered": {
+        "title": "Pair {name}",
+        "description": "OldPhoneKiosk found a nearby phone/tablet that is waiting for Home Assistant.\n\nDevice: **{name}**\nModel: **{model}**\niOS: **{ios}**\nApp: **{app_version}**\nAddress: **{host}**\n\nSubmit to confirm this is the device and send it a one-time pairing claim. No code entry or QR scan is required.",
+        "data": {}
       }
     },
+    "error": {
+      "waiting_for_phone": "Waiting for the phone/tablet to scan the QR and connect.",
+      "not_connected": "The claim was used, but the phone/tablet is not connected yet.",
+      "cannot_connect": "Home Assistant could not reach the discovered phone/tablet. Keep the app open on the same local network and try again."
+    },
     "abort": {
-      "already_configured": "OldPhoneKiosk is already configured."
+      "already_configured": "OldPhoneKiosk is already configured.",
+      "invalid_discovery": "The discovered OldPhoneKiosk advertisement was incomplete.",
+      "pairing_sent": "Pairing was sent to the discovered phone/tablet. It should appear as a device when it connects."
     }
   },
   "entity": {
