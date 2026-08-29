@@ -11,6 +11,7 @@ from homeassistant.core import HomeAssistant
 
 from .const import DOMAIN
 from .native_client import handle_device_message
+from .tasks import async_handle_task_action
 from .registry import AuthError, ClaimError, Registry, UnknownDeviceError
 from .wstoken import WsTokenService
 
@@ -104,7 +105,11 @@ class DeviceWebSocketView(HomeAssistantView):
             async for msg in ws:
                 if msg.type == WSMsgType.TEXT:
                     try:
-                        handle_device_message(registry, device_id, json.loads(msg.data))
+                        raw = json.loads(msg.data)
+                        if raw.get("type") == "task_action":
+                            await async_handle_task_action(hass, registry, device_id, raw)
+                        else:
+                            handle_device_message(registry, device_id, raw)
                     except Exception:  # noqa: BLE001 - bad device frames are ignored
                         _LOGGER.debug("Ignoring invalid device frame", exc_info=True)
                 elif msg.type in (WSMsgType.ERROR, WSMsgType.CLOSE, WSMsgType.CLOSED):

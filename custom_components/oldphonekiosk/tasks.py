@@ -7,7 +7,8 @@ import datetime as dt
 import json
 from typing import Any
 
-from homeassistant.components.todo import DOMAIN as TODO_DOMAIN, TodoListEntity
+from homeassistant.components.todo import DOMAIN as TODO_DOMAIN, TodoItem, TodoListEntity
+from homeassistant.components.todo.const import TodoItemStatus
 from homeassistant.const import CONF_ENTITY_ID
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_component import EntityComponent
@@ -15,7 +16,7 @@ from homeassistant.helpers.entity_component import EntityComponent
 from .const import CMD_SHOW_TASKS
 from .models import PanelCommand
 from .native_client import NativeOldPhoneKioskClient
-from .registry import DeviceOfflineError
+from .registry import DeviceOfflineError, Registry
 
 MAX_TASKS = 40
 
@@ -85,3 +86,60 @@ async def async_push_task_snapshot(
             await client.async_send_command(device_id, CMD_SHOW_TASKS)
     except DeviceOfflineError:
         return
+
+
+async def async_push_task_snapshot_via_registry(
+    hass: HomeAssistant,
+    registry: Registry,
+    device_id: str,
+    task_source: str,
+    *,
+    show: bool = False,
+) -> None:
+    """Push a selected HA todo snapshot using the in-process device registry."""
+    if not task_source.startswith(f"{TODO_DOMAIN}."):
+        return
+    items_json = await async_todo_items_json(hass, task_source)
+    params = {CONF_ENTITY_ID: task_source, "source": task_source, "items": items_json}
+    if show:
+        params["show"] = "true"
+    try:
+        await registry.send_command_nowait(device_id, PanelCommand.CONFIGURE_TASKS, params=params)
+        if show:
+            await registry.send_command_nowait(device_id, PanelCommand.SHOW_TASKS)
+    except DeviceOfflineError:
+        return
+
+
+async def async_handle_task_action(
+    hass: HomeAssistant,
+    registry: Registry,
+    device_id: str,
+    raw: dict[str, Any],
+) -> None:
+    """Apply a task action from a paired panel to the configured HA todo entity."""
+    source = str(raw.get("source") or "")
+    action = str(raw.get("action") or "")
+    entity = _todo_entity(hass, source)
+    if entity is None:
+        return
+
+    if action == "add":
+        summary = str(raw.get("summary") or "").strip()
+        if summary:
+            await entity.async_create_todo_item(TodoItem(summary=summary))
+            await entity.async_update_ha_state(force_refresh=True)
+    elif action == "complete":
+        uid = str(raw.get("uid") or "").strip()
+        summary = str(raw.get("summary") or "").strip()
+        if uid or summary:
+            await entity.async_update_todo_item(
+                TodoItem(
+                    uid=uid or None,
+                    summary=summary or None,
+                    status=TodoItemStatus.COMPLETED,
+                )
+            )
+            await entity.async_update_ha_state(force_refresh=True)
+
+    await async_push_task_snapshot_via_registry(hass, registry, device_id, source)

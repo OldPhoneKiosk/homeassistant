@@ -469,6 +469,25 @@ class Registry:
         finally:
             self._pending_commands.get(device_id, {}).pop(cmd.id, None)
 
+    async def send_command_nowait(
+        self, device_id: str, command: PanelCommand, params: dict | None = None
+    ) -> Command:
+        """Send a command without waiting for command_result.
+
+        Used while handling an inbound frame from the same device, where waiting
+        would block the receive loop from reading the result.
+        """
+        self.get_device(device_id)
+        conn = self._connections.get(device_id)
+        if conn is None:
+            raise DeviceOfflineError(device_id)
+        cmd = Command(id=str(uuid.uuid4()), command=command, params=params)
+        message: dict = {"type": "command", "id": cmd.id, "command": command.value}
+        if params is not None:
+            message["params"] = params
+        await conn.send_json(message)
+        return cmd
+
     def resolve_command(self, device_id: str, result: CommandResult) -> bool:
         """Deliver a command_result to a waiting sender. Returns True if matched."""
         fut = self._pending_commands.get(device_id, {}).get(result.id)

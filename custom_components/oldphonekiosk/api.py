@@ -184,11 +184,16 @@ class BridgeClient:
         payload = resp.json()
         return [PanelDeviceData.from_json(d) for d in payload.get("devices", [])]
 
-    async def async_send_command(self, device_id: str, command: str) -> dict[str, Any]:
+    async def async_send_command(
+        self, device_id: str, command: str, params: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {"command": command}
+        if params is not None:
+            body["params"] = params
         resp = await self._request(
             "POST",
             ENDPOINT_COMMANDS.format(device_id=device_id),
-            json={"command": command},
+            json=body,
         )
         return resp.json()
 

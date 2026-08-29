@@ -4,6 +4,10 @@ All notable changes to the OldPhoneKiosk Home Assistant integration are document
 
 ## Unreleased
 
+## 0.1.15 - 2026-08-29
+
+- Added write-back task actions from the phone to HA `todo.*`: completing a task and adding a new task now flow through Home Assistant to the selected Notion-backed todo list, then refresh the phone snapshot.
+
 ## 0.1.14 - 2026-08-29
 
 - Added HA todo task snapshots for the phone Tasks screen. Selecting a `todo.*` task list now pushes the list items to the paired panel via `configure_tasks` and switches the phone to Tasks.
