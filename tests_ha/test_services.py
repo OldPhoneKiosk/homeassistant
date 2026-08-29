@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import datetime, timezone
 from unittest.mock import patch
 
@@ -41,12 +42,14 @@ class _FakeClient:
                 intercom="idle",
                 stream="idle",
                 video_url=None,
+                dashboard_url=None,
                 app_version="0.1.0",
                 last_seen=datetime.now(timezone.utc),
             )
         ]
         self.media_calls: list[dict] = []
         self.stream_calls: list[tuple] = []
+        self.ui_calls: list[dict] = []
 
     async def async_get_devices(self) -> list[PanelDeviceData]:
         return list(self._devices)
@@ -79,6 +82,7 @@ class _FakeClient:
                 intercom="idle",
                 stream="idle",
                 video_url=None,
+                dashboard_url=None,
                 app_version=None,
                 last_seen=None,
             )
@@ -95,6 +99,12 @@ class _FakeClient:
 
     async def async_stop_stream(self, device_id):
         self.stream_calls.append(("stop", device_id, None))
+        return self._devices[0]
+
+    async def async_set_panel_ui(self, device_id, **kwargs):
+        self.ui_calls.append({"device_id": device_id, **kwargs})
+        current = self._devices[0]
+        self._devices[0] = replace(current, dashboard_url=kwargs.get("dashboard_url"))
         return self._devices[0]
 
     async def close(self) -> None:
@@ -209,6 +219,10 @@ async def test_pairing_button_creates_code_notification(hass: HomeAssistant):
     assert hass.states.get("select.oldphonekiosk_panel_screen") is not None
     assert hass.states.get("button.oldphonekiosk_panel_wake") is not None
     assert hass.states.get("button.oldphonekiosk_panel_sleep") is not None
+    assert hass.states.get("button.kitchen_start_camera") is not None
+    assert hass.states.get("button.kitchen_stop_camera") is not None
+    assert hass.states.get("text.kitchen_dashboard_url") is not None
+    assert hass.states.get("camera.kitchen_camera") is not None
     assert hass.states.get("sensor.oldphonekiosk_panel_battery") is not None
 
 
@@ -282,3 +296,42 @@ async def test_start_and_stop_stream_services(hass: HomeAssistant):
         ("start", "dev-1", "front"),
         ("stop", "dev-1", None),
     ]
+
+
+async def test_device_page_controls_start_camera_and_set_dashboard_url(hass: HomeAssistant):
+    fake = _FakeClient()
+    entry = MockConfigEntry(
+        domain=DOMAIN, data={CONF_BRIDGE_URL: "http://x", CONF_API_KEY: "k"}
+    )
+    entry.add_to_hass(hass)
+    with patch("custom_components.oldphonekiosk.BridgeClient", return_value=fake):
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+    await hass.services.async_call(
+        "button",
+        "press",
+        {"entity_id": "button.kitchen_start_camera"},
+        blocking=True,
+    )
+    await hass.services.async_call(
+        "text",
+        "set_value",
+        {
+            "entity_id": "text.kitchen_dashboard_url",
+            "value": "http://homeassistant.local:8123/lovelace/kitchen",
+        },
+        blocking=True,
+    )
+    await hass.async_block_till_done()
+
+    assert fake.stream_calls == [("start", "dev-1", "front")]
+    assert fake.ui_calls[-1] == {
+        "device_id": "dev-1",
+        "default_screen": "dashboard",
+        "dashboard_url": "http://homeassistant.local:8123/lovelace/kitchen",
+    }
+    assert (
+        hass.states.get("text.kitchen_dashboard_url").state
+        == "http://homeassistant.local:8123/lovelace/kitchen"
+    )

@@ -24,6 +24,17 @@
       },
       "sleep": {
         "name": "Sleep"
+      },
+      "start_camera": {
+        "name": "Start camera"
+      },
+      "stop_camera": {
+        "name": "Stop camera"
+      }
+    },
+    "text": {
+      "dashboard_url": {
+        "name": "Dashboard URL"
       }
     },
     "camera": {

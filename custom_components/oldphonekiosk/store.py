@@ -26,7 +26,7 @@ from .models import (
 )
 
 # Current schema version. Bump when adding a migration below.
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 
 # Migration to version 1: the devices table. IF NOT EXISTS makes it idempotent so
 # pre-migration databases (created before user_version tracking) upgrade cleanly.
@@ -66,6 +66,11 @@ CREATE TABLE IF NOT EXISTS claims (
 );
 """
 
+# Migration to version 4: per-panel dashboard URL controlled from HA device page.
+_MIGRATION_4 = """
+ALTER TABLE devices ADD COLUMN dashboard_url TEXT;
+"""
+
 
 def _configure_connection(conn: sqlite3.Connection, db_path: str) -> None:
     """Apply production-oriented PRAGMAs.
@@ -94,6 +99,8 @@ def _migrate(conn: sqlite3.Connection) -> None:
         conn.executescript(_MIGRATION_2)
     if version < 3:
         conn.executescript(_MIGRATION_3)
+    if version < 4:
+        conn.executescript(_MIGRATION_4)
     conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
     conn.commit()
 
@@ -145,8 +152,8 @@ class DeviceStore:
                 INSERT INTO devices (
                     device_id, name, room, model, ios_version, capabilities,
                     secret_hash, created_at, battery, brightness, screen, camera,
-                    app_version, last_seen, video_url, intercom
-                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                    app_version, last_seen, video_url, dashboard_url, intercom
+                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                 ON CONFLICT(device_id) DO UPDATE SET
                     name=excluded.name, room=excluded.room, model=excluded.model,
                     ios_version=excluded.ios_version, capabilities=excluded.capabilities,
@@ -172,6 +179,7 @@ class DeviceStore:
                     st.app_version,
                     st.last_seen.isoformat() if st.last_seen else None,
                     device.media.video_url,
+                    device.media.dashboard_url,
                     st.intercom.value if st.intercom else None,
                 ),
             )
@@ -200,12 +208,12 @@ class DeviceStore:
             )
             self._conn.commit()
 
-    def update_media(self, device_id: str, video_url: str | None) -> None:
-        """Persist the per-device media config (video_url)."""
+    def update_media(self, device_id: str, video_url: str | None, dashboard_url: str | None = None) -> None:
+        """Persist the per-device media/UI config."""
         with self._lock:
             self._conn.execute(
-                "UPDATE devices SET video_url=? WHERE device_id=?",
-                (video_url, device_id),
+                "UPDATE devices SET video_url=?, dashboard_url=? WHERE device_id=?",
+                (video_url, dashboard_url, device_id),
             )
             self._conn.commit()
 

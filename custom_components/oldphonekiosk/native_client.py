@@ -43,6 +43,7 @@ class PanelDeviceData:
     intercom: str | None
     stream: str | None
     video_url: str | None
+    dashboard_url: str | None
     app_version: str | None
     last_seen: datetime | None
 
@@ -62,6 +63,7 @@ class PanelDeviceData:
             intercom=state.intercom.value if state.intercom else None,
             stream=state.stream.value if state.stream else None,
             video_url=device.media.video_url,
+            dashboard_url=device.media.dashboard_url,
             app_version=state.app_version,
             last_seen=state.last_seen,
         )
@@ -111,6 +113,35 @@ class NativeOldPhoneKioskClient:
             "success": result.success,
             "error": result.error,
         }
+
+    async def async_set_panel_ui(
+        self,
+        device_id: str,
+        *,
+        default_screen: str | None = None,
+        enabled_screens: list[str] | None = None,
+        show_bottom_menu: bool | None = None,
+        dashboard_url: str | None = None,
+    ) -> PanelDeviceData:
+        params: dict[str, str] = {}
+        if default_screen is not None:
+            params["default_screen"] = default_screen
+        if enabled_screens is not None:
+            params["enabled_screens"] = ",".join(enabled_screens)
+        if show_bottom_menu is not None:
+            params["show_bottom_menu"] = "true" if show_bottom_menu else "false"
+        if dashboard_url is not None:
+            params["dashboard_url"] = dashboard_url
+        try:
+            device = self.registry.set_dashboard_url(device_id, dashboard_url)
+            if self.registry.is_online(device_id):
+                try:
+                    await self.registry.send_command(device_id, PanelCommand.CONFIGURE_UI, params=params)
+                except (DeviceOfflineError, asyncio.TimeoutError):
+                    pass
+        except UnknownDeviceError as exc:
+            raise BridgeNotFoundError("unknown device") from exc
+        return PanelDeviceData.from_device(device)
 
     async def async_set_media(
         self,

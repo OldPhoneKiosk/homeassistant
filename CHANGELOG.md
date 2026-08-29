@@ -4,6 +4,8 @@ All notable changes to the OldPhoneKiosk Home Assistant integration are document
 
 ## Unreleased
 
+- Added per-panel Home Assistant device-page controls: Dashboard URL text entity plus Start camera / Stop camera buttons, so users do not need Developer Tools service calls for common panel setup.
+
 ## 0.1.6 - 2026-08-29
 
 - Added no-code local discovery pairing: the iOS app advertises itself with Bonjour/mDNS and Home Assistant can confirm/send a one-time claim without manual code entry.

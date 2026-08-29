@@ -233,10 +233,12 @@ async def _async_set_panel_ui(hass: HomeAssistant, call: ServiceCall) -> None:
         raise ServiceValidationError("Set at least one panel UI option.")
 
     try:
-        await coordinator.client.registry.send_command(
+        await coordinator.client.async_set_panel_ui(
             device_id,
-            PanelCommand.CONFIGURE_UI,
-            params=params,
+            default_screen=call.data.get(ATTR_DEFAULT_SCREEN),
+            enabled_screens=call.data.get(ATTR_ENABLED_SCREENS),
+            show_bottom_menu=call.data.get(ATTR_SHOW_BOTTOM_MENU),
+            dashboard_url=call.data.get(ATTR_DASHBOARD_URL) if ATTR_DASHBOARD_URL in call.data else None,
         )
     except BridgeError as err:
         raise HomeAssistantError(f"Bridge set_panel_ui failed: {err}") from err

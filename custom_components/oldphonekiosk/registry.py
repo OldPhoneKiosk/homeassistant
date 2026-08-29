@@ -350,7 +350,7 @@ class Registry:
             st.app_version = app_version
         if set_video_url:
             device.media.video_url = video_url
-            self._store.update_media(device_id, video_url)
+            self._store.update_media(device_id, video_url, device.media.dashboard_url)
         st.last_seen = utcnow()
         st.online = True
         self._store.update_state(device_id, st)
@@ -374,8 +374,15 @@ class Registry:
             device.media.video_url = video_url
         if camera_mode is not None:
             device.state.camera = camera_mode
-        self._store.update_media(device_id, device.media.video_url)
+        self._store.update_media(device_id, device.media.video_url, device.media.dashboard_url)
         self._store.update_state(device_id, device.state)
+        return device
+
+    def set_dashboard_url(self, device_id: str, dashboard_url: str | None) -> PanelDevice:
+        """Persist and expose the dashboard URL selected from the HA device page."""
+        device = self.get_device(device_id)
+        device.media.dashboard_url = dashboard_url or None
+        self._store.update_media(device_id, device.media.video_url, device.media.dashboard_url)
         return device
 
     def set_stream(
@@ -398,7 +405,7 @@ class Registry:
             device.state.camera = camera_mode
         if set_video_url:
             device.media.video_url = video_url
-            self._store.update_media(device_id, video_url)
+            self._store.update_media(device_id, video_url, device.media.dashboard_url)
         self._store.update_state(device_id, device.state)
         return device
 

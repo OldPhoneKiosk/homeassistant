@@ -43,7 +43,12 @@
     "button": {
       "generate_pairing_code": { "name": "Generate pairing code" },
       "wake": { "name": "Wake" },
-      "sleep": { "name": "Sleep" }
+      "sleep": { "name": "Sleep" },
+      "start_camera": { "name": "Start camera" },
+      "stop_camera": { "name": "Stop camera" }
+    },
+    "text": {
+      "dashboard_url": { "name": "Dashboard URL" }
     }
   }
 }

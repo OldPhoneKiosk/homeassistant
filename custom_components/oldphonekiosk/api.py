@@ -78,6 +78,7 @@ class PanelDeviceData:
     intercom: str | None
     stream: str | None
     video_url: str | None
+    dashboard_url: str | None
     app_version: str | None
     last_seen: datetime | None
 
@@ -98,6 +99,7 @@ class PanelDeviceData:
             intercom=state.get("intercom"),
             stream=state.get("stream"),
             video_url=media.get("video_url"),
+            dashboard_url=media.get("dashboard_url"),
             app_version=state.get("app_version"),
             last_seen=_parse_dt(state.get("last_seen")),
         )
@@ -183,6 +185,37 @@ class BridgeClient:
             json={"command": command},
         )
         return resp.json()
+
+    async def async_set_panel_ui(
+        self,
+        device_id: str,
+        *,
+        default_screen: str | None = None,
+        enabled_screens: list[str] | None = None,
+        show_bottom_menu: bool | None = None,
+        dashboard_url: str | None = None,
+    ) -> PanelDeviceData:
+        """Push panel UI config via the legacy HTTP Bridge command endpoint."""
+        params: dict[str, Any] = {}
+        if default_screen is not None:
+            params["default_screen"] = default_screen
+        if enabled_screens is not None:
+            params["enabled_screens"] = ",".join(enabled_screens)
+        if show_bottom_menu is not None:
+            params["show_bottom_menu"] = "true" if show_bottom_menu else "false"
+        if dashboard_url is not None:
+            params["dashboard_url"] = dashboard_url
+        await self._request(
+            "POST",
+            ENDPOINT_COMMANDS.format(device_id=device_id),
+            json={"command": "configure_ui", "params": params},
+        )
+        # Legacy bridge may not store dashboard_url; preserve the existing device view.
+        devices = await self.async_get_devices()
+        for device in devices:
+            if device.device_id == device_id:
+                return device
+        raise BridgeNotFoundError("unknown device")
 
     async def async_delete_device(self, device_id: str) -> None:
         """Revoke/remove a device on the Bridge (DELETE, expects 204).

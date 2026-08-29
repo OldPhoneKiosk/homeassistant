@@ -90,10 +90,10 @@ class DeviceCapabilities(BaseModel):
 
 
 class DeviceMedia(BaseModel):
-    """Per-device media configuration. ``video_url`` is admin/HA-provided (e.g. a
-    go2rtc/WebRTC player page); the Bridge does not hardcode or stream it."""
+    """Per-device media/UI configuration stored per panel."""
 
     video_url: str | None = None
+    dashboard_url: str | None = None
 
 
 class DeviceState(BaseModel):

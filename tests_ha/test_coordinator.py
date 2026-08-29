@@ -41,6 +41,7 @@ def _device(device_id: str, name: str) -> PanelDeviceData:
         intercom="idle",
         stream="idle",
         video_url=None,
+        dashboard_url=None,
         app_version="0.1.0",
         last_seen=datetime.now(timezone.utc),
     )
