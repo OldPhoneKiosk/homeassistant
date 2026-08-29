@@ -11,6 +11,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import CMD_SLEEP, CMD_WAKE, DOMAIN
 from .coordinator import OldPhoneKioskCoordinator
 from .entity import OldPhoneKioskEntity
+from .media_sources import async_resolve_media_source_url, is_media_source
 from .services import async_create_pairing_response
 
 BUTTONS = (
@@ -148,7 +149,17 @@ class PanelActionButton(OldPhoneKioskEntity, ButtonEntity):
         if self._key == "beep":
             await client.async_beep(self._device_id)
         elif self._key == "play_sound":
-            await client.async_play_sound(self._device_id)
+            sound = None
+            url = None
+            device = self.device
+            stored_sound = getattr(device, "sound", None) if device else None
+            if is_media_source(stored_sound):
+                url = await async_resolve_media_source_url(self.hass, stored_sound)
+                if url is None:
+                    # Fall back to the stored value so the command result makes the
+                    # unresolved source visible instead of silently doing nothing.
+                    sound = stored_sound
+            await client.async_play_sound(self._device_id, sound=sound, url=url)
         elif self._key == "start_intercom":
             await client.async_start_intercom(self._device_id)
         elif self._key == "stop_intercom":

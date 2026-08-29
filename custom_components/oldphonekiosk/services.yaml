@@ -116,10 +116,13 @@ set_panel_ui:
         text:
     task_source:
       name: Task source
-      description: Task list id or URL feeding the tasks screen (empty to clear).
+      description: >-
+        To-do list feeding the tasks screen. Prefer the panel's Task list select on
+        the device page; here pick a todo.* entity (empty to clear).
       required: false
       selector:
-        text:
+        entity:
+          domain: todo
     photo_source:
       name: Photo source
       description: Photo feed id or URL feeding the photos screen (empty to clear).

@@ -47,18 +47,35 @@
         "name": "Stop intercom"
       }
     },
-    "text": {
-      "dashboard_url": {
-        "name": "Dashboard URL"
+    "select": {
+      "screen": {
+        "name": "Screen"
       },
-      "task_source": {
-        "name": "Task source"
+      "dashboard": {
+        "name": "Dashboard"
       },
-      "photo_source": {
-        "name": "Photo source"
+      "task_list": {
+        "name": "Task list"
       },
       "sound": {
         "name": "Sound"
+      },
+      "photo_source": {
+        "name": "Photo source"
+      }
+    },
+    "text": {
+      "custom_dashboard_url": {
+        "name": "Custom dashboard URL"
+      },
+      "custom_task_source": {
+        "name": "Custom task source"
+      },
+      "custom_photo_source": {
+        "name": "Custom photo source"
+      },
+      "custom_sound": {
+        "name": "Custom sound"
       }
     },
     "camera": {

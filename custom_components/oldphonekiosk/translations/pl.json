@@ -1,0 +1,69 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "OldPhoneKiosk",
+        "description": "Włącz natywny backend OldPhoneKiosk w Home Assistant. Zewnętrzny bridge nie jest wymagany.",
+        "data": {}
+      },
+      "pair": {
+        "title": "Sparuj telefon lub tablet",
+        "description": "W aplikacji OldPhoneKiosk otwórz **Parowanie** i wpisz ten jednorazowy kod:\n\n## {pairing_code}\n\nGdy aplikacja się połączy, naciśnij Wyślij.",
+        "data": {}
+      },
+      "confirm_discovered": {
+        "title": "Sparuj {name}",
+        "description": "OldPhoneKiosk znalazł w pobliżu telefon/tablet oczekujący na Home Assistant.\n\nUrządzenie: **{name}**\nModel: **{model}**\niOS: **{ios}**\nApp: **{app_version}**\nAdres: **{host}**\n\nZatwierdź, aby wysłać jednorazowe zgłoszenie parowania. Ręczny kod nie jest potrzebny w tym trybie Wi‑Fi.",
+        "data": {}
+      }
+    },
+    "error": {
+      "waiting_for_phone": "Oczekiwanie, aż telefon/tablet wpisze kod i się połączy.",
+      "not_connected": "Kod został użyty, ale telefon/tablet nie jest jeszcze połączony.",
+      "cannot_connect": "Home Assistant nie mógł połączyć się z wykrytym telefonem/tabletem. Zostaw aplikację otwartą w tej samej sieci lokalnej i spróbuj ponownie."
+    },
+    "abort": {
+      "already_configured": "OldPhoneKiosk jest już skonfigurowany.",
+      "invalid_discovery": "Wykryta rozgłoszona informacja OldPhoneKiosk była niekompletna.",
+      "pairing_sent": "Parowanie zostało wysłane do wykrytego telefonu/tabletu. Pojawi się jako urządzenie po połączeniu."
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "online": { "name": "Online" }
+    },
+    "sensor": {
+      "battery": { "name": "Bateria" },
+      "last_seen": { "name": "Ostatnio widziany" },
+      "app_version": { "name": "Wersja aplikacji" }
+    },
+    "select": {
+      "screen": { "name": "Ekran" },
+      "dashboard": { "name": "Dashboard" },
+      "task_list": { "name": "Lista zadań" },
+      "sound": { "name": "Dźwięk" },
+      "photo_source": { "name": "Źródło zdjęć" }
+    },
+    "button": {
+      "generate_pairing_code": { "name": "Wygeneruj kod parowania" },
+      "wake": { "name": "Wybudź" },
+      "sleep": { "name": "Uśpij" },
+      "start_front_camera": { "name": "Uruchom przednią kamerę" },
+      "start_back_camera": { "name": "Uruchom tylną kamerę" },
+      "stop_camera": { "name": "Zatrzymaj kamerę" },
+      "beep": { "name": "Sygnał" },
+      "play_sound": { "name": "Odtwórz dźwięk" },
+      "start_intercom": { "name": "Rozpocznij interkom" },
+      "stop_intercom": { "name": "Zakończ interkom" }
+    },
+    "text": {
+      "custom_dashboard_url": { "name": "Własny adres dashboardu" },
+      "custom_task_source": { "name": "Własne źródło zadań" },
+      "custom_photo_source": { "name": "Własne źródło zdjęć" },
+      "custom_sound": { "name": "Własny dźwięk" }
+    },
+    "camera": {
+      "camera": { "name": "Kamera" }
+    }
+  }
+}

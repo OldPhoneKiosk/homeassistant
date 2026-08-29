@@ -38,17 +38,32 @@
       "app_version": { "name": "App version" }
     },
     "select": {
-      "screen": { "name": "Screen" }
+      "screen": { "name": "Screen" },
+      "dashboard": { "name": "Dashboard" },
+      "task_list": { "name": "Task list" },
+      "sound": { "name": "Sound" },
+      "photo_source": { "name": "Photo source" }
     },
     "button": {
       "generate_pairing_code": { "name": "Generate pairing code" },
       "wake": { "name": "Wake" },
       "sleep": { "name": "Sleep" },
-      "start_camera": { "name": "Start camera" },
-      "stop_camera": { "name": "Stop camera" }
+      "start_front_camera": { "name": "Start front camera" },
+      "start_back_camera": { "name": "Start back camera" },
+      "stop_camera": { "name": "Stop camera" },
+      "beep": { "name": "Beep" },
+      "play_sound": { "name": "Play sound" },
+      "start_intercom": { "name": "Start intercom" },
+      "stop_intercom": { "name": "Stop intercom" }
     },
     "text": {
-      "dashboard_url": { "name": "Dashboard URL" }
+      "custom_dashboard_url": { "name": "Custom dashboard URL" },
+      "custom_task_source": { "name": "Custom task source" },
+      "custom_photo_source": { "name": "Custom photo source" },
+      "custom_sound": { "name": "Custom sound" }
+    },
+    "camera": {
+      "camera": { "name": "Camera" }
     }
   }
 }

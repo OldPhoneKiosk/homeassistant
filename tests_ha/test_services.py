@@ -256,10 +256,15 @@ async def test_pairing_button_creates_code_notification(hass: HomeAssistant):
     assert hass.states.get("button.kitchen_play_sound") is not None
     assert hass.states.get("button.kitchen_start_intercom") is not None
     assert hass.states.get("button.kitchen_stop_intercom") is not None
-    assert hass.states.get("text.kitchen_dashboard_url") is not None
-    assert hass.states.get("text.kitchen_task_source") is not None
-    assert hass.states.get("text.kitchen_photo_source") is not None
-    assert hass.states.get("text.kitchen_sound") is not None
+    assert hass.states.get("text.kitchen_custom_dashboard_url") is not None
+    assert hass.states.get("text.kitchen_custom_task_source") is not None
+    assert hass.states.get("text.kitchen_custom_photo_source") is not None
+    assert hass.states.get("text.kitchen_custom_sound") is not None
+    # HA-first source pickers: primary UX is the select controls on the device page.
+    assert hass.states.get("select.kitchen_dashboard") is not None
+    assert hass.states.get("select.kitchen_task_list") is not None
+    assert hass.states.get("select.kitchen_sound") is not None
+    assert hass.states.get("select.kitchen_photo_source") is not None
     assert hass.states.get("camera.kitchen_camera") is not None
     assert hass.states.get("sensor.oldphonekiosk_panel_battery") is not None
 
@@ -356,7 +361,7 @@ async def test_device_page_controls_start_camera_and_set_dashboard_url(hass: Hom
         "text",
         "set_value",
         {
-            "entity_id": "text.kitchen_dashboard_url",
+            "entity_id": "text.kitchen_custom_dashboard_url",
             "value": "http://homeassistant.local:8123/lovelace/kitchen",
         },
         blocking=True,
@@ -370,7 +375,7 @@ async def test_device_page_controls_start_camera_and_set_dashboard_url(hass: Hom
         "dashboard_url": "http://homeassistant.local:8123/lovelace/kitchen",
     }
     assert (
-        hass.states.get("text.kitchen_dashboard_url").state
+        hass.states.get("text.kitchen_custom_dashboard_url").state
         == "http://homeassistant.local:8123/lovelace/kitchen"
     )
 
@@ -402,20 +407,20 @@ async def test_task_photo_sound_text_and_action_buttons(hass: HomeAssistant):
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
-    # Text sources push configure_ui (tasks/photos) and persist the sound target.
+    # Custom (advanced) text sources push configure_ui (tasks/photos) and persist sound.
     await hass.services.async_call(
         "text", "set_value",
-        {"entity_id": "text.kitchen_task_source", "value": "todo.kitchen"},
+        {"entity_id": "text.kitchen_custom_task_source", "value": "todo.kitchen"},
         blocking=True,
     )
     await hass.services.async_call(
         "text", "set_value",
-        {"entity_id": "text.kitchen_photo_source", "value": "album.family"},
+        {"entity_id": "text.kitchen_custom_photo_source", "value": "album.family"},
         blocking=True,
     )
     await hass.services.async_call(
         "text", "set_value",
-        {"entity_id": "text.kitchen_sound", "value": "1007"},
+        {"entity_id": "text.kitchen_custom_sound", "value": "1007"},
         blocking=True,
     )
     await hass.async_block_till_done()
@@ -423,9 +428,9 @@ async def test_task_photo_sound_text_and_action_buttons(hass: HomeAssistant):
     assert fake.ui_calls[-2]["task_source"] == "todo.kitchen"
     assert fake.ui_calls[-1]["photo_source"] == "album.family"
     assert fake.sound_calls == [("dev-1", "1007")]
-    assert hass.states.get("text.kitchen_task_source").state == "todo.kitchen"
-    assert hass.states.get("text.kitchen_photo_source").state == "album.family"
-    assert hass.states.get("text.kitchen_sound").state == "1007"
+    assert hass.states.get("text.kitchen_custom_task_source").state == "todo.kitchen"
+    assert hass.states.get("text.kitchen_custom_photo_source").state == "album.family"
+    assert hass.states.get("text.kitchen_custom_sound").state == "1007"
 
     # Action buttons dispatch beep / play_sound / start+stop intercom.
     for entity in (
@@ -441,6 +446,97 @@ async def test_task_photo_sound_text_and_action_buttons(hass: HomeAssistant):
 
     kinds = [call[0] for call in fake.action_calls]
     assert kinds == ["beep", "play_sound", "start_intercom", "stop_intercom"]
+
+
+async def test_source_selects_apply_from_ha_resources(hass: HomeAssistant):
+    """HA-first pickers: dashboard/task-list/sound selects apply immediately."""
+    fake = _FakeClient()
+    entry = MockConfigEntry(
+        domain=DOMAIN, data={CONF_BRIDGE_URL: "http://x", CONF_API_KEY: "k"}
+    )
+    entry.add_to_hass(hass)
+    with patch("custom_components.oldphonekiosk.BridgeClient", return_value=fake):
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+    # A to-do list is offered to the task-list select as a ready pick.
+    hass.states.async_set("todo.kitchen", "0")
+    await hass.async_block_till_done()
+
+    # Dashboard select pushes the dashboard screen + URL (no manual string typing).
+    await hass.services.async_call(
+        "select", "select_option",
+        {"entity_id": "select.kitchen_dashboard", "option": "/lovelace"},
+        blocking=True,
+    )
+    # Task-list select stores the todo entity id chosen from HA states.
+    await hass.services.async_call(
+        "select", "select_option",
+        {"entity_id": "select.kitchen_task_list", "option": "todo.kitchen"},
+        blocking=True,
+    )
+    # Sound select stores a system-sound id preset.
+    await hass.services.async_call(
+        "select", "select_option",
+        {"entity_id": "select.kitchen_sound", "option": "1013"},
+        blocking=True,
+    )
+    await hass.async_block_till_done()
+
+    assert {
+        "device_id": "dev-1",
+        "default_screen": "dashboard",
+        "dashboard_url": "/lovelace",
+    } in fake.ui_calls
+    assert any(c.get("task_source") == "todo.kitchen" for c in fake.ui_calls)
+    assert fake.sound_calls == [("dev-1", "1013")]
+
+    assert hass.states.get("select.kitchen_dashboard").state == "/lovelace"
+    assert hass.states.get("select.kitchen_task_list").state == "todo.kitchen"
+    assert hass.states.get("select.kitchen_sound").state == "1013"
+    assert "todo.kitchen" in hass.states.get("select.kitchen_task_list").attributes["options"]
+
+
+async def test_play_sound_button_resolves_media_source_sound(hass: HomeAssistant, monkeypatch):
+    """A HA media-source sound selection is resolved to a phone-playable URL."""
+    fake = _FakeClient()
+    entry = MockConfigEntry(
+        domain=DOMAIN, data={CONF_BRIDGE_URL: "http://x", CONF_API_KEY: "k"}
+    )
+    entry.add_to_hass(hass)
+    with patch("custom_components.oldphonekiosk.BridgeClient", return_value=fake):
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+    async def _resolve(_hass, value):
+        assert value == "media-source://media_source/local/chime.mp3"
+        return "http://homeassistant.local:8123/media/local/chime.mp3"
+
+    monkeypatch.setattr(
+        "custom_components.oldphonekiosk.button.async_resolve_media_source_url",
+        _resolve,
+    )
+
+    await hass.services.async_call(
+        "text", "set_value",
+        {
+            "entity_id": "text.kitchen_custom_sound",
+            "value": "media-source://media_source/local/chime.mp3",
+        },
+        blocking=True,
+    )
+    await hass.services.async_call(
+        "button", "press", {"entity_id": "button.kitchen_play_sound"}, blocking=True
+    )
+    await hass.async_block_till_done()
+
+    assert fake.sound_calls == [("dev-1", "media-source://media_source/local/chime.mp3")]
+    assert fake.action_calls[-1] == (
+        "play_sound",
+        "dev-1",
+        None,
+        "http://homeassistant.local:8123/media/local/chime.mp3",
+    )
 
 
 async def test_play_sound_and_intercom_services(hass: HomeAssistant):

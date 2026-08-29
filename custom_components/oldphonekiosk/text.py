@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from homeassistant.components.text import TextEntity
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -74,12 +75,13 @@ class _PanelText(OldPhoneKioskEntity, TextEntity):
 
 
 class DashboardUrlText(_PanelText):
-    """Dashboard URL pushed to one phone/tablet panel."""
+    """Advanced/manual dashboard URL — fallback to the Dashboard select."""
 
     _key = "dashboard_url"
-    _attr_translation_key = "dashboard_url"
-    _attr_name = "Dashboard URL"
+    _attr_translation_key = "custom_dashboard_url"
+    _attr_name = "Custom dashboard URL"
     _attr_icon = "mdi:view-dashboard"
+    _attr_entity_category = EntityCategory.CONFIG
 
     def _device_value(self) -> str | None:
         device = self.device
@@ -101,9 +103,10 @@ class TaskSourceText(_PanelText):
     """Task list id / source URL feeding the panel's tasks screen."""
 
     _key = "task_source"
-    _attr_translation_key = "task_source"
-    _attr_name = "Task source"
+    _attr_translation_key = "custom_task_source"
+    _attr_name = "Custom task source"
     _attr_icon = "mdi:format-list-checks"
+    _attr_entity_category = EntityCategory.CONFIG
 
     def _device_value(self) -> str | None:
         device = self.device
@@ -123,9 +126,10 @@ class PhotoSourceText(_PanelText):
     """Photo feed id / source URL feeding the panel's photos screen."""
 
     _key = "photo_source"
-    _attr_translation_key = "photo_source"
-    _attr_name = "Photo source"
+    _attr_translation_key = "custom_photo_source"
+    _attr_name = "Custom photo source"
     _attr_icon = "mdi:image-multiple"
+    _attr_entity_category = EntityCategory.CONFIG
 
     def _device_value(self) -> str | None:
         device = self.device
@@ -149,9 +153,10 @@ class SoundText(_PanelText):
     """
 
     _key = "sound"
-    _attr_translation_key = "sound"
-    _attr_name = "Sound"
+    _attr_translation_key = "custom_sound"
+    _attr_name = "Custom sound"
     _attr_icon = "mdi:music-note"
+    _attr_entity_category = EntityCategory.CONFIG
 
     def _device_value(self) -> str | None:
         device = self.device

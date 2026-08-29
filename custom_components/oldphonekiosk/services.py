@@ -50,6 +50,7 @@ from .const import (
 )
 from .models import PanelCommand
 from .coordinator import OldPhoneKioskCoordinator
+from .media_sources import async_resolve_media_source_url, is_media_source
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -306,11 +307,18 @@ async def _async_play_sound(hass: HomeAssistant, call: ServiceCall) -> None:
         raise ServiceValidationError(
             f"No configured OldPhoneKiosk backend knows device '{device_id}'."
         )
+    sound = call.data.get(ATTR_SOUND)
+    url = call.data.get(ATTR_SOUND_URL)
+    if not url and is_media_source(sound):
+        resolved_url = await async_resolve_media_source_url(hass, sound)
+        if resolved_url:
+            url = resolved_url
+            sound = None
     try:
         await coordinator.client.async_play_sound(
             device_id,
-            sound=call.data.get(ATTR_SOUND),
-            url=call.data.get(ATTR_SOUND_URL),
+            sound=sound,
+            url=url,
         )
     except BridgeError as err:
         raise HomeAssistantError(f"Bridge play_sound failed: {err}") from err
