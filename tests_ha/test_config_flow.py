@@ -129,6 +129,7 @@ def _discovered_panel():
 
 
 async def test_zeroconf_flow_confirms_and_pushes_claim(monkeypatch, hass: HomeAssistant):
+    hass.config.internal_url = "http://192.168.18.10:8123"
     session = _FakeSession()
     monkeypatch.setattr(
         "custom_components.oldphonekiosk.config_flow.async_get_clientsession",
@@ -154,6 +155,7 @@ async def test_zeroconf_flow_confirms_and_pushes_claim(monkeypatch, hass: HomeAs
     assert session.posts[0][0] == "http://192.168.18.50:8766/pair-claim"
     payload = session.posts[0][1]
     assert payload["type"] == "claim"
+    assert payload["bridge_url"] == "http://192.168.18.10:8123"
     assert payload["name"] == "Kitchen iPad"
     assert payload["claim_token"]
 

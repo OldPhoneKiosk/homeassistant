@@ -4,6 +4,10 @@ All notable changes to the OldPhoneKiosk Home Assistant integration are document
 
 ## Unreleased
 
+## 0.1.10 - 2026-08-29
+
+- Pairing now prefers Home Assistant's configured Local/Internal URL when sending the connection URL to the phone, preventing newly paired devices from saving an unreachable fallback URL and staying stuck on “Connecting”.
+
 ## 0.1.9 - 2026-08-29
 
 - Fixed the Dashboard select to send phone-loadable absolute Home Assistant URLs when HA has an internal/external URL configured, instead of sending only `/lovelace/...` paths.

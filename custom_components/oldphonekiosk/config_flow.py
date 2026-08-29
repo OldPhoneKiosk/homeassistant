@@ -181,6 +181,9 @@ class OldPhoneKioskConfigFlow(ConfigFlow, domain=DOMAIN):
         )
 
     def _ha_base_url(self) -> str:
+        for candidate in (self.hass.config.internal_url, self.hass.config.external_url):
+            if candidate:
+                return candidate.rstrip("/")
         try:
             return get_url(self.hass, prefer_external=False).rstrip("/")
         except Exception:  # noqa: BLE001 - fallback for tests/minimal HA config
