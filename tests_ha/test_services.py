@@ -52,6 +52,7 @@ class _FakeClient:
         self.ui_calls: list[dict] = []
         self.sound_calls: list[tuple] = []
         self.action_calls: list[tuple] = []
+        self.command_calls: list[tuple] = []
 
     async def async_get_devices(self) -> list[PanelDeviceData]:
         return list(self._devices)
@@ -61,6 +62,10 @@ class _FakeClient:
             {"device_id": device_id, "video_url": video_url, "camera_mode": camera_mode}
         )
         return self._devices[0]
+
+    async def async_send_command(self, device_id, command, params=None):
+        self.command_calls.append((device_id, command, params))
+        return {"id": "c", "status": "completed", "success": True}
 
     async def async_delete_device(self, device_id: str) -> None:
         self.deleted.append(device_id)
@@ -490,6 +495,8 @@ async def test_source_selects_apply_from_ha_resources(hass: HomeAssistant):
         "dashboard_url": "http://homeassistant.local:8123/lovelace",
     } in fake.ui_calls
     assert any(c.get("task_source") == "todo.kitchen" for c in fake.ui_calls)
+    assert ("dev-1", "configure_tasks", {"entity_id": "todo.kitchen", "source": "todo.kitchen", "items": "[]", "show": "true"}) in fake.command_calls
+    assert ("dev-1", "show_tasks", None) in fake.command_calls
     assert fake.sound_calls == [("dev-1", "1013")]
 
     assert hass.states.get("select.kitchen_dashboard").state == "http://homeassistant.local:8123/lovelace"

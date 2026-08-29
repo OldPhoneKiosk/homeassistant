@@ -41,6 +41,7 @@ class PanelCommand(str, Enum):
     SHOW_ACTIONS = "show_actions"
     SHOW_DASHBOARD = "show_dashboard"
     CONFIGURE_UI = "configure_ui"
+    CONFIGURE_TASKS = "configure_tasks"
     SLEEP = "sleep"
     WAKE = "wake"
     START_STREAM = "start_stream"

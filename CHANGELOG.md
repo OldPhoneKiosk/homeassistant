@@ -4,6 +4,10 @@ All notable changes to the OldPhoneKiosk Home Assistant integration are document
 
 ## Unreleased
 
+## 0.1.14 - 2026-08-29
+
+- Added HA todo task snapshots for the phone Tasks screen. Selecting a `todo.*` task list now pushes the list items to the paired panel via `configure_tasks` and switches the phone to Tasks.
+
 ## 0.1.13 - 2026-08-29
 
 - Fixed additional Lovelace dashboard URLs: dashboards such as `dashboard-oscar` now generate top-level paths like `/dashboard-oscar/2` instead of invalid `/lovelace/dashboard-oscar/2` paths.

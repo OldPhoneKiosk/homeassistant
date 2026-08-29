@@ -17,6 +17,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import DOMAIN, SCREEN_DASHBOARD
 from .coordinator import OldPhoneKioskCoordinator
 from .entity import OldPhoneKioskEntity
+from .tasks import async_push_task_snapshot
 
 
 async def async_setup_entry(
@@ -116,6 +117,9 @@ class TaskSourceText(_PanelText):
         task_source = value.strip()
         await self.coordinator.client.async_set_panel_ui(
             self._device_id, task_source=task_source
+        )
+        await async_push_task_snapshot(
+            self.hass, self.coordinator.client, self._device_id, task_source, show=True
         )
         self._attr_native_value = task_source or None
         self.async_write_ha_state()

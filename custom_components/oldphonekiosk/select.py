@@ -26,6 +26,7 @@ from .const import DOMAIN, SCREEN_DASHBOARD, SCREEN_TO_COMMAND, SCREENS
 from .coordinator import OldPhoneKioskCoordinator
 from .entity import OldPhoneKioskEntity
 from .media_sources import async_media_source_options
+from .tasks import async_push_task_snapshot
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -320,6 +321,9 @@ class TaskListSelect(_SourceSelect):
     async def async_select_option(self, option: str) -> None:
         await self.coordinator.client.async_set_panel_ui(
             self._device_id, task_source=option
+        )
+        await async_push_task_snapshot(
+            self.hass, self.coordinator.client, self._device_id, option, show=True
         )
         self._apply_selected(option)
         await self.coordinator.async_request_refresh()
