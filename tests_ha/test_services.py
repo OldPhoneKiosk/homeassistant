@@ -450,6 +450,7 @@ async def test_task_photo_sound_text_and_action_buttons(hass: HomeAssistant):
 
 async def test_source_selects_apply_from_ha_resources(hass: HomeAssistant):
     """HA-first pickers: dashboard/task-list/sound selects apply immediately."""
+    hass.config.internal_url = "http://homeassistant.local:8123"
     fake = _FakeClient()
     entry = MockConfigEntry(
         domain=DOMAIN, data={CONF_BRIDGE_URL: "http://x", CONF_API_KEY: "k"}
@@ -486,15 +487,62 @@ async def test_source_selects_apply_from_ha_resources(hass: HomeAssistant):
     assert {
         "device_id": "dev-1",
         "default_screen": "dashboard",
-        "dashboard_url": "/lovelace",
+        "dashboard_url": "http://homeassistant.local:8123/lovelace",
     } in fake.ui_calls
     assert any(c.get("task_source") == "todo.kitchen" for c in fake.ui_calls)
     assert fake.sound_calls == [("dev-1", "1013")]
 
-    assert hass.states.get("select.kitchen_dashboard").state == "/lovelace"
+    assert hass.states.get("select.kitchen_dashboard").state == "http://homeassistant.local:8123/lovelace"
     assert hass.states.get("select.kitchen_task_list").state == "todo.kitchen"
     assert hass.states.get("select.kitchen_sound").state == "1013"
     assert "todo.kitchen" in hass.states.get("select.kitchen_task_list").attributes["options"]
+
+
+async def test_dashboard_select_offers_lovelace_view_tabs(hass: HomeAssistant):
+    """Dashboard picker includes concrete Lovelace view/tab URLs."""
+    hass.config.internal_url = "http://homeassistant.local:8123"
+
+    class _FakeLovelaceDashboard:
+        async def async_load(self, force):
+            return {
+                "views": [
+                    {"title": "ADA", "path": "ada"},
+                    {"title": "TOMAS", "path": "tomas"},
+                    {"title": "OSCAR", "path": "oscar"},
+                    {"title": "Kitchen", "path": "dashboard"},
+                ]
+            }
+
+    hass.data["lovelace"] = {"dashboards": {None: _FakeLovelaceDashboard()}}
+
+    fake = _FakeClient()
+    entry = MockConfigEntry(
+        domain=DOMAIN, data={CONF_BRIDGE_URL: "http://x", CONF_API_KEY: "k"}
+    )
+    entry.add_to_hass(hass)
+    with patch("custom_components.oldphonekiosk.BridgeClient", return_value=fake):
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+    state = hass.states.get("select.kitchen_dashboard")
+    assert state is not None
+    assert "/lovelace/ada" in state.attributes["options"]
+    assert "/lovelace/tomas" in state.attributes["options"]
+    assert "/lovelace/oscar" in state.attributes["options"]
+    assert "/lovelace/dashboard" in state.attributes["options"]
+
+    await hass.services.async_call(
+        "select", "select_option",
+        {"entity_id": "select.kitchen_dashboard", "option": "/lovelace/dashboard"},
+        blocking=True,
+    )
+    await hass.async_block_till_done()
+
+    assert {
+        "device_id": "dev-1",
+        "default_screen": "dashboard",
+        "dashboard_url": "http://homeassistant.local:8123/lovelace/dashboard",
+    } in fake.ui_calls
 
 
 async def test_play_sound_button_resolves_media_source_sound(hass: HomeAssistant, monkeypatch):

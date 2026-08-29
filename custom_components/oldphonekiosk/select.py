@@ -38,6 +38,20 @@ SOUND_PRESET_IDS = ["1007", "1013", "1016", "1057", "1104", "1304"]
 DEFAULT_DASHBOARD_URLS = ["/lovelace", "/lovelace/default_view"]
 
 
+def _absolute_dashboard_url(hass: HomeAssistant, dashboard_url: str) -> str:
+    """Return a phone-loadable absolute dashboard URL when HA knows its base URL."""
+    url = dashboard_url.strip()
+    if not url or "://" in url:
+        return url
+
+    base_url = hass.config.internal_url or hass.config.external_url
+    if base_url:
+        base = base_url.rstrip("/")
+        path = url if url.startswith("/") else f"/{url}"
+        return f"{base}{path}"
+    return url
+
+
 def _todo_entities(hass: HomeAssistant) -> list[str]:
     """Return the ``todo.*`` entity ids currently known to HA."""
     return sorted(hass.states.async_entity_ids("todo"))
@@ -58,10 +72,58 @@ def _dashboard_urls(hass: HomeAssistant) -> list[str]:
     urls: list[str] = []
     if isinstance(dashboards, dict):
         for url_path in dashboards:
-            if url_path in (None, "lovelace"):
-                urls.append("/lovelace")
-            else:
-                urls.append(f"/lovelace/{url_path}")
+            path = _dashboard_base_path(url_path)
+            if path not in urls:
+                urls.append(path)
+    return urls
+
+
+def _dashboard_base_path(url_path: str | None) -> str:
+    """Return the frontend path for a Lovelace dashboard."""
+    if url_path in (None, "lovelace"):
+        return "/lovelace"
+    if str(url_path).startswith("/"):
+        return str(url_path)
+    if str(url_path).startswith("lovelace"):
+        return f"/{url_path}"
+    return f"/lovelace/{url_path}"
+
+
+async def _dashboard_view_urls(hass: HomeAssistant) -> list[str]:
+    """Best-effort dashboard + view/tab URLs from loaded Lovelace configs."""
+    data = hass.data.get("lovelace")
+    dashboards = None
+    if data is not None:
+        dashboards = getattr(data, "dashboards", None)
+        if dashboards is None and isinstance(data, dict):
+            dashboards = data.get("dashboards")
+    if not isinstance(dashboards, dict):
+        return []
+
+    urls: list[str] = []
+    for url_path, dashboard in dashboards.items():
+        base_path = _dashboard_base_path(url_path)
+        if base_path not in urls:
+            urls.append(base_path)
+        async_load = getattr(dashboard, "async_load", None)
+        if async_load is None:
+            continue
+        try:
+            config = await async_load(False)
+        except Exception:  # noqa: BLE001 - Lovelace configs may be missing/unloadable.
+            continue
+        views = config.get("views", []) if isinstance(config, dict) else []
+        if not isinstance(views, list):
+            continue
+        for index, view in enumerate(views):
+            if not isinstance(view, dict):
+                continue
+            view_path = str(view.get("path") or index).strip("/")
+            if not view_path:
+                continue
+            url = f"{base_path}/{view_path}"
+            if url not in urls:
+                urls.append(url)
     return urls
 
 
@@ -183,17 +245,26 @@ class DashboardSelect(_SourceSelect):
     def _discovered(self) -> list[str]:
         return _dashboard_urls(self.hass) or DEFAULT_DASHBOARD_URLS
 
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        await self._async_refresh_views()
+
+    async def _async_refresh_views(self) -> None:
+        self._discovered_extra = await _dashboard_view_urls(self.hass)
+        self.async_write_ha_state()
+
     def _stored(self) -> str | None:
         device = self.device
         return device.dashboard_url if device else None
 
     async def async_select_option(self, option: str) -> None:
+        dashboard_url = _absolute_dashboard_url(self.hass, option)
         await self.coordinator.client.async_set_panel_ui(
             self._device_id,
             default_screen=SCREEN_DASHBOARD,
-            dashboard_url=option,
+            dashboard_url=dashboard_url,
         )
-        self._apply_selected(option)
+        self._apply_selected(dashboard_url)
         await self.coordinator.async_request_refresh()
 
 

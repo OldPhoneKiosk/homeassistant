@@ -4,6 +4,11 @@ All notable changes to the OldPhoneKiosk Home Assistant integration are document
 
 ## Unreleased
 
+## 0.1.9 - 2026-08-29
+
+- Fixed the Dashboard select to send phone-loadable absolute Home Assistant URLs when HA has an internal/external URL configured, instead of sending only `/lovelace/...` paths.
+- Added Lovelace view/tab URLs to Dashboard select options when HA exposes dashboard views, so the phone can be pointed directly at tabs like `/lovelace/ada`, `/lovelace/tomas` or `/lovelace/dashboard`.
+
 ## 0.1.8 - 2026-08-29
 
 - Added HA-first per-panel select controls for Dashboard, Task list, Sound and Photo source on the device page, so users can pick from Home Assistant resources instead of typing raw values.
