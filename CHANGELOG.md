@@ -4,6 +4,10 @@ All notable changes to the OldPhoneKiosk Home Assistant integration are document
 
 ## Unreleased
 
+## 0.1.13 - 2026-08-29
+
+- Fixed additional Lovelace dashboard URLs: dashboards such as `dashboard-oscar` now generate top-level paths like `/dashboard-oscar/2` instead of invalid `/lovelace/dashboard-oscar/2` paths.
+
 ## 0.1.12 - 2026-08-29
 
 - When Lovelace view/tab URLs are discoverable, the Dashboard select now exposes the concrete tab URLs only and avoids the default `/lovelace` / `/lovelace/0` Home target that caused panels to refresh back to Home.

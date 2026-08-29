@@ -513,7 +513,16 @@ async def test_dashboard_select_offers_lovelace_view_tabs(hass: HomeAssistant):
                 ]
             }
 
-    hass.data["lovelace"] = {"dashboards": {None: _FakeLovelaceDashboard()}}
+    class _FakeOscarDashboard:
+        async def async_load(self, force):
+            return {"views": [{"title": "Overview"}, {"title": "Rooms"}, {"title": "Kids"}]}
+
+    hass.data["lovelace"] = {
+        "dashboards": {
+            None: _FakeLovelaceDashboard(),
+            "dashboard-oscar": _FakeOscarDashboard(),
+        }
+    }
 
     fake = _FakeClient()
     entry = MockConfigEntry(
@@ -532,10 +541,13 @@ async def test_dashboard_select_offers_lovelace_view_tabs(hass: HomeAssistant):
     assert "/lovelace/tomas" in state.attributes["options"]
     assert "/lovelace/oscar" in state.attributes["options"]
     assert "/lovelace/dashboard" in state.attributes["options"]
+    assert "/dashboard-oscar/0" in state.attributes["options"]
+    assert "/dashboard-oscar/2" in state.attributes["options"]
+    assert "/lovelace/dashboard-oscar/2" not in state.attributes["options"]
 
     await hass.services.async_call(
         "select", "select_option",
-        {"entity_id": "select.kitchen_dashboard", "option": "/lovelace/dashboard"},
+        {"entity_id": "select.kitchen_dashboard", "option": "/dashboard-oscar/2"},
         blocking=True,
     )
     await hass.async_block_till_done()
@@ -543,7 +555,7 @@ async def test_dashboard_select_offers_lovelace_view_tabs(hass: HomeAssistant):
     assert {
         "device_id": "dev-1",
         "default_screen": "dashboard",
-        "dashboard_url": "http://homeassistant.local:8123/lovelace/dashboard",
+        "dashboard_url": "http://homeassistant.local:8123/dashboard-oscar/2",
     } in fake.ui_calls
 
 

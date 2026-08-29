@@ -79,14 +79,17 @@ def _dashboard_urls(hass: HomeAssistant) -> list[str]:
 
 
 def _dashboard_base_path(url_path: str | None) -> str:
-    """Return the frontend path for a Lovelace dashboard."""
+    """Return the frontend path for a Lovelace dashboard.
+
+    Home Assistant's default dashboard lives under ``/lovelace``. Additional
+    dashboards use their configured ``url_path`` as a top-level frontend path,
+    e.g. a dashboard with ``url_path=dashboard-oscar`` is served at
+    ``/dashboard-oscar``, not ``/lovelace/dashboard-oscar``.
+    """
     if url_path in (None, "lovelace"):
         return "/lovelace"
-    if str(url_path).startswith("/"):
-        return str(url_path)
-    if str(url_path).startswith("lovelace"):
-        return f"/{url_path}"
-    return f"/lovelace/{url_path}"
+    path = str(url_path).strip("/")
+    return f"/{path}"
 
 
 def _looks_like_default_lovelace_home(url: str) -> bool:
