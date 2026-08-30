@@ -37,14 +37,26 @@ def _stringify(value: Any) -> str | None:
     return str(value)
 
 
-def _task_item_dict(item: Any) -> dict[str, str]:
+def _task_item_dict(item: Any) -> dict[str, Any]:
     raw = dataclasses.asdict(item) if dataclasses.is_dataclass(item) else dict(item)
     uid = _stringify(raw.get("uid") or raw.get("id") or raw.get("summary") or "") or ""
-    result: dict[str, str] = {"uid": uid}
-    for key in ("summary", "status", "due", "description"):
+    result: dict[str, Any] = {"uid": uid}
+    for key in ("summary", "status", "due", "description", "assignee"):
         value = _stringify(raw.get(key))
         if value:
             result[key] = value
+    details = {
+        key: value
+        for key, value in (
+            (_stringify(value), _stringify(raw_value))
+            for value, raw_value in raw.items()
+        )
+        if key
+        and value
+        and key not in {"uid", "id", "summary", "status", "due", "description"}
+    }
+    if details:
+        result["details"] = details
     return result
 
 
