@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.19 - 2026-08-30
+
+- Add authenticated panel photo snapshot endpoint for the iOS Photos screen.
+- Discover `camera.*` entities in the panel Photo source picker and prefer cameras with imported media such as Google Photos Album.
+- Selecting a Photo source now switches the panel to the Photos screen.
+
 ## 0.1.18 - 2026-08-30
 
 - Include task `assignee` and a JSON `details` object in snapshots sent to iOS so the phone can show task detail modals.

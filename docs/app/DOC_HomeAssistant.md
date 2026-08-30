@@ -20,7 +20,7 @@ After a panel is paired, OldPhoneKiosk exposes entities and services that can be
 | `select.<panel>_screen` | requested panel screen (photos/tasks/actions/dashboard/home/sleep) |
 | `text.<panel>_dashboard_url` | dashboard the panel shows on the dashboard screen |
 | `text.<panel>_task_source` | task list id/URL feeding the tasks screen |
-| `text.<panel>_photo_source` | photo feed id/URL feeding the photos screen |
+| `text.<panel>_photo_source` / `select.<panel>_photo_source` | photo feed/camera feeding the photos screen; `camera.*` entities are served through the authenticated panel snapshot endpoint |
 | `text.<panel>_sound` | sound name/id/URL dispatched by the Play sound button |
 | `number.<panel>_dim_after` | seconds before the app dims the panel UI while idle |
 | `number.<panel>_sleep_screen_after` | seconds before the app enters its sleep/blank screen while idle |

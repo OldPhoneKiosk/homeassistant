@@ -23,10 +23,11 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN, SCREEN_DASHBOARD, SCREEN_TO_COMMAND, SCREENS
+from .const import DOMAIN, SCREEN_DASHBOARD, SCREEN_PHOTOS, SCREEN_TO_COMMAND, SCREENS
 from .coordinator import OldPhoneKioskCoordinator
 from .entity import OldPhoneKioskEntity
 from .media_sources import async_media_source_options
+from .photos import async_camera_source_options
 from .tasks import async_push_task_snapshot
 
 _LOGGER = logging.getLogger(__name__)
@@ -426,14 +427,19 @@ class PhotoSourceSelect(_SourceSelect):
 
     async def _async_refresh_sources(self) -> None:
         """Populate options from ``media_source`` albums/folders (best-effort)."""
-        self._discovered_extra = await async_media_source_options(
-            self.hass, kind="photos"
-        )
+        media_options = await async_media_source_options(self.hass, kind="photos")
+        self._discovered_extra = [
+            *async_camera_source_options(self.hass),
+            *media_options,
+        ]
         self.async_write_ha_state()
 
     async def async_select_option(self, option: str) -> None:
         await self.coordinator.client.async_set_panel_ui(
-            self._device_id, photo_source=option
+            self._device_id, default_screen=SCREEN_PHOTOS, photo_source=option
         )
         self._apply_selected(option)
+        await self.coordinator.client.async_send_command(
+            self._device_id, SCREEN_TO_COMMAND[SCREEN_PHOTOS]
+        )
         await self.coordinator.async_request_refresh()
