@@ -12,6 +12,7 @@ from homeassistant.core import HomeAssistant
 from .const import DOMAIN
 from .models import PanelCommand
 from .native_client import handle_device_message
+from .photos import async_get_photo_snapshot
 from .registry import AuthError, ClaimError, Registry, UnknownDeviceError
 from .tasks import async_handle_task_action, async_push_task_snapshot_via_registry
 from .wstoken import WsTokenService
@@ -119,6 +120,39 @@ class WsTokenView(HomeAssistantView):
         )
 
 
+class DevicePhotoSnapshotView(HomeAssistantView):
+    """Authenticated snapshot endpoint for the iOS Photos screen."""
+
+    url = "/api/oldphonekiosk/devices/{device_id}/photo.jpg"
+    name = "api:oldphonekiosk:devices:photo"
+    requires_auth = False
+
+    async def get(self, request: web.Request, device_id: str) -> web.Response:
+        hass: HomeAssistant = request.app["hass"]
+        registry = _registry(hass)
+        secret = request.headers.get("X-OldPhoneKiosk-Device-Secret", "")
+        try:
+            device = registry.verify_secret(device_id, secret)
+        except UnknownDeviceError:
+            return web.Response(status=404, text="unknown device")
+        except AuthError:
+            return web.Response(status=401, text="invalid device secret")
+        try:
+            content, content_type = await async_get_photo_snapshot(
+                hass, device.media.photo_source
+            )
+        except ValueError as exc:
+            return web.Response(status=404, text=str(exc))
+        except Exception as exc:
+            _LOGGER.debug("Could not fetch panel photo snapshot", exc_info=True)
+            return web.Response(status=502, text=str(exc))
+        return web.Response(
+            body=content,
+            content_type=content_type,
+            headers={"Cache-Control": "no-store, max-age=0"},
+        )
+
+
 class DeviceWebSocketView(HomeAssistantView):
     """Device WebSocket: state heartbeat + command channel."""
 
@@ -165,4 +199,5 @@ def async_register_http_views(hass: HomeAssistant) -> None:
     """Register device-facing HA HTTP endpoints."""
     hass.http.register_view(ClaimRedeemView())
     hass.http.register_view(WsTokenView())
+    hass.http.register_view(DevicePhotoSnapshotView())
     hass.http.register_view(DeviceWebSocketView())
