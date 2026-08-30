@@ -43,6 +43,12 @@ class OldPhoneKioskEntity(CoordinatorEntity[OldPhoneKioskCoordinator]):
             "show_bottom_menu": device.show_bottom_menu if device else None,
             "keep_screen_awake": device.keep_screen_awake if device else None,
             "show_connection_banner": device.show_connection_banner if device else None,
+            "show_photo_time_overlay": device.show_photo_time_overlay
+            if device
+            else None,
+            "show_photo_location_overlay": device.show_photo_location_overlay
+            if device
+            else None,
             "battery_state": device.battery_state if device else None,
             "dim_after_seconds": device.dim_after_seconds if device else None,
             "sleep_after_seconds": device.sleep_after_seconds if device else None,
