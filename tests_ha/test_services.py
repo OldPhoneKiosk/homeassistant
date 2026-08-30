@@ -561,6 +561,18 @@ async def test_source_selects_apply_from_ha_resources(hass: HomeAssistant):
         in hass.states.get("select.kitchen_task_list").attributes["options"]
     )
 
+    # Photo-source select must include cameras that appear after OldPhoneKiosk setup.
+    hass.states.async_set(
+        "camera.google_photos_picker_tkowalski_iseno_net_none",
+        "idle",
+        {"media_count": 3},
+    )
+    await hass.async_block_till_done()
+    assert (
+        "camera.google_photos_picker_tkowalski_iseno_net_none"
+        in hass.states.get("select.kitchen_photo_source").attributes["options"]
+    )
+
 
 async def test_device_page_navigation_and_device_level_controls(hass: HomeAssistant):
     fake = _FakeClient()
