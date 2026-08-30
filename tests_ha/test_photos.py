@@ -44,15 +44,20 @@ def test_resolve_photo_camera_root_chooses_best_camera(hass):
     )
 
 
-def test_photo_proxy_path_uses_entity_picture_token(hass):
-    hass.states.async_set(
-        "camera.google_photos_media",
-        "idle",
-        {
-            "media_count": 3,
-            "entity_picture": "/api/camera_proxy/camera.google_photos_media?token=abc",
-        },
-    )
+class FakeCameraEntity:
+    entity_picture = "/api/camera_proxy/camera.google_photos_media?token=abc"
+
+
+class FakeCameraComponent:
+    def get_entity(self, entity_id):
+        if entity_id == "camera.google_photos_media":
+            return FakeCameraEntity()
+        return None
+
+
+def test_photo_proxy_path_uses_camera_entity_picture_token(hass):
+    hass.states.async_set("camera.google_photos_media", "idle", {"media_count": 3})
+    hass.data["camera"] = FakeCameraComponent()
 
     assert (
         async_photo_proxy_path(hass, "camera.google_photos_media")
@@ -60,7 +65,9 @@ def test_photo_proxy_path_uses_entity_picture_token(hass):
     )
 
 
-def test_photo_proxy_path_without_entity_picture_falls_back_to_server_snapshot(hass):
+def test_photo_proxy_path_without_loaded_camera_entity_falls_back_to_server_snapshot(
+    hass,
+):
     hass.states.async_set("camera.google_photos_media", "idle", {"media_count": 3})
 
     assert async_photo_proxy_path(hass, "camera.google_photos_media") is None

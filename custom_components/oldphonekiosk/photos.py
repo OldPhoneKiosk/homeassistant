@@ -61,19 +61,20 @@ def resolve_photo_camera_entity_id(
 
 
 def async_photo_proxy_path(hass: HomeAssistant, source: str | None) -> str | None:
-    """Return HA's own camera proxy path for a photo source when available.
+    """Return HA's tokenized camera proxy path for a photo source when available.
 
-    This mirrors what Lovelace uses for dashboard camera cards. It is preferred
-    for iOS panels because the camera integration owns the current access token,
-    caching, and any integration-specific proxy behavior.
+    This mirrors what Lovelace uses for dashboard camera cards. Camera
+    ``entity_picture`` is an entity property, not a regular state attribute in
+    modern HA, so read it from the loaded camera entity object.
     """
     entity_id = resolve_photo_camera_entity_id(hass, source)
     if not entity_id:
         return None
-    state = hass.states.get(entity_id)
-    if state is None:
-        return None
-    entity_picture = state.attributes.get("entity_picture")
+    from homeassistant.components import camera
+
+    component = hass.data.get(camera.DOMAIN)
+    camera_entity = component.get_entity(entity_id) if component is not None else None
+    entity_picture = getattr(camera_entity, "entity_picture", None)
     if isinstance(entity_picture, str) and entity_picture:
         return entity_picture
     return None
