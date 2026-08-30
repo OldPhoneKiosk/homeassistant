@@ -118,6 +118,8 @@ class DeviceMedia(BaseModel):
     show_bottom_menu: bool | None = None
     keep_screen_awake: bool | None = None
     show_connection_banner: bool | None = None
+    show_photo_time_overlay: bool | None = None
+    show_photo_location_overlay: bool | None = None
     dim_after_seconds: float | None = None
     sleep_after_seconds: float | None = None
     task_refresh_seconds: float | None = None

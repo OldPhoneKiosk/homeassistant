@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.24 - 2026-08-30
+
+- Add per-panel photo overlay switches for showing the clock and photo location on the native iPad Photos screen.
+
 ## 0.1.23 - 2026-08-30
 
 - Track iOS charging state from panel heartbeats and expose it as a `Charging` binary sensor plus `battery_state` attributes.

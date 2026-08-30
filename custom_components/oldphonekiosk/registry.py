@@ -399,6 +399,8 @@ class Registry:
         show_bottom_menu: bool | None | object = _UNSET,
         keep_screen_awake: bool | None | object = _UNSET,
         show_connection_banner: bool | None | object = _UNSET,
+        show_photo_time_overlay: bool | None | object = _UNSET,
+        show_photo_location_overlay: bool | None | object = _UNSET,
         dim_after_seconds: float | None | object = _UNSET,
         sleep_after_seconds: float | None | object = _UNSET,
         task_refresh_seconds: float | None | object = _UNSET,
@@ -433,6 +435,18 @@ class Registry:
             device.media.show_connection_banner = (
                 bool(show_connection_banner)
                 if show_connection_banner is not None
+                else None
+            )
+        if show_photo_time_overlay is not _UNSET:
+            device.media.show_photo_time_overlay = (
+                bool(show_photo_time_overlay)
+                if show_photo_time_overlay is not None
+                else None
+            )
+        if show_photo_location_overlay is not _UNSET:
+            device.media.show_photo_location_overlay = (
+                bool(show_photo_location_overlay)
+                if show_photo_location_overlay is not None
                 else None
             )
         if dim_after_seconds is not _UNSET:

@@ -52,6 +52,24 @@ async def async_setup_entry(
                     field="show_connection_banner",
                     default=True,
                 ),
+                PanelUISwitch(
+                    coordinator,
+                    device_id,
+                    key="photo_time_overlay",
+                    name="Photo time overlay",
+                    icon="mdi:clock-outline",
+                    field="show_photo_time_overlay",
+                    default=False,
+                ),
+                PanelUISwitch(
+                    coordinator,
+                    device_id,
+                    key="photo_location_overlay",
+                    name="Photo location overlay",
+                    icon="mdi:map-marker-outline",
+                    field="show_photo_location_overlay",
+                    default=False,
+                ),
             )
         ]
 
