@@ -12,7 +12,7 @@ from homeassistant.core import HomeAssistant
 from .const import DOMAIN
 from .models import PanelCommand
 from .native_client import handle_device_message
-from .photos import async_get_photo_snapshot
+from .photos import async_get_photo_snapshot, async_photo_proxy_path
 from .registry import AuthError, ClaimError, Registry, UnknownDeviceError
 from .tasks import async_handle_task_action, async_push_task_snapshot_via_registry
 from .wstoken import WsTokenService
@@ -137,6 +137,9 @@ class DevicePhotoSnapshotView(HomeAssistantView):
             return web.Response(status=404, text="unknown device")
         except AuthError:
             return web.Response(status=401, text="invalid device secret")
+        proxy_path = async_photo_proxy_path(hass, device.media.photo_source)
+        if proxy_path:
+            raise web.HTTPFound(location=proxy_path)
         try:
             content, content_type = await async_get_photo_snapshot(
                 hass, device.media.photo_source
