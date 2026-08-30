@@ -20,7 +20,8 @@ from typing import ClassVar
 
 from homeassistant.components.select import SelectEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.const import EVENT_STATE_CHANGED
+from homeassistant.core import Event, HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN, SCREEN_DASHBOARD, SCREEN_PHOTOS, SCREEN_TO_COMMAND, SCREENS
@@ -278,7 +279,11 @@ class _SourceSelect(OldPhoneKioskEntity, SelectEntity):
     @callback
     def _handle_coordinator_update(self) -> None:
         # Realign the optimistic pick to the device's persisted value on a real
-        # refresh (HA is the source of truth).
+        # refresh (HA is the source of truth). During revoke the HA entity may
+        # already be removed from the entity registry; avoid writing a stale
+        # select state after its backing device is gone.
+        if self.device is None:
+            return
         self._selected = self._stored()
         super()._handle_coordinator_update()
 
@@ -417,13 +422,37 @@ class PhotoSourceSelect(_SourceSelect):
     _attr_name = "Photo source"
     _attr_icon = "mdi:image-multiple"
 
+    @property
+    def options(self) -> list[str]:
+        opts: list[str] = []
+        for option in [
+            *async_camera_source_options(self.hass),
+            *self._discovered(),
+            *self._discovered_extra,
+        ]:
+            if option and option not in opts:
+                opts.append(option)
+        for current in (self._stored(), self._selected):
+            if current and current not in opts:
+                opts.append(current)
+        return opts
+
     def _stored(self) -> str | None:
         device = self.device
         return device.photo_source if device else None
 
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
+        self.async_on_remove(
+            self.hass.bus.async_listen(EVENT_STATE_CHANGED, self._handle_state_changed)
+        )
         await self._async_refresh_sources()
+
+    @callback
+    def _handle_state_changed(self, event: Event) -> None:
+        entity_id = event.data.get("entity_id")
+        if isinstance(entity_id, str) and entity_id.startswith("camera."):
+            self.async_write_ha_state()
 
     async def _async_refresh_sources(self) -> None:
         """Populate options from ``media_source`` albums/folders (best-effort)."""

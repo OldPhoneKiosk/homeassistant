@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.20 - 2026-08-30
+
+- Refresh camera entities dynamically in the Photo source picker so Google Photos cameras that load after OldPhoneKiosk still appear in the select options.
+
 ## 0.1.19 - 2026-08-30
 
 - Add authenticated panel photo snapshot endpoint for the iOS Photos screen.
