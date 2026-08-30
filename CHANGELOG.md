@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.22 - 2026-08-30
+
+- Build the iOS Photos screen camera proxy redirect from the loaded HA camera entity's `entity_picture` property, ensuring the tokenized proxy URL is used instead of falling back to a server snapshot path that can return 500/502.
+
 ## 0.1.21 - 2026-08-30
 
 - Prefer Home Assistant's own camera proxy URL for the iOS Photos screen when a camera entity exposes `entity_picture`, matching the dashboard path that already renders Google Photos correctly.
