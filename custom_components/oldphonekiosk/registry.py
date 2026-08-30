@@ -322,6 +322,7 @@ class Registry:
         device_id: str,
         *,
         battery: int | None = None,
+        battery_state: str | None = None,
         brightness: float | None = None,
         screen=None,
         camera=None,
@@ -336,6 +337,8 @@ class Registry:
         st = device.state
         if battery is not None:
             st.battery = battery
+        if battery_state is not None:
+            st.battery_state = battery_state
         if brightness is not None:
             st.brightness = brightness
         if screen is not None:

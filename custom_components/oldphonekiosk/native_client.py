@@ -44,6 +44,7 @@ class PanelDeviceData:
     model: str | None
     online: bool
     battery: int | None
+    battery_state: str | None
     brightness: float | None
     screen: str | None
     camera_mode: str | None
@@ -74,6 +75,7 @@ class PanelDeviceData:
             model=device.model,
             online=state.online,
             battery=state.battery,
+            battery_state=state.battery_state,
             brightness=state.brightness,
             screen=state.screen.value if state.screen else None,
             camera_mode=state.camera.value if state.camera else None,
@@ -420,6 +422,7 @@ def handle_device_message(
         registry.update_state(
             device_id,
             battery=raw.get("battery"),
+            battery_state=raw.get("battery_state") or raw.get("batteryState"),
             brightness=raw.get("brightness"),
             screen=enum_or_none(PanelScreen, raw.get("screen")),
             camera=enum_or_none(CameraState, raw.get("camera")),

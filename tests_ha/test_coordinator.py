@@ -35,6 +35,7 @@ def _device(device_id: str, name: str) -> PanelDeviceData:
         model="iPhone SE",
         online=True,
         battery=80,
+        battery_state="charging",
         brightness=0.35,
         screen="home",
         camera_mode="off",

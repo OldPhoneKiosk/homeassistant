@@ -72,6 +72,7 @@ class PanelDeviceData:
     model: str | None
     online: bool
     battery: int | None
+    battery_state: str | None
     brightness: float | None
     screen: str | None
     camera_mode: str | None
@@ -103,6 +104,7 @@ class PanelDeviceData:
             model=data.get("model"),
             online=bool(state.get("online", False)),
             battery=state.get("battery"),
+            battery_state=state.get("battery_state") or state.get("batteryState"),
             brightness=state.get("brightness"),
             screen=state.get("screen"),
             camera_mode=state.get("camera"),

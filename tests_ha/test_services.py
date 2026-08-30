@@ -36,6 +36,7 @@ class _FakeClient:
                 model="iPhone",
                 online=True,
                 battery=80,
+                battery_state="charging",
                 brightness=0.35,
                 screen="home",
                 camera_mode="off",
@@ -83,6 +84,7 @@ class _FakeClient:
                 model=None,
                 online=False,
                 battery=None,
+                battery_state=None,
                 brightness=None,
                 screen=None,
                 camera_mode="off",
@@ -303,6 +305,10 @@ async def test_pairing_button_creates_code_notification(hass: HomeAssistant):
     assert hass.states.get("number.kitchen_refresh_tasks_every") is not None
     assert hass.states.get("camera.kitchen_camera") is not None
     assert hass.states.get("sensor.oldphonekiosk_panel_battery") is not None
+    charging = hass.states.get("binary_sensor.kitchen_charging")
+    assert charging is not None
+    assert charging.state == "on"
+    assert charging.attributes["battery_state"] == "charging"
 
 
 async def test_set_media_service(hass: HomeAssistant):

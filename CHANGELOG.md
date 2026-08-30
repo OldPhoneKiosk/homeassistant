@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.23 - 2026-08-30
+
+- Track iOS charging state from panel heartbeats and expose it as a `Charging` binary sensor plus `battery_state` attributes.
+
 ## 0.1.22 - 2026-08-30
 
 - Build the iOS Photos screen camera proxy redirect from the loaded HA camera entity's `entity_picture` property, ensuring the tokenized proxy URL is used instead of falling back to a server snapshot path that can return 500/502.
