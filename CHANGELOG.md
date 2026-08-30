@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.21 - 2026-08-30
+
+- Prefer Home Assistant's own camera proxy URL for the iOS Photos screen when a camera entity exposes `entity_picture`, matching the dashboard path that already renders Google Photos correctly.
+
 ## 0.1.20 - 2026-08-30
 
 - Refresh camera entities dynamically in the Photo source picker so Google Photos cameras that load after OldPhoneKiosk still appear in the select options.
