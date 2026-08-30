@@ -23,7 +23,10 @@ class OldPhoneKioskCoordinator(DataUpdateCoordinator[dict[str, PanelDeviceData]]
         self, hass: HomeAssistant, entry: ConfigEntry, client: NativeOldPhoneKioskClient
     ) -> None:
         kwargs = {}
-        if "config_entry" in inspect.signature(DataUpdateCoordinator.__init__).parameters:
+        if (
+            "config_entry"
+            in inspect.signature(DataUpdateCoordinator.__init__).parameters
+        ):
             kwargs["config_entry"] = entry
         super().__init__(
             hass,

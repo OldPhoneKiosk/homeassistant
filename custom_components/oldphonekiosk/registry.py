@@ -147,9 +147,7 @@ class Registry:
             capabilities=request.capabilities,
         )
         del self._pending[pairing_code]  # one-time use
-        return NewDeviceCredentials(
-            device_id=device.device_id, device_secret=secret
-        )
+        return NewDeviceCredentials(device_id=device.device_id, device_secret=secret)
 
     def _create_device(
         self,
@@ -380,7 +378,9 @@ class Registry:
         self._store.update_state(device_id, device.state)
         return device
 
-    def set_dashboard_url(self, device_id: str, dashboard_url: str | None) -> PanelDevice:
+    def set_dashboard_url(
+        self, device_id: str, dashboard_url: str | None
+    ) -> PanelDevice:
         """Persist and expose the dashboard URL selected from the HA device page."""
         return self.set_media_config(device_id, dashboard_url=dashboard_url)
 
@@ -394,6 +394,11 @@ class Registry:
         sound: str | None | object = _UNSET,
         enabled_screens: str | None | object = _UNSET,
         show_bottom_menu: bool | None | object = _UNSET,
+        keep_screen_awake: bool | None | object = _UNSET,
+        show_connection_banner: bool | None | object = _UNSET,
+        dim_after_seconds: float | None | object = _UNSET,
+        sleep_after_seconds: float | None | object = _UNSET,
+        task_refresh_seconds: float | None | object = _UNSET,
     ) -> PanelDevice:
         """Persist the HA-owned per-panel UI sources (dashboard/tasks/photos/sound).
 
@@ -410,9 +415,37 @@ class Registry:
         if sound is not _UNSET:
             device.media.sound = sound or None
         if enabled_screens is not _UNSET:
-            device.media.enabled_screens = str(enabled_screens) if enabled_screens else None
+            device.media.enabled_screens = (
+                str(enabled_screens) if enabled_screens else None
+            )
         if show_bottom_menu is not _UNSET:
-            device.media.show_bottom_menu = bool(show_bottom_menu) if show_bottom_menu is not None else None
+            device.media.show_bottom_menu = (
+                bool(show_bottom_menu) if show_bottom_menu is not None else None
+            )
+        if keep_screen_awake is not _UNSET:
+            device.media.keep_screen_awake = (
+                bool(keep_screen_awake) if keep_screen_awake is not None else None
+            )
+        if show_connection_banner is not _UNSET:
+            device.media.show_connection_banner = (
+                bool(show_connection_banner)
+                if show_connection_banner is not None
+                else None
+            )
+        if dim_after_seconds is not _UNSET:
+            device.media.dim_after_seconds = (
+                float(dim_after_seconds) if dim_after_seconds is not None else None
+            )
+        if sleep_after_seconds is not _UNSET:
+            device.media.sleep_after_seconds = (
+                float(sleep_after_seconds) if sleep_after_seconds is not None else None
+            )
+        if task_refresh_seconds is not _UNSET:
+            device.media.task_refresh_seconds = (
+                float(task_refresh_seconds)
+                if task_refresh_seconds is not None
+                else None
+            )
         self._store.update_media(device_id, device.media)
         return device
 
@@ -470,7 +503,7 @@ class Registry:
         try:
             result = await asyncio.wait_for(fut, timeout=self._command_timeout)
             return cmd, result
-        except asyncio.TimeoutError:
+        except TimeoutError:
             return cmd, None
         finally:
             self._pending_commands.get(device_id, {}).pop(cmd.id, None)

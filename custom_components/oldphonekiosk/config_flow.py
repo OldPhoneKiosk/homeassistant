@@ -18,7 +18,7 @@ except ImportError:  # HA < 2024.4
 
 from .backend import ensure_backend
 from .const import DOMAIN
-from .pairing import build_claim_payload, payload_to_json
+from .pairing import build_claim_payload
 from .registry import Registry
 
 _LOGGER = logging.getLogger(__name__)
@@ -77,7 +77,11 @@ class OldPhoneKioskConfigFlow(ConfigFlow, domain=DOMAIN):
         if not host or not port:
             return self.async_abort(reason="invalid_discovery")
 
-        instance_id = _txt(props, "id") or getattr(discovery_info, "name", None) or f"{host}:{port}"
+        instance_id = (
+            _txt(props, "id")
+            or getattr(discovery_info, "name", None)
+            or f"{host}:{port}"
+        )
         await self.async_set_unique_id(f"discovered:{instance_id}")
         self._abort_if_unique_id_configured()
 
@@ -85,7 +89,9 @@ class OldPhoneKioskConfigFlow(ConfigFlow, domain=DOMAIN):
             "id": instance_id,
             "host": host,
             "port": port,
-            "name": _txt(props, "name") or _instance_name(discovery_info) or DEFAULT_PANEL_NAME,
+            "name": _txt(props, "name")
+            or _instance_name(discovery_info)
+            or DEFAULT_PANEL_NAME,
             "model": _txt(props, "model") or "iOS device",
             "ios": _txt(props, "ios") or "unknown",
             "app_version": _txt(props, "version") or "unknown",
@@ -160,11 +166,15 @@ class OldPhoneKioskConfigFlow(ConfigFlow, domain=DOMAIN):
             session = async_get_clientsession(self.hass)
             async with session.post(url, json=payload, timeout=10) as response:
                 if response.status not in (200, 202, 204):
-                    _LOGGER.warning("OldPhoneKiosk discovery push failed: %s", response.status)
+                    _LOGGER.warning(
+                        "OldPhoneKiosk discovery push failed: %s", response.status
+                    )
                     return False
                 return True
-        except (TimeoutError, ClientError, OSError) as exc:
-            _LOGGER.warning("Could not push OldPhoneKiosk claim to discovered app", exc_info=True)
+        except (TimeoutError, ClientError, OSError):
+            _LOGGER.warning(
+                "Could not push OldPhoneKiosk claim to discovered app", exc_info=True
+            )
             return False
 
     def _show_pairing_form(

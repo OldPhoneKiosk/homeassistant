@@ -32,7 +32,9 @@ def ensure_backend(hass: HomeAssistant) -> Registry:
         domain_data[DATA_REGISTRY] = registry
         domain_data[DATA_WS_TOKENS] = WsTokenService(secrets.token_urlsafe(32))
 
-    if getattr(hass, "http", None) is not None and not domain_data.get(DATA_HTTP_REGISTERED):
+    if getattr(hass, "http", None) is not None and not domain_data.get(
+        DATA_HTTP_REGISTERED
+    ):
         async_register_http_views(hass)
         domain_data[DATA_HTTP_REGISTERED] = True
 

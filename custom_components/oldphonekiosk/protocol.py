@@ -109,9 +109,9 @@ class DeviceStateView(BaseModel):
 
 
 class DeviceMediaView(BaseModel):
-    video_url: str | None = None      # viewer (go2rtc player page) for Lovelace
-    stream_name: str | None = None    # go2rtc stream name (derived)
-    publish_url: str | None = None    # WHIP publish endpoint the device would use
+    video_url: str | None = None  # viewer (go2rtc player page) for Lovelace
+    stream_name: str | None = None  # go2rtc stream name (derived)
+    publish_url: str | None = None  # WHIP publish endpoint the device would use
 
 
 class DeviceView(BaseModel):

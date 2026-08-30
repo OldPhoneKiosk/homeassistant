@@ -5,9 +5,16 @@ from __future__ import annotations
 import dataclasses
 import datetime as dt
 import json
+import logging
 from typing import Any
 
-from homeassistant.components.todo import DOMAIN as TODO_DOMAIN, TodoItem, TodoListEntity
+from homeassistant.components.todo import (
+    DOMAIN as TODO_DOMAIN,
+)
+from homeassistant.components.todo import (
+    TodoItem,
+    TodoListEntity,
+)
 from homeassistant.components.todo.const import TodoItemStatus
 from homeassistant.const import CONF_ENTITY_ID
 from homeassistant.core import HomeAssistant
@@ -19,6 +26,7 @@ from .native_client import NativeOldPhoneKioskClient
 from .registry import DeviceOfflineError, Registry
 
 MAX_TASKS = 40
+_LOGGER = logging.getLogger(__name__)
 
 
 def _stringify(value: Any) -> str | None:
@@ -53,6 +61,12 @@ async def async_todo_items_json(hass: HomeAssistant, entity_id: str) -> str:
     entity = _todo_entity(hass, entity_id)
     if entity is None:
         return "[]"
+    try:
+        await entity.async_update()
+    except Exception:
+        _LOGGER.debug(
+            "Could not refresh todo entity %s before snapshot", entity_id, exc_info=True
+        )
     items = entity.todo_items or []
     payload = [
         data
@@ -81,7 +95,9 @@ async def async_push_task_snapshot(
     if show:
         params["show"] = "true"
     try:
-        await client.async_send_command(device_id, PanelCommand.CONFIGURE_TASKS.value, params=params)
+        await client.async_send_command(
+            device_id, PanelCommand.CONFIGURE_TASKS.value, params=params
+        )
         if show:
             await client.async_send_command(device_id, CMD_SHOW_TASKS)
     except DeviceOfflineError:
@@ -104,7 +120,9 @@ async def async_push_task_snapshot_via_registry(
     if show:
         params["show"] = "true"
     try:
-        await registry.send_command_nowait(device_id, PanelCommand.CONFIGURE_TASKS, params=params)
+        await registry.send_command_nowait(
+            device_id, PanelCommand.CONFIGURE_TASKS, params=params
+        )
         if show:
             await registry.send_command_nowait(device_id, PanelCommand.SHOW_TASKS)
     except DeviceOfflineError:

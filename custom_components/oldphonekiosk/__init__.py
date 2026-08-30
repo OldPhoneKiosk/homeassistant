@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import inspect
+
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
@@ -29,7 +30,10 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Migrate old external-Bridge entries to the HA-native single entry."""
     if entry.version < 2:
         kwargs = {"data": {}, "title": "OldPhoneKiosk"}
-        if "version" in inspect.signature(hass.config_entries.async_update_entry).parameters:
+        if (
+            "version"
+            in inspect.signature(hass.config_entries.async_update_entry).parameters
+        ):
             kwargs["version"] = 2
             hass.config_entries.async_update_entry(entry, **kwargs)
         else:

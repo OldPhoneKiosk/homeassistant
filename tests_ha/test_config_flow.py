@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import inspect
-
 from types import SimpleNamespace
 
 from homeassistant import config_entries, data_entry_flow
@@ -128,7 +127,9 @@ def _discovered_panel():
     )
 
 
-async def test_zeroconf_flow_confirms_and_pushes_claim(monkeypatch, hass: HomeAssistant):
+async def test_zeroconf_flow_confirms_and_pushes_claim(
+    monkeypatch, hass: HomeAssistant
+):
     hass.config.internal_url = "http://192.168.18.10:8123"
     session = _FakeSession()
     monkeypatch.setattr(
@@ -147,7 +148,8 @@ async def test_zeroconf_flow_confirms_and_pushes_claim(monkeypatch, hass: HomeAs
     assert result["description_placeholders"]["name"] == "Kitchen iPad"
 
     created = await hass.config_entries.flow.async_configure(
-        result["flow_id"], user_input={},
+        result["flow_id"],
+        user_input={},
     )
 
     assert created["type"] == data_entry_flow.FlowResultType.CREATE_ENTRY
@@ -177,7 +179,9 @@ def _existing_entry_kwargs() -> dict:
     return kwargs
 
 
-async def test_zeroconf_flow_uses_bonjour_instance_name_when_txt_name_missing(monkeypatch, hass: HomeAssistant):
+async def test_zeroconf_flow_uses_bonjour_instance_name_when_txt_name_missing(
+    monkeypatch, hass: HomeAssistant
+):
     session = _FakeSession()
     monkeypatch.setattr(
         "custom_components.oldphonekiosk.config_flow.async_get_clientsession",
@@ -198,13 +202,16 @@ async def test_zeroconf_flow_uses_bonjour_instance_name_when_txt_name_missing(mo
     assert result["type"] == data_entry_flow.FlowResultType.FORM
     assert result["description_placeholders"]["name"] == "Tomasz iPad"
     created = await hass.config_entries.flow.async_configure(
-        result["flow_id"], user_input={},
+        result["flow_id"],
+        user_input={},
     )
     assert created["type"] == data_entry_flow.FlowResultType.CREATE_ENTRY
     assert session.posts[0][1]["name"] == "Tomasz iPad"
 
 
-async def test_zeroconf_flow_adds_panel_to_existing_hub(monkeypatch, hass: HomeAssistant):
+async def test_zeroconf_flow_adds_panel_to_existing_hub(
+    monkeypatch, hass: HomeAssistant
+):
     session = _FakeSession()
     monkeypatch.setattr(
         "custom_components.oldphonekiosk.config_flow.async_get_clientsession",
@@ -219,7 +226,9 @@ async def test_zeroconf_flow_adds_panel_to_existing_hub(monkeypatch, hass: HomeA
         context={"source": config_entries.SOURCE_ZEROCONF},
         data=_discovered_panel(),
     )
-    done = await hass.config_entries.flow.async_configure(result["flow_id"], user_input={})
+    done = await hass.config_entries.flow.async_configure(
+        result["flow_id"], user_input={}
+    )
 
     assert done["type"] == data_entry_flow.FlowResultType.ABORT
     assert done["reason"] == "pairing_sent"

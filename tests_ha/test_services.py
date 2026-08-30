@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import patch
 
 from homeassistant.core import HomeAssistant
@@ -44,7 +44,7 @@ class _FakeClient:
                 video_url=None,
                 dashboard_url=None,
                 app_version="0.1.0",
-                last_seen=datetime.now(timezone.utc),
+                last_seen=datetime.now(UTC),
             )
         ]
         self.media_calls: list[dict] = []
@@ -112,10 +112,25 @@ class _FakeClient:
         self.ui_calls.append({"device_id": device_id, **kwargs})
         current = self._devices[0]
         changes = {}
-        for key in ("dashboard_url", "task_source", "photo_source", "enabled_screens", "show_bottom_menu"):
+        for key in (
+            "dashboard_url",
+            "task_source",
+            "photo_source",
+            "enabled_screens",
+            "show_bottom_menu",
+            "keep_screen_awake",
+            "show_connection_banner",
+            "dim_after_seconds",
+            "sleep_after_seconds",
+            "task_refresh_seconds",
+        ):
             if kwargs.get(key) is not None:
                 value = kwargs.get(key)
-                changes[key] = ",".join(value) if key == "enabled_screens" and isinstance(value, list) else value
+                changes[key] = (
+                    ",".join(value)
+                    if key == "enabled_screens" and isinstance(value, list)
+                    else value
+                )
         self._devices[0] = replace(current, **changes)
         return self._devices[0]
 
@@ -132,8 +147,12 @@ class _FakeClient:
         self.action_calls.append(("play_sound", device_id, sound, url))
         return {"id": "c", "status": "completed", "success": True}
 
-    async def async_start_intercom(self, device_id, *, mode=None, audio_url=None, stream_url=None):
-        self.action_calls.append(("start_intercom", device_id, mode, audio_url, stream_url))
+    async def async_start_intercom(
+        self, device_id, *, mode=None, audio_url=None, stream_url=None
+    ):
+        self.action_calls.append(
+            ("start_intercom", device_id, mode, audio_url, stream_url)
+        )
         return {"id": "c", "status": "completed", "success": True}
 
     async def async_stop_intercom(self, device_id):
@@ -151,9 +170,7 @@ async def test_revoke_panel_service(hass: HomeAssistant):
     )
     entry.add_to_hass(hass)
 
-    with patch(
-        "custom_components.oldphonekiosk.BridgeClient", return_value=fake
-    ):
+    with patch("custom_components.oldphonekiosk.BridgeClient", return_value=fake):
         assert await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 
@@ -223,7 +240,9 @@ async def test_pair_new_panel_service_returns_pairing_code(hass: HomeAssistant):
 
 async def test_pairing_button_creates_code_notification(hass: HomeAssistant):
     fake = _FakeClient()
-    entry = MockConfigEntry(domain=DOMAIN, data={CONF_BRIDGE_URL: "http://x", CONF_API_KEY: "k"})
+    entry = MockConfigEntry(
+        domain=DOMAIN, data={CONF_BRIDGE_URL: "http://x", CONF_API_KEY: "k"}
+    )
     entry.add_to_hass(hass)
     with patch("custom_components.oldphonekiosk.BridgeClient", return_value=fake):
         assert await hass.config_entries.async_setup(entry.entry_id)
@@ -245,8 +264,13 @@ async def test_pairing_button_creates_code_notification(hass: HomeAssistant):
 
     assert fake.provisioned == ("OldPhoneKiosk Panel", None)
     create_notification.assert_called_once()
-    assert create_notification.call_args.kwargs["title"] == "OldPhoneKiosk — pair a panel"
-    assert create_notification.call_args.kwargs["notification_id"] == f"{DOMAIN}_pair_dev-new"
+    assert (
+        create_notification.call_args.kwargs["title"] == "OldPhoneKiosk — pair a panel"
+    )
+    assert (
+        create_notification.call_args.kwargs["notification_id"]
+        == f"{DOMAIN}_pair_dev-new"
+    )
 
     assert hass.states.get("binary_sensor.oldphonekiosk_panel_online") is not None
     assert hass.states.get("select.oldphonekiosk_panel_screen") is not None
@@ -270,8 +294,13 @@ async def test_pairing_button_creates_code_notification(hass: HomeAssistant):
     assert hass.states.get("select.kitchen_sound") is not None
     assert hass.states.get("select.kitchen_photo_source") is not None
     assert hass.states.get("switch.kitchen_bottom_menu") is not None
+    assert hass.states.get("switch.kitchen_keep_screen_awake_in_app") is not None
+    assert hass.states.get("switch.kitchen_connection_banner") is not None
     assert hass.states.get("number.kitchen_screen_brightness") is not None
     assert hass.states.get("number.kitchen_device_volume") is not None
+    assert hass.states.get("number.kitchen_dim_after") is not None
+    assert hass.states.get("number.kitchen_sleep_screen_after") is not None
+    assert hass.states.get("number.kitchen_refresh_tasks_every") is not None
     assert hass.states.get("camera.kitchen_camera") is not None
     assert hass.states.get("sensor.oldphonekiosk_panel_battery") is not None
 
@@ -348,7 +377,9 @@ async def test_start_and_stop_stream_services(hass: HomeAssistant):
     ]
 
 
-async def test_device_page_controls_start_camera_and_set_dashboard_url(hass: HomeAssistant):
+async def test_device_page_controls_start_camera_and_set_dashboard_url(
+    hass: HomeAssistant,
+):
     fake = _FakeClient()
     entry = MockConfigEntry(
         domain=DOMAIN, data={CONF_BRIDGE_URL: "http://x", CONF_API_KEY: "k"}
@@ -398,7 +429,10 @@ async def test_start_back_camera_button(hass: HomeAssistant):
         await hass.async_block_till_done()
 
     await hass.services.async_call(
-        "button", "press", {"entity_id": "button.kitchen_start_back_camera"}, blocking=True
+        "button",
+        "press",
+        {"entity_id": "button.kitchen_start_back_camera"},
+        blocking=True,
     )
     await hass.async_block_till_done()
     assert fake.stream_calls == [("start", "dev-1", "back")]
@@ -416,17 +450,20 @@ async def test_task_photo_sound_text_and_action_buttons(hass: HomeAssistant):
 
     # Custom (advanced) text sources push configure_ui (tasks/photos) and persist sound.
     await hass.services.async_call(
-        "text", "set_value",
+        "text",
+        "set_value",
         {"entity_id": "text.kitchen_custom_task_source", "value": "todo.kitchen"},
         blocking=True,
     )
     await hass.services.async_call(
-        "text", "set_value",
+        "text",
+        "set_value",
         {"entity_id": "text.kitchen_custom_photo_source", "value": "album.family"},
         blocking=True,
     )
     await hass.services.async_call(
-        "text", "set_value",
+        "text",
+        "set_value",
         {"entity_id": "text.kitchen_custom_sound", "value": "1007"},
         blocking=True,
     )
@@ -473,19 +510,22 @@ async def test_source_selects_apply_from_ha_resources(hass: HomeAssistant):
 
     # Dashboard select pushes the dashboard screen + URL (no manual string typing).
     await hass.services.async_call(
-        "select", "select_option",
+        "select",
+        "select_option",
         {"entity_id": "select.kitchen_dashboard", "option": "/lovelace"},
         blocking=True,
     )
     # Task-list select stores the todo entity id chosen from HA states.
     await hass.services.async_call(
-        "select", "select_option",
+        "select",
+        "select_option",
         {"entity_id": "select.kitchen_task_list", "option": "todo.kitchen"},
         blocking=True,
     )
     # Sound select stores a system-sound id preset.
     await hass.services.async_call(
-        "select", "select_option",
+        "select",
+        "select_option",
         {"entity_id": "select.kitchen_sound", "option": "1013"},
         blocking=True,
     )
@@ -497,14 +537,29 @@ async def test_source_selects_apply_from_ha_resources(hass: HomeAssistant):
         "dashboard_url": "http://homeassistant.local:8123/lovelace",
     } in fake.ui_calls
     assert any(c.get("task_source") == "todo.kitchen" for c in fake.ui_calls)
-    assert ("dev-1", "configure_tasks", {"entity_id": "todo.kitchen", "source": "todo.kitchen", "items": "[]", "show": "true"}) in fake.command_calls
+    assert (
+        "dev-1",
+        "configure_tasks",
+        {
+            "entity_id": "todo.kitchen",
+            "source": "todo.kitchen",
+            "items": "[]",
+            "show": "true",
+        },
+    ) in fake.command_calls
     assert ("dev-1", "show_tasks", None) in fake.command_calls
     assert fake.sound_calls == [("dev-1", "1013")]
 
-    assert hass.states.get("select.kitchen_dashboard").state == "http://homeassistant.local:8123/lovelace"
+    assert (
+        hass.states.get("select.kitchen_dashboard").state
+        == "http://homeassistant.local:8123/lovelace"
+    )
     assert hass.states.get("select.kitchen_task_list").state == "todo.kitchen"
     assert hass.states.get("select.kitchen_sound").state == "1013"
-    assert "todo.kitchen" in hass.states.get("select.kitchen_task_list").attributes["options"]
+    assert (
+        "todo.kitchen"
+        in hass.states.get("select.kitchen_task_list").attributes["options"]
+    )
 
 
 async def test_device_page_navigation_and_device_level_controls(hass: HomeAssistant):
@@ -521,6 +576,18 @@ async def test_device_page_navigation_and_device_level_controls(hass: HomeAssist
         "switch",
         "turn_off",
         {"entity_id": "switch.kitchen_bottom_menu"},
+        blocking=True,
+    )
+    await hass.services.async_call(
+        "switch",
+        "turn_off",
+        {"entity_id": "switch.kitchen_keep_screen_awake_in_app"},
+        blocking=True,
+    )
+    await hass.services.async_call(
+        "switch",
+        "turn_off",
+        {"entity_id": "switch.kitchen_connection_banner"},
         blocking=True,
     )
     await hass.services.async_call(
@@ -541,12 +608,46 @@ async def test_device_page_navigation_and_device_level_controls(hass: HomeAssist
         {"entity_id": "number.kitchen_device_volume", "value": 35},
         blocking=True,
     )
+    await hass.services.async_call(
+        "number",
+        "set_value",
+        {"entity_id": "number.kitchen_dim_after", "value": 45},
+        blocking=True,
+    )
+    await hass.services.async_call(
+        "number",
+        "set_value",
+        {"entity_id": "number.kitchen_sleep_screen_after", "value": 120},
+        blocking=True,
+    )
     await hass.async_block_till_done()
 
+    await hass.services.async_call(
+        "number",
+        "set_value",
+        {"entity_id": "number.kitchen_refresh_tasks_every", "value": 30},
+        blocking=True,
+    )
+
     assert any(c.get("show_bottom_menu") is False for c in fake.ui_calls)
-    assert any(c.get("enabled_screens") == ["tasks", "dashboard"] for c in fake.ui_calls)
-    assert ("dev-1", "set_brightness", {"level": "0.420", "percent": "42"}) in fake.command_calls
-    assert ("dev-1", "set_volume", {"level": "0.350", "percent": "35"}) in fake.command_calls
+    assert any(c.get("keep_screen_awake") is False for c in fake.ui_calls)
+    assert any(c.get("show_connection_banner") is False for c in fake.ui_calls)
+    assert any(
+        c.get("enabled_screens") == ["tasks", "dashboard"] for c in fake.ui_calls
+    )
+    assert any(c.get("dim_after_seconds") == 45 for c in fake.ui_calls)
+    assert any(c.get("sleep_after_seconds") == 120 for c in fake.ui_calls)
+    assert any(c.get("task_refresh_seconds") == 30 for c in fake.ui_calls)
+    assert (
+        "dev-1",
+        "set_brightness",
+        {"level": "0.420", "percent": "42"},
+    ) in fake.command_calls
+    assert (
+        "dev-1",
+        "set_volume",
+        {"level": "0.350", "percent": "35"},
+    ) in fake.command_calls
 
 
 async def test_dashboard_select_offers_lovelace_view_tabs(hass: HomeAssistant):
@@ -566,7 +667,9 @@ async def test_dashboard_select_offers_lovelace_view_tabs(hass: HomeAssistant):
 
     class _FakeOscarDashboard:
         async def async_load(self, force):
-            return {"views": [{"title": "Overview"}, {"title": "Rooms"}, {"title": "Kids"}]}
+            return {
+                "views": [{"title": "Overview"}, {"title": "Rooms"}, {"title": "Kids"}]
+            }
 
     hass.data["lovelace"] = {
         "dashboards": {
@@ -597,7 +700,8 @@ async def test_dashboard_select_offers_lovelace_view_tabs(hass: HomeAssistant):
     assert "/lovelace/dashboard-oscar/2" not in state.attributes["options"]
 
     await hass.services.async_call(
-        "select", "select_option",
+        "select",
+        "select_option",
         {"entity_id": "select.kitchen_dashboard", "option": "/dashboard-oscar/2"},
         blocking=True,
     )
@@ -622,7 +726,9 @@ async def test_dashboard_select_does_not_keep_stale_lovelace_home_when_views_exi
 
     hass.data["lovelace"] = {"dashboards": {None: _FakeLovelaceDashboard()}}
     fake = _FakeClient()
-    fake._devices[0] = replace(fake._devices[0], dashboard_url="http://homeassistant.local:8123/lovelace/0")
+    fake._devices[0] = replace(
+        fake._devices[0], dashboard_url="http://homeassistant.local:8123/lovelace/0"
+    )
     entry = MockConfigEntry(
         domain=DOMAIN, data={CONF_BRIDGE_URL: "http://x", CONF_API_KEY: "k"}
     )
@@ -637,7 +743,9 @@ async def test_dashboard_select_does_not_keep_stale_lovelace_home_when_views_exi
     assert state.attributes["options"] == ["/lovelace/tomas"]
 
 
-async def test_play_sound_button_resolves_media_source_sound(hass: HomeAssistant, monkeypatch):
+async def test_play_sound_button_resolves_media_source_sound(
+    hass: HomeAssistant, monkeypatch
+):
     """A HA media-source sound selection is resolved to a phone-playable URL."""
     fake = _FakeClient()
     entry = MockConfigEntry(
@@ -658,7 +766,8 @@ async def test_play_sound_button_resolves_media_source_sound(hass: HomeAssistant
     )
 
     await hass.services.async_call(
-        "text", "set_value",
+        "text",
+        "set_value",
         {
             "entity_id": "text.kitchen_custom_sound",
             "value": "media-source://media_source/local/chime.mp3",
@@ -670,7 +779,9 @@ async def test_play_sound_button_resolves_media_source_sound(hass: HomeAssistant
     )
     await hass.async_block_till_done()
 
-    assert fake.sound_calls == [("dev-1", "media-source://media_source/local/chime.mp3")]
+    assert fake.sound_calls == [
+        ("dev-1", "media-source://media_source/local/chime.mp3")
+    ]
     assert fake.action_calls[-1] == (
         "play_sound",
         "dev-1",
@@ -705,12 +816,14 @@ async def test_play_sound_and_intercom_services(hass: HomeAssistant):
         DOMAIN, SERVICE_BEEP, {ATTR_DEVICE_ID: "dev-1"}, blocking=True
     )
     await hass.services.async_call(
-        DOMAIN, SERVICE_PLAY_SOUND,
+        DOMAIN,
+        SERVICE_PLAY_SOUND,
         {ATTR_DEVICE_ID: "dev-1", "url": "http://ha/local/chime.mp3"},
         blocking=True,
     )
     await hass.services.async_call(
-        DOMAIN, SERVICE_START_INTERCOM,
+        DOMAIN,
+        SERVICE_START_INTERCOM,
         {ATTR_DEVICE_ID: "dev-1", "mode": "talk"},
         blocking=True,
     )
@@ -720,6 +833,11 @@ async def test_play_sound_and_intercom_services(hass: HomeAssistant):
     await hass.async_block_till_done()
 
     assert fake.action_calls[0] == ("beep", "dev-1")
-    assert fake.action_calls[1] == ("play_sound", "dev-1", None, "http://ha/local/chime.mp3")
+    assert fake.action_calls[1] == (
+        "play_sound",
+        "dev-1",
+        None,
+        "http://ha/local/chime.mp3",
+    )
     assert fake.action_calls[2] == ("start_intercom", "dev-1", "talk", None, None)
     assert fake.action_calls[3] == ("stop_intercom", "dev-1")

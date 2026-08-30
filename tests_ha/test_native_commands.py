@@ -85,17 +85,22 @@ async def test_stop_intercom_sends_command():
 async def test_set_panel_ui_pushes_sources_and_persists():
     registry, client, device_id, conn = _online_device()
     await client.async_set_panel_ui(
-        device_id, task_source="todo.kitchen", photo_source="album.family"
+        device_id,
+        task_source="todo.kitchen",
+        photo_source="album.family",
+        task_refresh_seconds=45,
     )
     cmd = conn.commands()[-1]
     assert cmd["command"] == "configure_ui"
     assert cmd["params"] == {
         "task_source": "todo.kitchen",
         "photo_source": "album.family",
+        "task_refresh_seconds": "45",
     }
     device = registry.get_device(device_id)
     assert device.media.task_source == "todo.kitchen"
     assert device.media.photo_source == "album.family"
+    assert device.media.task_refresh_seconds == 45
 
 
 async def test_media_config_persists_across_reload():
@@ -109,6 +114,7 @@ async def test_media_config_persists_across_reload():
         task_source="todo.kitchen",
         photo_source="album.family",
         sound="1007",
+        task_refresh_seconds=60,
     )
 
     # A fresh registry over the same store reloads the persisted config.
@@ -118,3 +124,4 @@ async def test_media_config_persists_across_reload():
     assert media.task_source == "todo.kitchen"
     assert media.photo_source == "album.family"
     assert media.sound == "1007"
+    assert media.task_refresh_seconds == 60

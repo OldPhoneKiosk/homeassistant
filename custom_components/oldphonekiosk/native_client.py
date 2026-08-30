@@ -6,13 +6,20 @@ registry, pairing claims, state, commands, and media settings directly.
 
 from __future__ import annotations
 
-import asyncio
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
 from .api import BridgeNotFoundError
-from .models import CameraState, CommandResult, DeviceState, PanelCommand, PanelDevice, PanelScreen, IntercomState, StreamState
+from .models import (
+    CameraState,
+    CommandResult,
+    IntercomState,
+    PanelCommand,
+    PanelDevice,
+    PanelScreen,
+    StreamState,
+)
 from .registry import DeviceOfflineError, Registry, UnknownDeviceError
 
 _UNSET = object()
@@ -51,9 +58,14 @@ class PanelDeviceData:
     sound: str | None = None
     enabled_screens: str | None = None
     show_bottom_menu: bool | None = None
+    keep_screen_awake: bool | None = None
+    show_connection_banner: bool | None = None
+    dim_after_seconds: float | None = None
+    sleep_after_seconds: float | None = None
+    task_refresh_seconds: float | None = None
 
     @classmethod
-    def from_device(cls, device: PanelDevice) -> "PanelDeviceData":
+    def from_device(cls, device: PanelDevice) -> PanelDeviceData:
         state = device.state
         return cls(
             device_id=device.device_id,
@@ -76,6 +88,11 @@ class PanelDeviceData:
             sound=device.media.sound,
             enabled_screens=device.media.enabled_screens,
             show_bottom_menu=device.media.show_bottom_menu,
+            keep_screen_awake=device.media.keep_screen_awake,
+            show_connection_banner=device.media.show_connection_banner,
+            dim_after_seconds=device.media.dim_after_seconds,
+            sleep_after_seconds=device.media.sleep_after_seconds,
+            task_refresh_seconds=device.media.task_refresh_seconds,
         )
 
 
@@ -92,7 +109,9 @@ class NativeOldPhoneKioskClient:
     async def async_get_devices(self) -> list[PanelDeviceData]:
         return [PanelDeviceData.from_device(d) for d in self.registry.list_devices()]
 
-    async def async_create_claim(self, name: str, room: str | None = None) -> PanelClaim:
+    async def async_create_claim(
+        self, name: str, room: str | None = None
+    ) -> PanelClaim:
         claim = self.registry.create_claim(name=name, room=room)
         return PanelClaim(
             claim_token=claim.claim_token,
@@ -116,11 +135,18 @@ class NativeOldPhoneKioskClient:
         except UnknownDeviceError as exc:
             raise BridgeNotFoundError("unknown device") from exc
         except DeviceOfflineError:
-            return {"id": "", "status": "offline", "success": False, "error": "device offline"}
+            return {
+                "id": "",
+                "status": "offline",
+                "success": False,
+                "error": "device offline",
+            }
         if result is None:
             return {"id": cmd.id, "status": "timeout"}
         if result.success:
-            self.registry.apply_command_optimistic_state(device_id, PanelCommand(command))
+            self.registry.apply_command_optimistic_state(
+                device_id, PanelCommand(command)
+            )
         return {
             "id": cmd.id,
             "status": "completed" if result.success else "failed",
@@ -135,6 +161,11 @@ class NativeOldPhoneKioskClient:
         default_screen: str | None = None,
         enabled_screens: list[str] | None = None,
         show_bottom_menu: bool | None = None,
+        keep_screen_awake: bool | None = None,
+        show_connection_banner: bool | None = None,
+        dim_after_seconds: float | None = None,
+        sleep_after_seconds: float | None = None,
+        task_refresh_seconds: float | None = None,
         dashboard_url: str | None = None,
         task_source: str | None = None,
         photo_source: str | None = None,
@@ -146,6 +177,18 @@ class NativeOldPhoneKioskClient:
             params["enabled_screens"] = ",".join(enabled_screens)
         if show_bottom_menu is not None:
             params["show_bottom_menu"] = "true" if show_bottom_menu else "false"
+        if keep_screen_awake is not None:
+            params["keep_screen_awake"] = "true" if keep_screen_awake else "false"
+        if show_connection_banner is not None:
+            params["show_connection_banner"] = (
+                "true" if show_connection_banner else "false"
+            )
+        if dim_after_seconds is not None:
+            params["dim_after_seconds"] = str(int(max(0, dim_after_seconds)))
+        if sleep_after_seconds is not None:
+            params["sleep_after_seconds"] = str(int(max(0, sleep_after_seconds)))
+        if task_refresh_seconds is not None:
+            params["task_refresh_seconds"] = str(int(max(0, task_refresh_seconds)))
         if dashboard_url is not None:
             params["dashboard_url"] = dashboard_url
         if task_source is not None:
@@ -163,18 +206,32 @@ class NativeOldPhoneKioskClient:
             config_kwargs["enabled_screens"] = ",".join(enabled_screens)
         if show_bottom_menu is not None:
             config_kwargs["show_bottom_menu"] = show_bottom_menu
+        if keep_screen_awake is not None:
+            config_kwargs["keep_screen_awake"] = keep_screen_awake
+        if show_connection_banner is not None:
+            config_kwargs["show_connection_banner"] = show_connection_banner
+        if dim_after_seconds is not None:
+            config_kwargs["dim_after_seconds"] = dim_after_seconds
+        if sleep_after_seconds is not None:
+            config_kwargs["sleep_after_seconds"] = sleep_after_seconds
+        if task_refresh_seconds is not None:
+            config_kwargs["task_refresh_seconds"] = task_refresh_seconds
         try:
             device = self.registry.set_media_config(device_id, **config_kwargs)
             if self.registry.is_online(device_id):
                 try:
-                    await self.registry.send_command(device_id, PanelCommand.CONFIGURE_UI, params=params)
-                except (DeviceOfflineError, asyncio.TimeoutError):
+                    await self.registry.send_command(
+                        device_id, PanelCommand.CONFIGURE_UI, params=params
+                    )
+                except (TimeoutError, DeviceOfflineError):
                     pass
         except UnknownDeviceError as exc:
             raise BridgeNotFoundError("unknown device") from exc
         return PanelDeviceData.from_device(device)
 
-    async def async_set_sound(self, device_id: str, sound: str | None) -> PanelDeviceData:
+    async def async_set_sound(
+        self, device_id: str, sound: str | None
+    ) -> PanelDeviceData:
         """Persist the HA-owned sound target for the play_sound button (no dispatch)."""
         try:
             device = self.registry.set_media_config(device_id, sound=sound)
@@ -208,7 +265,9 @@ class NativeOldPhoneKioskClient:
             device_id, PanelCommand.PLAY_SOUND.value, params=params or None
         )
 
-    async def async_set_device_level(self, device_id: str, command: str, level: float) -> dict[str, Any]:
+    async def async_set_device_level(
+        self, device_id: str, command: str, level: float
+    ) -> dict[str, Any]:
         level = max(0.0, min(1.0, float(level)))
         return await self.async_send_command(
             device_id,
@@ -243,7 +302,9 @@ class NativeOldPhoneKioskClient:
 
     async def async_stop_intercom(self, device_id: str) -> dict[str, Any]:
         """Close the intercom session on the panel (back to idle)."""
-        return await self.async_send_command(device_id, PanelCommand.STOP_INTERCOM.value)
+        return await self.async_send_command(
+            device_id, PanelCommand.STOP_INTERCOM.value
+        )
 
     async def async_set_media(
         self,
@@ -257,7 +318,9 @@ class NativeOldPhoneKioskClient:
                 device_id,
                 set_video_url=video_url is not _UNSET,
                 video_url=None if video_url is _UNSET else video_url,
-                camera_mode=CameraState(camera_mode) if camera_mode is not None else None,
+                camera_mode=CameraState(camera_mode)
+                if camera_mode is not None
+                else None,
             )
         except UnknownDeviceError as exc:
             raise BridgeNotFoundError("unknown device") from exc
@@ -273,9 +336,13 @@ class NativeOldPhoneKioskClient:
         name = self._stream_name(device_id)
         return f"{base}/stream.html?src={name}", f"{base}/api/webrtc?src={name}"
 
-    async def async_start_stream(self, device_id: str, camera_mode: str | None = None) -> PanelDeviceData:
+    async def async_start_stream(
+        self, device_id: str, camera_mode: str | None = None
+    ) -> PanelDeviceData:
         viewer, publish = self._go2rtc_urls(device_id)
-        camera = CameraState(camera_mode) if camera_mode is not None else CameraState.FRONT
+        camera = (
+            CameraState(camera_mode) if camera_mode is not None else CameraState.FRONT
+        )
         try:
             if viewer is None:
                 device = self.registry.set_stream(
@@ -308,7 +375,7 @@ class NativeOldPhoneKioskClient:
                         PanelCommand.START_STREAM,
                         params=params,
                     )
-                except (DeviceOfflineError, asyncio.TimeoutError):
+                except (TimeoutError, DeviceOfflineError):
                     pass
         except UnknownDeviceError as exc:
             raise BridgeNotFoundError("unknown device") from exc
@@ -325,18 +392,23 @@ class NativeOldPhoneKioskClient:
             )
             if self.registry.is_online(device_id):
                 try:
-                    await self.registry.send_command(device_id, PanelCommand.STOP_STREAM, params={})
-                except (DeviceOfflineError, asyncio.TimeoutError):
+                    await self.registry.send_command(
+                        device_id, PanelCommand.STOP_STREAM, params={}
+                    )
+                except (TimeoutError, DeviceOfflineError):
                     pass
         except UnknownDeviceError as exc:
             raise BridgeNotFoundError("unknown device") from exc
         return PanelDeviceData.from_device(device)
 
 
-def handle_device_message(registry: Registry, device_id: str, raw: dict[str, Any]) -> None:
+def handle_device_message(
+    registry: Registry, device_id: str, raw: dict[str, Any]
+) -> None:
     """Route an inbound device WebSocket message."""
     msg_type = raw.get("type")
     if msg_type == "state":
+
         def enum_or_none(enum_cls, value):
             if value is None:
                 return None
@@ -362,5 +434,9 @@ def handle_device_message(registry: Registry, device_id: str, raw: dict[str, Any
         if command_id:
             registry.resolve_command(
                 device_id,
-                CommandResult(id=command_id, success=bool(raw.get("success")), error=raw.get("error")),
+                CommandResult(
+                    id=command_id,
+                    success=bool(raw.get("success")),
+                    error=raw.get("error"),
+                ),
             )

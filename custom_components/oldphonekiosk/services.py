@@ -25,17 +25,18 @@ from .const import (
     ATTR_DEVICE_ID,
     ATTR_ENABLED_SCREENS,
     ATTR_INTERCOM_MODE,
+    ATTR_NAME,
     ATTR_PHOTO_SOURCE,
+    ATTR_ROOM,
     ATTR_SHOW_BOTTOM_MENU,
     ATTR_SOUND,
     ATTR_SOUND_URL,
     ATTR_STREAM_URL,
     ATTR_TASK_SOURCE,
-    ATTR_NAME,
-    ATTR_ROOM,
     ATTR_VIDEO_URL,
     CAMERA_MODES,
     DOMAIN,
+    SCREENS,
     SERVICE_BEEP,
     SERVICE_PAIR_NEW_PANEL,
     SERVICE_PLAY_SOUND,
@@ -46,9 +47,7 @@ from .const import (
     SERVICE_START_STREAM,
     SERVICE_STOP_INTERCOM,
     SERVICE_STOP_STREAM,
-    SCREENS,
 )
-from .models import PanelCommand
 from .coordinator import OldPhoneKioskCoordinator
 from .media_sources import async_resolve_media_source_url, is_media_source
 
@@ -125,9 +124,8 @@ def _find_coordinator(
 ) -> OldPhoneKioskCoordinator | None:
     """Return the coordinator whose Bridge currently knows ``device_id``."""
     for coordinator in hass.data.get(DOMAIN, {}).values():
-        if (
-            isinstance(coordinator, OldPhoneKioskCoordinator)
-            and device_id in (coordinator.data or {})
+        if isinstance(coordinator, OldPhoneKioskCoordinator) and device_id in (
+            coordinator.data or {}
         ):
             return coordinator
     return None
@@ -260,7 +258,9 @@ async def _async_set_panel_ui(hass: HomeAssistant, call: ServiceCall) -> None:
     if ATTR_ENABLED_SCREENS in call.data:
         params[ATTR_ENABLED_SCREENS] = ",".join(call.data[ATTR_ENABLED_SCREENS])
     if ATTR_SHOW_BOTTOM_MENU in call.data:
-        params[ATTR_SHOW_BOTTOM_MENU] = "true" if call.data[ATTR_SHOW_BOTTOM_MENU] else "false"
+        params[ATTR_SHOW_BOTTOM_MENU] = (
+            "true" if call.data[ATTR_SHOW_BOTTOM_MENU] else "false"
+        )
     if ATTR_DASHBOARD_URL in call.data:
         params[ATTR_DASHBOARD_URL] = call.data[ATTR_DASHBOARD_URL] or ""
     if ATTR_TASK_SOURCE in call.data:
@@ -277,9 +277,15 @@ async def _async_set_panel_ui(hass: HomeAssistant, call: ServiceCall) -> None:
             default_screen=call.data.get(ATTR_DEFAULT_SCREEN),
             enabled_screens=call.data.get(ATTR_ENABLED_SCREENS),
             show_bottom_menu=call.data.get(ATTR_SHOW_BOTTOM_MENU),
-            dashboard_url=call.data.get(ATTR_DASHBOARD_URL) if ATTR_DASHBOARD_URL in call.data else None,
-            task_source=call.data.get(ATTR_TASK_SOURCE) if ATTR_TASK_SOURCE in call.data else None,
-            photo_source=call.data.get(ATTR_PHOTO_SOURCE) if ATTR_PHOTO_SOURCE in call.data else None,
+            dashboard_url=call.data.get(ATTR_DASHBOARD_URL)
+            if ATTR_DASHBOARD_URL in call.data
+            else None,
+            task_source=call.data.get(ATTR_TASK_SOURCE)
+            if ATTR_TASK_SOURCE in call.data
+            else None,
+            photo_source=call.data.get(ATTR_PHOTO_SOURCE)
+            if ATTR_PHOTO_SOURCE in call.data
+            else None,
         )
     except BridgeError as err:
         raise HomeAssistantError(f"Bridge set_panel_ui failed: {err}") from err
@@ -447,17 +453,21 @@ def async_setup_services(hass: HomeAssistant) -> None:
     hass.services.async_register(
         DOMAIN, SERVICE_STOP_STREAM, _handle_stop_stream, schema=STOP_STREAM_SCHEMA
     )
-    hass.services.async_register(
-        DOMAIN, SERVICE_BEEP, _handle_beep, schema=BEEP_SCHEMA
-    )
+    hass.services.async_register(DOMAIN, SERVICE_BEEP, _handle_beep, schema=BEEP_SCHEMA)
     hass.services.async_register(
         DOMAIN, SERVICE_PLAY_SOUND, _handle_play_sound, schema=PLAY_SOUND_SCHEMA
     )
     hass.services.async_register(
-        DOMAIN, SERVICE_START_INTERCOM, _handle_start_intercom, schema=START_INTERCOM_SCHEMA
+        DOMAIN,
+        SERVICE_START_INTERCOM,
+        _handle_start_intercom,
+        schema=START_INTERCOM_SCHEMA,
     )
     hass.services.async_register(
-        DOMAIN, SERVICE_STOP_INTERCOM, _handle_stop_intercom, schema=STOP_INTERCOM_SCHEMA
+        DOMAIN,
+        SERVICE_STOP_INTERCOM,
+        _handle_stop_intercom,
+        schema=STOP_INTERCOM_SCHEMA,
     )
     hass.services.async_register(
         DOMAIN,

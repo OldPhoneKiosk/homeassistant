@@ -14,11 +14,11 @@ import httpx
 
 from .const import (
     API_KEY_HEADER,
+    ENDPOINT_CLAIM_CREATE,
     ENDPOINT_COMMANDS,
     ENDPOINT_DEVICE,
     ENDPOINT_DEVICES,
     ENDPOINT_HEALTH,
-    ENDPOINT_CLAIM_CREATE,
     ENDPOINT_MEDIA,
     ENDPOINT_PAIRING_APPROVE,
     ENDPOINT_PAIRING_START,
@@ -86,9 +86,14 @@ class PanelDeviceData:
     sound: str | None = None
     enabled_screens: str | None = None
     show_bottom_menu: bool | None = None
+    keep_screen_awake: bool | None = None
+    show_connection_banner: bool | None = None
+    dim_after_seconds: float | None = None
+    sleep_after_seconds: float | None = None
+    task_refresh_seconds: float | None = None
 
     @classmethod
-    def from_json(cls, data: dict[str, Any]) -> "PanelDeviceData":
+    def from_json(cls, data: dict[str, Any]) -> PanelDeviceData:
         state = data.get("state") or {}
         media = data.get("media") or {}
         return cls(
@@ -112,6 +117,11 @@ class PanelDeviceData:
             sound=media.get("sound"),
             enabled_screens=media.get("enabled_screens"),
             show_bottom_menu=media.get("show_bottom_menu"),
+            keep_screen_awake=media.get("keep_screen_awake"),
+            show_connection_banner=media.get("show_connection_banner"),
+            dim_after_seconds=media.get("dim_after_seconds"),
+            sleep_after_seconds=media.get("sleep_after_seconds"),
+            task_refresh_seconds=media.get("task_refresh_seconds"),
         )
 
 
@@ -208,6 +218,10 @@ class BridgeClient:
         default_screen: str | None = None,
         enabled_screens: list[str] | None = None,
         show_bottom_menu: bool | None = None,
+        keep_screen_awake: bool | None = None,
+        show_connection_banner: bool | None = None,
+        dim_after_seconds: float | None = None,
+        sleep_after_seconds: float | None = None,
         dashboard_url: str | None = None,
     ) -> PanelDeviceData:
         """Push panel UI config via the legacy HTTP Bridge command endpoint."""
@@ -218,6 +232,16 @@ class BridgeClient:
             params["enabled_screens"] = ",".join(enabled_screens)
         if show_bottom_menu is not None:
             params["show_bottom_menu"] = "true" if show_bottom_menu else "false"
+        if keep_screen_awake is not None:
+            params["keep_screen_awake"] = "true" if keep_screen_awake else "false"
+        if show_connection_banner is not None:
+            params["show_connection_banner"] = (
+                "true" if show_connection_banner else "false"
+            )
+        if dim_after_seconds is not None:
+            params["dim_after_seconds"] = str(int(max(0, dim_after_seconds)))
+        if sleep_after_seconds is not None:
+            params["sleep_after_seconds"] = str(int(max(0, sleep_after_seconds)))
         if dashboard_url is not None:
             params["dashboard_url"] = dashboard_url
         await self._request(

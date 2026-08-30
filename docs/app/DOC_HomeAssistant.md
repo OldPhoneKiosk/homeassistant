@@ -22,6 +22,9 @@ After a panel is paired, OldPhoneKiosk exposes entities and services that can be
 | `text.<panel>_task_source` | task list id/URL feeding the tasks screen |
 | `text.<panel>_photo_source` | photo feed id/URL feeding the photos screen |
 | `text.<panel>_sound` | sound name/id/URL dispatched by the Play sound button |
+| `number.<panel>_dim_after` | seconds before the app dims the panel UI while idle |
+| `number.<panel>_sleep_screen_after` | seconds before the app enters its sleep/blank screen while idle |
+| `number.<panel>_refresh_tasks_every` | seconds between automatic task refresh requests from the panel; `0` disables auto-refresh |
 | `camera.<panel>_camera` | live still/MJPEG view of the panel camera |
 | `button.<panel>_wake` | send wake command |
 | `button.<panel>_sleep` | send sleep command |
@@ -87,8 +90,11 @@ data:
   default_screen: dashboard
   dashboard_url: "http://homeassistant.local:8123/lovelace/kitchen"
   task_source: todo.kitchen
+  task_refresh_seconds: 60
   photo_source: album.family
 ```
+
+The same cadence is exposed on each panel device page as `number.<panel>_refresh_tasks_every`. Setting it to `0` disables automatic refresh; otherwise the connected iOS app periodically asks Home Assistant for a fresh snapshot of the configured `todo.*` source.
 
 ### `oldphonekiosk.beep`
 

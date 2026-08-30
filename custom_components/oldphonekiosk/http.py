@@ -10,9 +10,10 @@ from homeassistant.components.http import HomeAssistantView
 from homeassistant.core import HomeAssistant
 
 from .const import DOMAIN
+from .models import PanelCommand
 from .native_client import handle_device_message
-from .tasks import async_handle_task_action
 from .registry import AuthError, ClaimError, Registry, UnknownDeviceError
+from .tasks import async_handle_task_action, async_push_task_snapshot_via_registry
 from .wstoken import WsTokenService
 
 _LOGGER = logging.getLogger(__name__)
@@ -27,6 +28,44 @@ def _registry(hass: HomeAssistant) -> Registry:
 
 def _ws_tokens(hass: HomeAssistant) -> WsTokenService:
     return hass.data[DOMAIN][DATA_WS_TOKENS]
+
+
+async def _send_persisted_config(
+    hass: HomeAssistant, registry: Registry, device_id: str
+) -> None:
+    """Send HA-owned panel config and task snapshot immediately after WS connect."""
+    media = registry.get_device(device_id).media
+    params: dict[str, str] = {}
+    if media.dashboard_url:
+        params["dashboard_url"] = media.dashboard_url
+    if media.task_source:
+        params["task_source"] = media.task_source
+    if media.photo_source:
+        params["photo_source"] = media.photo_source
+    if media.enabled_screens:
+        params["enabled_screens"] = media.enabled_screens
+    if media.show_bottom_menu is not None:
+        params["show_bottom_menu"] = "true" if media.show_bottom_menu else "false"
+    if media.keep_screen_awake is not None:
+        params["keep_screen_awake"] = "true" if media.keep_screen_awake else "false"
+    if media.show_connection_banner is not None:
+        params["show_connection_banner"] = (
+            "true" if media.show_connection_banner else "false"
+        )
+    if media.dim_after_seconds is not None:
+        params["dim_after_seconds"] = str(int(media.dim_after_seconds))
+    if media.sleep_after_seconds is not None:
+        params["sleep_after_seconds"] = str(int(media.sleep_after_seconds))
+    if media.task_refresh_seconds is not None:
+        params["task_refresh_seconds"] = str(int(media.task_refresh_seconds))
+    if params:
+        await registry.send_command_nowait(
+            device_id, PanelCommand.CONFIGURE_UI, params=params
+        )
+    if media.task_source:
+        await async_push_task_snapshot_via_registry(
+            hass, registry, device_id, media.task_source
+        )
 
 
 class ClaimRedeemView(HomeAssistantView):
@@ -102,15 +141,18 @@ class DeviceWebSocketView(HomeAssistantView):
         await ws.prepare(request)
         registry.register_connection(device_id, ws)
         try:
+            await _send_persisted_config(hass, registry, device_id)
             async for msg in ws:
                 if msg.type == WSMsgType.TEXT:
                     try:
                         raw = json.loads(msg.data)
                         if raw.get("type") == "task_action":
-                            await async_handle_task_action(hass, registry, device_id, raw)
+                            await async_handle_task_action(
+                                hass, registry, device_id, raw
+                            )
                         else:
                             handle_device_message(registry, device_id, raw)
-                    except Exception:  # noqa: BLE001 - bad device frames are ignored
+                    except Exception:
                         _LOGGER.debug("Ignoring invalid device frame", exc_info=True)
                 elif msg.type in (WSMsgType.ERROR, WSMsgType.CLOSE, WSMsgType.CLOSED):
                     break

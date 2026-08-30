@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Iterable
-
 from homeassistant.core import HomeAssistant
 
 MEDIA_SOURCE_PREFIX = "media-source://"
@@ -33,7 +31,9 @@ def _child_class(child) -> str:
 def _looks_audio(child) -> bool:
     media_id = (_child_id(child) or "").lower()
     media_class = _child_class(child)
-    return media_class in {"music", "track", "audio", "playlist"} or media_id.endswith(AUDIO_EXTENSIONS)
+    return media_class in {"music", "track", "audio", "playlist"} or media_id.endswith(
+        AUDIO_EXTENSIONS
+    )
 
 
 def _looks_photo_source(child) -> bool:
@@ -97,7 +97,9 @@ async def async_media_source_options(
     return options
 
 
-async def async_resolve_media_source_url(hass: HomeAssistant, value: str | None) -> str | None:
+async def async_resolve_media_source_url(
+    hass: HomeAssistant, value: str | None
+) -> str | None:
     """Resolve a media-source id to a playable URL for the iOS receiver."""
     if not is_media_source(value):
         return None

@@ -42,19 +42,23 @@ async def async_setup_entry(
     known_devices = set(coordinator.data or {})
 
     def _panel_entities(device_ids: set[str]):
-        return [
-            PanelCommandButton(coordinator, device_id, key, name, command, icon)
-            for device_id in device_ids
-            for key, name, command, icon in BUTTONS
-        ] + [
-            PanelStreamButton(coordinator, device_id, key, name, camera_mode, icon)
-            for device_id in device_ids
-            for key, name, camera_mode, icon in STREAM_BUTTONS
-        ] + [
-            PanelActionButton(coordinator, device_id, key, name, icon)
-            for device_id in device_ids
-            for key, name, icon in ACTION_BUTTONS
-        ]
+        return (
+            [
+                PanelCommandButton(coordinator, device_id, key, name, command, icon)
+                for device_id in device_ids
+                for key, name, command, icon in BUTTONS
+            ]
+            + [
+                PanelStreamButton(coordinator, device_id, key, name, camera_mode, icon)
+                for device_id in device_ids
+                for key, name, camera_mode, icon in STREAM_BUTTONS
+            ]
+            + [
+                PanelActionButton(coordinator, device_id, key, name, icon)
+                for device_id in device_ids
+                for key, name, icon in ACTION_BUTTONS
+            ]
+        )
 
     entities: list[ButtonEntity] = [HubPairingButton(coordinator, entry)]
     entities.extend(_panel_entities(known_devices))
@@ -78,7 +82,9 @@ class HubPairingButton(ButtonEntity):
     _attr_name = "Generate pairing code"
     _attr_translation_key = "generate_pairing_code"
 
-    def __init__(self, coordinator: OldPhoneKioskCoordinator, entry: ConfigEntry) -> None:
+    def __init__(
+        self, coordinator: OldPhoneKioskCoordinator, entry: ConfigEntry
+    ) -> None:
         self.coordinator = coordinator
         self._entry = entry
         self._attr_unique_id = f"{entry.entry_id}_generate_pairing_code"

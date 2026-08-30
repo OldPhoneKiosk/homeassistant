@@ -16,6 +16,7 @@ values (a full URL, a bundled sound name, an id HA cannot enumerate).
 from __future__ import annotations
 
 import logging
+from typing import ClassVar
 
 from homeassistant.components.select import SelectEntity
 from homeassistant.config_entries import ConfigEntry
@@ -96,11 +97,10 @@ def _dashboard_base_path(url_path: str | None) -> str:
 def _looks_like_default_lovelace_home(url: str) -> bool:
     """Return true for Lovelace root/home URLs that commonly resolve to /lovelace/0."""
     normalized = url.strip().rstrip("/")
-    return normalized.endswith("/lovelace") or normalized.endswith("/lovelace/0")
+    return normalized.endswith(("/lovelace", "/lovelace/0"))
 
 
 async def _dashboard_view_urls(hass: HomeAssistant) -> list[str]:
-
     """Best-effort dashboard + view/tab URLs from loaded Lovelace configs."""
     data = hass.data.get("lovelace")
     dashboards = None
@@ -119,7 +119,8 @@ async def _dashboard_view_urls(hass: HomeAssistant) -> list[str]:
             continue
         try:
             config = await async_load(False)
-        except Exception:  # noqa: BLE001 - Lovelace configs may be missing/unloadable.
+        except Exception:
+            _LOGGER.debug("Could not load Lovelace dashboard config", exc_info=True)
             continue
         views = config.get("views", []) if isinstance(config, dict) else []
         if not isinstance(views, list):
@@ -196,7 +197,7 @@ class VisibleScreensSelect(OldPhoneKioskEntity, SelectEntity):
     _attr_translation_key = "visible_screens"
     _attr_name = "Visible screens"
     _attr_icon = "mdi:view-dashboard-outline"
-    _attr_options = [
+    _attr_options: ClassVar[list[str]] = [
         "dashboard",
         "tasks,dashboard",
         "photos,tasks,dashboard",
@@ -219,7 +220,9 @@ class VisibleScreensSelect(OldPhoneKioskEntity, SelectEntity):
     async def async_select_option(self, option: str) -> None:
         screens = [screen.strip() for screen in option.split(",") if screen.strip()]
         self._selected = ",".join(screens)
-        await self.coordinator.client.async_set_panel_ui(self._device_id, enabled_screens=screens)
+        await self.coordinator.client.async_set_panel_ui(
+            self._device_id, enabled_screens=screens
+        )
         self.async_write_ha_state()
         await self.coordinator.async_request_refresh()
 
@@ -385,7 +388,9 @@ class SoundSelect(_SourceSelect):
         await self._async_refresh_sources()
 
     async def _async_refresh_sources(self) -> None:
-        self._discovered_extra = await async_media_source_options(self.hass, kind="audio")
+        self._discovered_extra = await async_media_source_options(
+            self.hass, kind="audio"
+        )
         self.async_write_ha_state()
 
     def _stored(self) -> str | None:
@@ -421,7 +426,9 @@ class PhotoSourceSelect(_SourceSelect):
 
     async def _async_refresh_sources(self) -> None:
         """Populate options from ``media_source`` albums/folders (best-effort)."""
-        self._discovered_extra = await async_media_source_options(self.hass, kind="photos")
+        self._discovered_extra = await async_media_source_options(
+            self.hass, kind="photos"
+        )
         self.async_write_ha_state()
 
     async def async_select_option(self, option: str) -> None:
