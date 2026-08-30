@@ -128,6 +128,7 @@ class DeviceState(BaseModel):
 
     online: bool = False
     battery: int | None = Field(default=None, ge=0, le=100)
+    battery_state: str | None = None
     brightness: float | None = Field(default=None, ge=0.0, le=1.0)
     screen: PanelScreen | None = None
     camera: CameraState = CameraState.OFF

@@ -30,7 +30,8 @@
   },
   "entity": {
     "binary_sensor": {
-      "online": { "name": "Online" }
+      "online": { "name": "Online" },
+      "charging": { "name": "Charging" }
     },
     "sensor": {
       "battery": { "name": "Battery" },

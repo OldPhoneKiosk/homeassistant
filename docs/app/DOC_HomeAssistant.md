@@ -14,6 +14,7 @@ After a panel is paired, OldPhoneKiosk exposes entities and services that can be
 | Entity | Meaning |
 | --- | --- |
 | `binary_sensor.<panel>_online` | whether the iPhone is currently connected/recently seen |
+| `binary_sensor.<panel>_charging` | whether the iPhone/iPad heartbeat reports charging/full; the raw `battery_state` attribute is `charging`, `full`, `unplugged`, or `unknown` |
 | `sensor.<panel>_battery` | battery percentage reported by the app |
 | `sensor.<panel>_last_seen` | last heartbeat timestamp |
 | `sensor.<panel>_app_version` | iOS app build/version |
