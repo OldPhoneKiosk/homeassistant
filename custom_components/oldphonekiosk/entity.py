@@ -5,9 +5,9 @@ from __future__ import annotations
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .native_client import PanelDeviceData
 from .const import DOMAIN, MANUFACTURER
 from .coordinator import OldPhoneKioskCoordinator
+from .native_client import PanelDeviceData
 
 
 class OldPhoneKioskEntity(CoordinatorEntity[OldPhoneKioskCoordinator]):
@@ -15,9 +15,7 @@ class OldPhoneKioskEntity(CoordinatorEntity[OldPhoneKioskCoordinator]):
 
     _attr_has_entity_name = True
 
-    def __init__(
-        self, coordinator: OldPhoneKioskCoordinator, device_id: str
-    ) -> None:
+    def __init__(self, coordinator: OldPhoneKioskCoordinator, device_id: str) -> None:
         super().__init__(coordinator)
         self._device_id = device_id
 
@@ -30,7 +28,7 @@ class OldPhoneKioskEntity(CoordinatorEntity[OldPhoneKioskCoordinator]):
         return super().available and self.device is not None
 
     @property
-    def extra_state_attributes(self) -> dict[str, str | bool | None]:
+    def extra_state_attributes(self) -> dict[str, str | bool | float | None]:
         # Expose the panel device id (for revoke_panel) plus media/camera/intercom
         # so the Lovelace card can read them from any panel entity.
         device = self.device
@@ -43,6 +41,10 @@ class OldPhoneKioskEntity(CoordinatorEntity[OldPhoneKioskCoordinator]):
             "sound": device.sound if device else None,
             "enabled_screens": device.enabled_screens if device else None,
             "show_bottom_menu": device.show_bottom_menu if device else None,
+            "keep_screen_awake": device.keep_screen_awake if device else None,
+            "show_connection_banner": device.show_connection_banner if device else None,
+            "dim_after_seconds": device.dim_after_seconds if device else None,
+            "sleep_after_seconds": device.sleep_after_seconds if device else None,
             "camera_mode": device.camera_mode if device else None,
             "intercom": device.intercom if device else None,
             "stream": device.stream if device else None,

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -43,7 +43,7 @@ def _device(device_id: str, name: str) -> PanelDeviceData:
         video_url=None,
         dashboard_url=None,
         app_version="0.1.0",
-        last_seen=datetime.now(timezone.utc),
+        last_seen=datetime.now(UTC),
     )
 
 

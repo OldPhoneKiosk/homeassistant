@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 
 from pydantic import BaseModel, Field
@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 
 def utcnow() -> datetime:
     """Timezone-aware UTC now (single source for testability)."""
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 class PanelScreen(str, Enum):
@@ -116,6 +116,11 @@ class DeviceMedia(BaseModel):
     sound: str | None = None
     enabled_screens: str | None = None
     show_bottom_menu: bool | None = None
+    keep_screen_awake: bool | None = None
+    show_connection_banner: bool | None = None
+    dim_after_seconds: float | None = None
+    sleep_after_seconds: float | None = None
+    task_refresh_seconds: float | None = None
 
 
 class DeviceState(BaseModel):

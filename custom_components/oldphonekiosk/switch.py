@@ -21,7 +21,39 @@ async def async_setup_entry(
     known_devices = set(coordinator.data or {})
 
     def _entities(device_ids: set[str]):
-        return [BottomMenuSwitch(coordinator, device_id) for device_id in device_ids]
+        return [
+            entity
+            for device_id in device_ids
+            for entity in (
+                PanelUISwitch(
+                    coordinator,
+                    device_id,
+                    key="bottom_menu",
+                    name="Bottom menu",
+                    icon="mdi:dock-bottom",
+                    field="show_bottom_menu",
+                    default=True,
+                ),
+                PanelUISwitch(
+                    coordinator,
+                    device_id,
+                    key="keep_screen_awake",
+                    name="Keep screen awake in app",
+                    icon="mdi:cellphone-lock",
+                    field="keep_screen_awake",
+                    default=True,
+                ),
+                PanelUISwitch(
+                    coordinator,
+                    device_id,
+                    key="connection_banner",
+                    name="Connection banner",
+                    icon="mdi:connection",
+                    field="show_connection_banner",
+                    default=True,
+                ),
+            )
+        ]
 
     async_add_entities(_entities(known_devices))
 
@@ -36,15 +68,26 @@ async def async_setup_entry(
     entry.async_on_unload(coordinator.async_add_listener(_async_add_new_devices))
 
 
-class BottomMenuSwitch(OldPhoneKioskEntity, SwitchEntity):
-    """Show/hide the phone bottom navigation menu from HA."""
+class PanelUISwitch(OldPhoneKioskEntity, SwitchEntity):
+    """Persist and push a boolean configure_ui setting."""
 
-    _attr_icon = "mdi:dock-bottom"
-
-    def __init__(self, coordinator: OldPhoneKioskCoordinator, device_id: str) -> None:
+    def __init__(
+        self,
+        coordinator: OldPhoneKioskCoordinator,
+        device_id: str,
+        *,
+        key: str,
+        name: str,
+        icon: str,
+        field: str,
+        default: bool,
+    ) -> None:
         super().__init__(coordinator, device_id)
-        self._attr_unique_id = f"{device_id}_bottom_menu"
-        self._attr_name = "Bottom menu"
+        self._attr_unique_id = f"{device_id}_{key}"
+        self._attr_name = name
+        self._attr_icon = icon
+        self._field = field
+        self._default = default
         self._optimistic: bool | None = None
 
     @property
@@ -52,9 +95,8 @@ class BottomMenuSwitch(OldPhoneKioskEntity, SwitchEntity):
         if self._optimistic is not None:
             return self._optimistic
         device = self.device
-        if device and device.show_bottom_menu is not None:
-            return device.show_bottom_menu
-        return True
+        stored = getattr(device, self._field, None) if device else None
+        return stored if stored is not None else self._default
 
     async def async_turn_on(self, **kwargs) -> None:
         await self._set(True)
@@ -62,11 +104,11 @@ class BottomMenuSwitch(OldPhoneKioskEntity, SwitchEntity):
     async def async_turn_off(self, **kwargs) -> None:
         await self._set(False)
 
-    async def _set(self, show: bool) -> None:
-        self._optimistic = show
+    async def _set(self, value: bool) -> None:
+        self._optimistic = value
         await self.coordinator.client.async_set_panel_ui(
             self._device_id,
-            show_bottom_menu=show,
+            **{self._field: value},
         )
         self.async_write_ha_state()
         await self.coordinator.async_request_refresh()

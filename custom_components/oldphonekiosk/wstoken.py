@@ -13,12 +13,12 @@ from __future__ import annotations
 
 import hashlib
 import hmac
-from datetime import datetime, timedelta, timezone
-from typing import Callable
+from collections.abc import Callable
+from datetime import UTC, datetime, timedelta
 
 
 def _utcnow() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 class WsTokenService:
@@ -36,7 +36,7 @@ class WsTokenService:
         self._now = now
 
     def _signature(self, device_id: str, exp: int) -> str:
-        message = f"ws:{device_id}:{exp}".encode("utf-8")
+        message = f"ws:{device_id}:{exp}".encode()
         return hmac.new(self._secret, message, hashlib.sha256).hexdigest()
 
     def issue(self, device_id: str) -> tuple[str, datetime]:
@@ -45,7 +45,7 @@ class WsTokenService:
         exp = int(expires_at.timestamp())
         token = f"{exp}.{self._signature(device_id, exp)}"
         # Normalize expires_at to the whole-second epoch we actually signed.
-        return token, datetime.fromtimestamp(exp, tz=timezone.utc)
+        return token, datetime.fromtimestamp(exp, tz=UTC)
 
     def verify(self, device_id: str, token: str) -> bool:
         """Constant-time verify signature and expiry for ``device_id``."""

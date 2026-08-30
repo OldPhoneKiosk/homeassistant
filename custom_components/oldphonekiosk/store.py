@@ -26,7 +26,7 @@ from .models import (
 )
 
 # Current schema version. Bump when adding a migration below.
-SCHEMA_VERSION = 6
+SCHEMA_VERSION = 8
 
 # Migration to version 1: the devices table. IF NOT EXISTS makes it idempotent so
 # pre-migration databases (created before user_version tracking) upgrade cleanly.
@@ -83,6 +83,17 @@ _MIGRATION_6 = """
 ALTER TABLE devices ADD COLUMN enabled_screens TEXT;
 ALTER TABLE devices ADD COLUMN show_bottom_menu INTEGER;
 """
+# Migration to version 7: HA-owned screen behavior controls.
+_MIGRATION_7 = """
+ALTER TABLE devices ADD COLUMN keep_screen_awake INTEGER;
+ALTER TABLE devices ADD COLUMN show_connection_banner INTEGER;
+ALTER TABLE devices ADD COLUMN dim_after_seconds REAL;
+ALTER TABLE devices ADD COLUMN sleep_after_seconds REAL;
+"""
+# Migration to version 8: HA-owned task refresh cadence.
+_MIGRATION_8 = """
+ALTER TABLE devices ADD COLUMN task_refresh_seconds REAL;
+"""
 
 
 def _configure_connection(conn: sqlite3.Connection, db_path: str) -> None:
@@ -118,6 +129,10 @@ def _migrate(conn: sqlite3.Connection) -> None:
         conn.executescript(_MIGRATION_5)
     if version < 6:
         conn.executescript(_MIGRATION_6)
+    if version < 7:
+        conn.executescript(_MIGRATION_7)
+    if version < 8:
+        conn.executescript(_MIGRATION_8)
     conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
     conn.commit()
 
@@ -170,8 +185,10 @@ class DeviceStore:
                     device_id, name, room, model, ios_version, capabilities,
                     secret_hash, created_at, battery, brightness, screen, camera,
                     app_version, last_seen, video_url, dashboard_url, intercom,
-                    task_source, photo_source, sound, enabled_screens, show_bottom_menu
-                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                    task_source, photo_source, sound, enabled_screens, show_bottom_menu,
+                    keep_screen_awake, show_connection_banner, dim_after_seconds, sleep_after_seconds,
+                    task_refresh_seconds
+                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                 ON CONFLICT(device_id) DO UPDATE SET
                     name=excluded.name, room=excluded.room, model=excluded.model,
                     ios_version=excluded.ios_version, capabilities=excluded.capabilities,
@@ -203,7 +220,18 @@ class DeviceStore:
                     device.media.photo_source,
                     device.media.sound,
                     device.media.enabled_screens,
-                    None if device.media.show_bottom_menu is None else int(device.media.show_bottom_menu),
+                    None
+                    if device.media.show_bottom_menu is None
+                    else int(device.media.show_bottom_menu),
+                    None
+                    if device.media.keep_screen_awake is None
+                    else int(device.media.keep_screen_awake),
+                    None
+                    if device.media.show_connection_banner is None
+                    else int(device.media.show_connection_banner),
+                    device.media.dim_after_seconds,
+                    device.media.sleep_after_seconds,
+                    device.media.task_refresh_seconds,
                 ),
             )
             self._conn.commit()
@@ -238,7 +266,9 @@ class DeviceStore:
                 """
                 UPDATE devices SET
                     video_url=?, dashboard_url=?, task_source=?, photo_source=?, sound=?,
-                    enabled_screens=?, show_bottom_menu=?
+                    enabled_screens=?, show_bottom_menu=?, keep_screen_awake=?,
+                    show_connection_banner=?, dim_after_seconds=?, sleep_after_seconds=?,
+                    task_refresh_seconds=?
                 WHERE device_id=?
                 """,
                 (
@@ -248,7 +278,18 @@ class DeviceStore:
                     media.photo_source,
                     media.sound,
                     media.enabled_screens,
-                    None if media.show_bottom_menu is None else int(media.show_bottom_menu),
+                    None
+                    if media.show_bottom_menu is None
+                    else int(media.show_bottom_menu),
+                    None
+                    if media.keep_screen_awake is None
+                    else int(media.keep_screen_awake),
+                    None
+                    if media.show_connection_banner is None
+                    else int(media.show_connection_banner),
+                    media.dim_after_seconds,
+                    media.sleep_after_seconds,
+                    media.task_refresh_seconds,
                     device_id,
                 ),
             )
@@ -342,14 +383,33 @@ class DeviceStore:
         photo_source = row["photo_source"] if "photo_source" in keys else None
         sound = row["sound"] if "sound" in keys else None
         enabled_screens = row["enabled_screens"] if "enabled_screens" in keys else None
-        show_bottom_menu = row["show_bottom_menu"] if "show_bottom_menu" in keys else None
+        show_bottom_menu = (
+            row["show_bottom_menu"] if "show_bottom_menu" in keys else None
+        )
+        keep_screen_awake = (
+            row["keep_screen_awake"] if "keep_screen_awake" in keys else None
+        )
+        show_connection_banner = (
+            row["show_connection_banner"] if "show_connection_banner" in keys else None
+        )
+        dim_after_seconds = (
+            row["dim_after_seconds"] if "dim_after_seconds" in keys else None
+        )
+        sleep_after_seconds = (
+            row["sleep_after_seconds"] if "sleep_after_seconds" in keys else None
+        )
+        task_refresh_seconds = (
+            row["task_refresh_seconds"] if "task_refresh_seconds" in keys else None
+        )
         state = DeviceState(
             online=False,  # never persisted true; requires a live connection
             battery=row["battery"],
             brightness=row["brightness"],
             screen=PanelScreen(row["screen"]) if row["screen"] else None,
             camera=CameraState(row["camera"]) if row["camera"] else CameraState.OFF,
-            intercom=IntercomState(intercom_raw) if intercom_raw else IntercomState.IDLE,
+            intercom=IntercomState(intercom_raw)
+            if intercom_raw
+            else IntercomState.IDLE,
             app_version=row["app_version"],
             last_seen=_dt(row["last_seen"]),
         )
@@ -368,7 +428,18 @@ class DeviceStore:
                 photo_source=photo_source,
                 sound=sound,
                 enabled_screens=enabled_screens,
-                show_bottom_menu=None if show_bottom_menu is None else bool(show_bottom_menu),
+                show_bottom_menu=None
+                if show_bottom_menu is None
+                else bool(show_bottom_menu),
+                keep_screen_awake=None
+                if keep_screen_awake is None
+                else bool(keep_screen_awake),
+                show_connection_banner=None
+                if show_connection_banner is None
+                else bool(show_connection_banner),
+                dim_after_seconds=dim_after_seconds,
+                sleep_after_seconds=sleep_after_seconds,
+                task_refresh_seconds=task_refresh_seconds,
             ),
             created_at=_dt(row["created_at"]) or datetime.now().astimezone(),
         )
