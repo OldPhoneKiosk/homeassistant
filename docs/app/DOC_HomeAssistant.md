@@ -96,6 +96,8 @@ data:
 
 The same cadence is exposed on each panel device page as `number.<panel>_refresh_tasks_every`. Setting it to `0` disables automatic refresh; otherwise the connected iOS app periodically asks Home Assistant for a fresh snapshot of the configured `todo.*` source.
 
+Task snapshots include the standard HA todo fields (`uid`, `summary`, `status`, `due`, `description`) and may include `assignee` plus a compact JSON `details` object for extra metadata. The iOS app renders these fields in a read-only task detail modal when the user taps a task row.
+
 ### `oldphonekiosk.beep`
 
 Play a short attention beep + haptic on the panel.
