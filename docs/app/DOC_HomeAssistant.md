@@ -126,7 +126,7 @@ data:
 
 ### `oldphonekiosk.start_intercom` and `oldphonekiosk.stop_intercom`
 
-Open/close an intercom session on the panel. **Honest MVP:** the panel reflects the intercom state (ringing/talking) in its UI; live audio capture/streaming is not implemented yet. The contract already carries `audio_url` / `stream_url` so a future build can pull/publish real audio without a protocol change.
+Open/close an intercom session on the panel. `start_intercom` first starts the panel's front-camera MJPEG publisher, so HA can immediately show the visual call through `camera.<panel>_camera`, then sets the panel intercom state to ringing/talking. Live two-way audio is still reserved for the later WebRTC audio path, but the visual call path works from one HA button/service.
 
 ```yaml
 service: oldphonekiosk.start_intercom
