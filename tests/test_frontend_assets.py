@@ -10,6 +10,8 @@ def test_frontend_registers_static_assets_not_sidebar_panel():
     assert "async_register_panel" not in source
     assert "async_remove_panel" not in source
     assert "StaticPathConfig" in source
+    assert "async_ensure_lovelace_resource" in source
+    assert "oldphonekiosk-intercom-card.js?v=0.1.32" in source
 
 
 def test_lovelace_intercom_card_asset_exists_and_is_registered():
