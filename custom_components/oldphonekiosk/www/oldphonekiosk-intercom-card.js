@@ -233,10 +233,14 @@ class OldPhoneKioskIntercomCard extends HTMLElement {
 
   async _hangup(send = true, options = {}) {
     const sessionId = this._sessionId;
-    this._cleanupMedia();
+    // Send the remote hangup before local cleanup. Local cleanup unsubscribes from
+    // the HA signaling stream, and that unsubscribe also removes the broker
+    // session; doing it first made the following hangup hit "unknown session" and
+    // the iPad never received stop_intercom/stop_stream.
     if (send && sessionId && this._hass) {
       await this._hass.callWS({ type: "oldphonekiosk/intercom/hangup", session_id: sessionId }).catch(() => {});
     }
+    this._cleanupMedia();
     this._status = options.status || "Rozłączono";
     this.render();
   }

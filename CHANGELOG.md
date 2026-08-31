@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.38 - 2026-08-31
+
+- Fix the Lovelace intercom card `Rozłącz` flow so it sends the HA/iPad hangup before unsubscribing from the session.
+- Add intercom signaling logs for `browser->device` and `device->browser` actions to diagnose iPad answer/ICE/audio paths.
+
 ## 0.1.37 - 2026-08-31
 
 - Fix the Lovelace intercom `Zadzwoń` flow so backend-issued `start_stream` and `start_intercom` commands validate correctly before being sent to the panel.

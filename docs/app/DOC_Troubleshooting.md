@@ -29,6 +29,10 @@ Check iPhone Wi‑Fi, iOS app build, Home Assistant logs for `oldphonekiosk`, an
 
 Upgrade the OldPhoneKiosk Home Assistant integration to `0.1.37` or newer and restart Home Assistant. Older intercom card/backend combinations could start the WebRTC session but fail when the broker sent the panel `start_stream`/`start_intercom` commands, producing a Pydantic `Command command` validation error in the Lovelace card.
 
+## Rozłącz does not stop the iPad intercom/camera
+
+Upgrade the OldPhoneKiosk Home Assistant integration to `0.1.38` or newer and restart Home Assistant. Version `0.1.38` sends the remote hangup before the Lovelace card unsubscribes from the signaling session, so HA can still deliver `hangup`, `stop_intercom`, and `stop_stream` to the iPad. If iPad → HA audio still fails, check HA logs for `OldPhoneKiosk intercom device->browser` actions; a healthy iPad build should send `answer` and ICE candidates after `Zadzwoń`.
+
 ## Safe logs to share
 
 Share Home Assistant version, integration version or commit, iOS app build, relevant HA log lines and reproduction steps. Do **not** share active pairing codes or claim tokens, device secrets or full Home Assistant tokens.
