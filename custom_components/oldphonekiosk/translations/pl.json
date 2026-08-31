@@ -57,6 +57,9 @@
       "start_intercom": { "name": "Rozpocznij interkom" },
       "stop_intercom": { "name": "Zakończ interkom" }
     },
+    "switch": {
+      "camera_rotate_180": { "name": "Obróć kamerę o 180°" }
+    },
     "text": {
       "custom_dashboard_url": { "name": "Własny adres dashboardu" },
       "custom_task_source": { "name": "Własne źródło zadań" },

@@ -122,6 +122,8 @@ class _FakeClient:
             "show_bottom_menu",
             "keep_screen_awake",
             "show_connection_banner",
+            "show_photo_time_overlay",
+            "camera_rotate_180",
             "dim_after_seconds",
             "sleep_after_seconds",
             "task_refresh_seconds",
@@ -298,6 +300,7 @@ async def test_pairing_button_creates_code_notification(hass: HomeAssistant):
     assert hass.states.get("switch.kitchen_bottom_menu") is not None
     assert hass.states.get("switch.kitchen_keep_screen_awake_in_app") is not None
     assert hass.states.get("switch.kitchen_connection_banner") is not None
+    assert hass.states.get("switch.kitchen_rotate_camera_180deg") is not None
     assert hass.states.get("switch.kitchen_photo_time_overlay") is not None
     assert hass.states.get("number.kitchen_screen_brightness") is not None
     assert hass.states.get("number.kitchen_device_volume") is not None
@@ -652,9 +655,24 @@ async def test_device_page_navigation_and_device_level_controls(hass: HomeAssist
         {"entity_id": "number.kitchen_refresh_tasks_every", "value": 30},
         blocking=True,
     )
+    await hass.services.async_call(
+        "switch",
+        "turn_on",
+        {"entity_id": "switch.kitchen_rotate_camera_180deg"},
+        blocking=True,
+    )
+    await hass.services.async_call(
+        "switch",
+        "turn_on",
+        {"entity_id": "switch.kitchen_photo_time_overlay"},
+        blocking=True,
+    )
 
     assert any(c.get("show_bottom_menu") is False for c in fake.ui_calls)
     assert any(c.get("keep_screen_awake") is False for c in fake.ui_calls)
+    assert any(c.get("show_connection_banner") is False for c in fake.ui_calls)
+    assert any(c.get("camera_rotate_180") is True for c in fake.ui_calls)
+    assert any(c.get("show_photo_time_overlay") is True for c in fake.ui_calls)
     assert any(c.get("show_connection_banner") is False for c in fake.ui_calls)
     assert any(
         c.get("enabled_screens") == ["tasks", "dashboard"] for c in fake.ui_calls

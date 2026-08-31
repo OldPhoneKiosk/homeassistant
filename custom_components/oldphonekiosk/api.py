@@ -90,6 +90,7 @@ class PanelDeviceData:
     keep_screen_awake: bool | None = None
     show_connection_banner: bool | None = None
     show_photo_time_overlay: bool | None = None
+    camera_rotate_180: bool | None = None
     dim_after_seconds: float | None = None
     sleep_after_seconds: float | None = None
     task_refresh_seconds: float | None = None
@@ -123,6 +124,7 @@ class PanelDeviceData:
             keep_screen_awake=media.get("keep_screen_awake"),
             show_connection_banner=media.get("show_connection_banner"),
             show_photo_time_overlay=media.get("show_photo_time_overlay"),
+            camera_rotate_180=media.get("camera_rotate_180"),
             dim_after_seconds=media.get("dim_after_seconds"),
             sleep_after_seconds=media.get("sleep_after_seconds"),
             task_refresh_seconds=media.get("task_refresh_seconds"),
@@ -225,6 +227,7 @@ class BridgeClient:
         keep_screen_awake: bool | None = None,
         show_connection_banner: bool | None = None,
         show_photo_time_overlay: bool | None = None,
+        camera_rotate_180: bool | None = None,
         dim_after_seconds: float | None = None,
         sleep_after_seconds: float | None = None,
         dashboard_url: str | None = None,
@@ -247,6 +250,8 @@ class BridgeClient:
             params["show_photo_time_overlay"] = (
                 "true" if show_photo_time_overlay else "false"
             )
+        if camera_rotate_180 is not None:
+            params["camera_rotate_180"] = "true" if camera_rotate_180 else "false"
         if dim_after_seconds is not None:
             params["dim_after_seconds"] = str(int(max(0, dim_after_seconds)))
         if sleep_after_seconds is not None:

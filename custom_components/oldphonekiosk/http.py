@@ -57,6 +57,8 @@ async def _send_persisted_config(
         params["show_photo_time_overlay"] = (
             "true" if media.show_photo_time_overlay else "false"
         )
+    if media.camera_rotate_180 is not None:
+        params["camera_rotate_180"] = "true" if media.camera_rotate_180 else "false"
     if media.dim_after_seconds is not None:
         params["dim_after_seconds"] = str(int(media.dim_after_seconds))
     if media.sleep_after_seconds is not None:
