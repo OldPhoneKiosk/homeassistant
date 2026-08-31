@@ -23,8 +23,7 @@ After a panel is paired, OldPhoneKiosk exposes entities and services that can be
 | `text.<panel>_task_source` | task list id/URL feeding the tasks screen |
 | `text.<panel>_photo_source` / `select.<panel>_photo_source` | photo feed/camera feeding the photos screen; `camera.*` entities are served through the authenticated panel snapshot endpoint. When HA exposes an `entity_picture` camera proxy property, the panel follows that same tokenized proxy path, matching dashboard rendering. The select refreshes camera options dynamically, so cameras from integrations such as Google Photos Album appear even if they load after OldPhoneKiosk. |
 | `text.<panel>_sound` | sound name/id/URL dispatched by the Play sound button |
-| `switch.<panel>_photo_time_overlay` | shows/hides the clock overlay on the native Photos screen |
-| `switch.<panel>_photo_location_overlay` | shows/hides the location overlay when the selected photo source exposes location metadata |
+| `switch.<panel>_photo_time_overlay` | shows/hides the fixed-position clock overlay on the native Photos screen |
 | `number.<panel>_dim_after` | seconds before the app dims the panel UI while idle |
 | `number.<panel>_sleep_screen_after` | seconds before the app enters its sleep/blank screen while idle |
 | `number.<panel>_refresh_tasks_every` | seconds between automatic task refresh requests from the panel; `0` disables auto-refresh |

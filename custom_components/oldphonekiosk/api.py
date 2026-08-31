@@ -90,7 +90,6 @@ class PanelDeviceData:
     keep_screen_awake: bool | None = None
     show_connection_banner: bool | None = None
     show_photo_time_overlay: bool | None = None
-    show_photo_location_overlay: bool | None = None
     dim_after_seconds: float | None = None
     sleep_after_seconds: float | None = None
     task_refresh_seconds: float | None = None
@@ -124,7 +123,6 @@ class PanelDeviceData:
             keep_screen_awake=media.get("keep_screen_awake"),
             show_connection_banner=media.get("show_connection_banner"),
             show_photo_time_overlay=media.get("show_photo_time_overlay"),
-            show_photo_location_overlay=media.get("show_photo_location_overlay"),
             dim_after_seconds=media.get("dim_after_seconds"),
             sleep_after_seconds=media.get("sleep_after_seconds"),
             task_refresh_seconds=media.get("task_refresh_seconds"),
@@ -227,7 +225,6 @@ class BridgeClient:
         keep_screen_awake: bool | None = None,
         show_connection_banner: bool | None = None,
         show_photo_time_overlay: bool | None = None,
-        show_photo_location_overlay: bool | None = None,
         dim_after_seconds: float | None = None,
         sleep_after_seconds: float | None = None,
         dashboard_url: str | None = None,
@@ -249,10 +246,6 @@ class BridgeClient:
         if show_photo_time_overlay is not None:
             params["show_photo_time_overlay"] = (
                 "true" if show_photo_time_overlay else "false"
-            )
-        if show_photo_location_overlay is not None:
-            params["show_photo_location_overlay"] = (
-                "true" if show_photo_location_overlay else "false"
             )
         if dim_after_seconds is not None:
             params["dim_after_seconds"] = str(int(max(0, dim_after_seconds)))

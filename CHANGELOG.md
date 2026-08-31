@@ -1,8 +1,13 @@
 # Changelog
 
+## 0.1.25 - 2026-08-31
+
+- Remove the unused photo location overlay switch because Google Photos Picker does not provide location metadata.
+- Keep the photo clock overlay as the only HA-driven photo metadata overlay.
+
 ## 0.1.24 - 2026-08-30
 
-- Add per-panel photo overlay switches for showing the clock and photo location on the native iPad Photos screen.
+- Add per-panel photo overlay switches for showing the clock on the native iPad Photos screen.
 
 ## 0.1.23 - 2026-08-30
 
