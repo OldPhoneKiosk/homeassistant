@@ -23,6 +23,7 @@ class FakeResources:
     def __init__(self, items=None):
         self._items = items or []
         self.created = []
+        self.updated = []
         self.load_calls = 0
 
     async def async_load(self):
@@ -36,6 +37,14 @@ class FakeResources:
         self._items.append(item)
         return item
 
+    async def async_update_item(self, item_id, updates):
+        self.updated.append((item_id, updates))
+        for item in self._items:
+            if item.get("id") == item_id:
+                item.update(updates)
+                return item
+        raise KeyError(item_id)
+
 
 @pytest.mark.asyncio
 async def test_ensure_lovelace_resource_creates_module_resource():
@@ -47,20 +56,41 @@ async def test_ensure_lovelace_resource_creates_module_resource():
 
     assert resources.load_calls == 1
     assert resources.created == [
-        {"res_type": "module", "url": "/oldphonekiosk_static/oldphonekiosk-intercom-card.js?v=0.1.34"}
+        {"res_type": "module", "url": "/oldphonekiosk_static/oldphonekiosk-intercom-card.js?v=0.1.35"}
     ]
     assert hass.data["oldphonekiosk"]["lovelace_resource_registered"] is True
 
 
 @pytest.mark.asyncio
-async def test_ensure_lovelace_resource_does_not_duplicate_existing_resource():
+async def test_ensure_lovelace_resource_updates_stale_existing_resource():
     module = _load_frontend_module()
     resources = FakeResources(
-        [{"type": "module", "url": "/oldphonekiosk_static/oldphonekiosk-intercom-card.js?v=0.1.31"}]
+        [{"id": "res-1", "type": "module", "url": "/oldphonekiosk_static/oldphonekiosk-intercom-card.js?v=0.1.34"}]
     )
     hass = SimpleNamespace(data={"lovelace": {"resources": resources}})
 
     await module.async_ensure_lovelace_resource(hass)
 
     assert resources.created == []
+    assert resources.updated == [
+        (
+            "res-1",
+            {"res_type": "module", "url": "/oldphonekiosk_static/oldphonekiosk-intercom-card.js?v=0.1.35"},
+        )
+    ]
+    assert hass.data["oldphonekiosk"]["lovelace_resource_registered"] is True
+
+
+@pytest.mark.asyncio
+async def test_ensure_lovelace_resource_does_not_duplicate_current_resource():
+    module = _load_frontend_module()
+    resources = FakeResources(
+        [{"id": "res-1", "type": "module", "url": "/oldphonekiosk_static/oldphonekiosk-intercom-card.js?v=0.1.35"}]
+    )
+    hass = SimpleNamespace(data={"lovelace": {"resources": resources}})
+
+    await module.async_ensure_lovelace_resource(hass)
+
+    assert resources.created == []
+    assert resources.updated == []
     assert hass.data["oldphonekiosk"]["lovelace_resource_registered"] is True

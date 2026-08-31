@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.35 - 2026-08-31
+
+- Update an existing stale Lovelace resource URL for `oldphonekiosk-intercom-card.js` to the current cache-busted version instead of treating any old `?v=` as current.
+- Fixes HA continuing to load the old two-button intercom card after upgrading to v0.1.34.
+
 ## 0.1.34 - 2026-08-31
 
 - Change the intercom card to call/hold-to-talk/hangup UX: `Zadzwoń` starts intercom + front camera + speaker, `Mów` enables the browser microphone only while pressed, and `Rozłącz` stops intercom + camera.
