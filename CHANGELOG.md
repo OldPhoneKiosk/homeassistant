@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.30 - 2026-08-31
+
+- Add the `/oldphonekiosk` Home Assistant frontend panel for browser microphone/speaker WebRTC intercom.
+- Add authenticated HA websocket signaling commands for intercom start, subscribe, offer, ICE candidate, and hangup.
+- Route `intercom_signal` frames over the existing panel device WebSocket so iOS can exchange SDP/ICE without using Home Assistant as the audio media server.
+
 ## 0.1.29 - 2026-08-31
 
 - Add a per-panel **Rotate camera 180°** switch that persists in Home Assistant and is replayed to the iOS app on reconnect.

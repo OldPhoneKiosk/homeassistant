@@ -128,7 +128,9 @@ data:
 
 ### `oldphonekiosk.start_intercom` and `oldphonekiosk.stop_intercom`
 
-Open/close an intercom session on the panel. `start_intercom` first starts the panel's front-camera MJPEG publisher, so HA can immediately show the visual call through `camera.<panel>_camera`, then sets the panel intercom state to ringing/talking. Live two-way audio is still reserved for the later WebRTC audio path, but the visual call path works from one HA button/service.
+Open/close an intercom session on the panel. `start_intercom` first starts the panel's front-camera MJPEG publisher, so HA can immediately show the visual call through `camera.<panel>_camera`, then sets the panel intercom state to ringing/talking.
+
+For live two-way audio, open the **OldPhoneKiosk** sidebar panel at `/oldphonekiosk`. The panel asks the HA browser for microphone permission, creates an audio-only WebRTC peer connection, and uses the integration websocket API as signaling only. Audio media flows directly between the HA browser and the iOS app; Home Assistant does not proxy PCM/Opus audio chunks.
 
 ```yaml
 service: oldphonekiosk.start_intercom

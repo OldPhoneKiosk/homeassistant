@@ -492,6 +492,18 @@ class Registry:
     # Commands
     # ------------------------------------------------------------------
 
+    async def send_raw(self, device_id: str, message: dict) -> None:
+        """Send an arbitrary JSON frame to a connected device.
+
+        Used for WebRTC intercom signaling frames, which are not request/response
+        panel commands and must not allocate pending command futures.
+        """
+        self.get_device(device_id)
+        conn = self._connections.get(device_id)
+        if conn is None:
+            raise DeviceOfflineError(device_id)
+        await conn.send_json(message)
+
     async def send_command(
         self, device_id: str, command: PanelCommand, params: dict | None = None
     ) -> tuple[Command, CommandResult | None]:
