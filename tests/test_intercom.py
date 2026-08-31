@@ -37,7 +37,9 @@ class FakeRegistry:
         self.get_device(device_id)
         if not self.is_online(device_id):
             raise DeviceOfflineError(device_id)
-        self.sent.append((device_id, {"type": "command", "command": command.value, "params": params}))
+        assert isinstance(command, str)
+        assert hasattr(command, "value")
+        self.sent.append((device_id, {"type": "command", "command": getattr(command, "value"), "params": params}))
 
 
 @pytest.mark.asyncio

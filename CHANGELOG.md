@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.37 - 2026-08-31
+
+- Fix the Lovelace intercom `Zadzwoń` flow so backend-issued `start_stream` and `start_intercom` commands validate correctly before being sent to the panel.
+- Keep the lightweight intercom broker compatible with fast tests while using string-compatible command values accepted by Home Assistant/Pydantic at runtime.
+
 ## 0.1.36 - 2026-08-31
 
 - Make `Zadzwoń` start the intercom/camera/speaker without requiring browser microphone access; the browser asks for microphone only when holding `Mów`.

@@ -10,15 +10,21 @@ from dataclasses import dataclass, field
 import uuid
 from typing import Awaitable, Callable, Protocol
 
-from .models import PanelCommand
-
 IntercomSignalHandler = Callable[[dict], Awaitable[None]]
 
 
-CMD_START_STREAM = PanelCommand.START_STREAM
-CMD_STOP_STREAM = PanelCommand.STOP_STREAM
-CMD_START_INTERCOM = PanelCommand.START_INTERCOM
-CMD_STOP_INTERCOM = PanelCommand.STOP_INTERCOM
+class _Command(str):
+    """String command shim compatible with Registry and Pydantic validation."""
+
+    @property
+    def value(self) -> str:
+        return str(self)
+
+
+CMD_START_STREAM = _Command("start_stream")
+CMD_STOP_STREAM = _Command("stop_stream")
+CMD_START_INTERCOM = _Command("start_intercom")
+CMD_STOP_INTERCOM = _Command("stop_intercom")
 
 
 class IntercomRegistry(Protocol):
@@ -28,7 +34,7 @@ class IntercomRegistry(Protocol):
     def is_online(self, device_id: str) -> bool: ...
     async def send_raw(self, device_id: str, message: dict) -> None: ...
     async def send_command_nowait(
-        self, device_id: str, command: PanelCommand, params: dict | None = None
+        self, device_id: str, command: _Command, params: dict | None = None
     ): ...
 
 
