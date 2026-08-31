@@ -171,9 +171,9 @@ play_sound:
 start_intercom:
   name: Start intercom
   description: >-
-    Open an intercom session on the panel. Honest MVP: the panel reflects the
-    intercom state (ringing/talking) in its UI; live audio capture/streaming is not
-    yet implemented, but audio_url/stream_url are carried for a future build.
+    Open an intercom session on the panel and start the front-camera MJPEG stream
+    so Home Assistant can immediately show the panel video. This establishes the
+    visual call path; live two-way audio is reserved for the later WebRTC audio path.
   fields:
     device_id:
       name: Panel device id

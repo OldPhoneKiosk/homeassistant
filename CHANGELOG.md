@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.27 - 2026-08-31
+
+- Make Start intercom establish a practical HA-side video connection by starting the panel's front-camera MJPEG publisher before setting intercom state.
+- The intercom button/service now opens the camera path users need for an incoming/talk session; live two-way audio remains reserved for the later WebRTC audio path.
+
 ## 0.1.26 - 2026-08-31
 
 - Document the direct iOS local MJPEG camera path for front/back camera streaming into Home Assistant.

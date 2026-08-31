@@ -167,6 +167,9 @@ class PanelActionButton(OldPhoneKioskEntity, ButtonEntity):
                     sound = stored_sound
             await client.async_play_sound(self._device_id, sound=sound, url=url)
         elif self._key == "start_intercom":
+            # One-tap intercom should open a useful HA connection: start the
+            # front-camera MJPEG publisher before setting intercom/talk state.
+            await client.async_start_stream(self._device_id, camera_mode="front")
             await client.async_start_intercom(self._device_id)
         elif self._key == "stop_intercom":
             await client.async_stop_intercom(self._device_id)

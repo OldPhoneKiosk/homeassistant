@@ -339,6 +339,11 @@ async def _async_start_intercom(hass: HomeAssistant, call: ServiceCall) -> None:
             f"No configured OldPhoneKiosk backend knows device '{device_id}'."
         )
     try:
+        # Intercom should establish a useful HA-side connection, not only toggle
+        # a state banner on the panel. Start the foreground front-camera MJPEG
+        # publisher first so `camera.<panel>_camera` receives a live URL from the
+        # next device heartbeat, then mark the panel as ringing/talking.
+        await coordinator.client.async_start_stream(device_id, camera_mode="front")
         await coordinator.client.async_start_intercom(
             device_id,
             mode=call.data.get(ATTR_INTERCOM_MODE),
