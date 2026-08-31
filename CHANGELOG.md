@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.31 - 2026-08-31
+
+- Replace the experimental `/oldphonekiosk` sidebar page with a Lovelace custom card.
+- Add `custom:oldphonekiosk-intercom-card` for camera preview plus browser microphone/speaker WebRTC intercom in one dashboard card.
+- Keep WebRTC signaling backend unchanged and remove sidebar panel registration.
+
 ## 0.1.30 - 2026-08-31
 
 - Add the `/oldphonekiosk` Home Assistant frontend panel for browser microphone/speaker WebRTC intercom.
