@@ -299,7 +299,6 @@ async def test_pairing_button_creates_code_notification(hass: HomeAssistant):
     assert hass.states.get("switch.kitchen_keep_screen_awake_in_app") is not None
     assert hass.states.get("switch.kitchen_connection_banner") is not None
     assert hass.states.get("switch.kitchen_photo_time_overlay") is not None
-    assert hass.states.get("switch.kitchen_photo_location_overlay") is not None
     assert hass.states.get("number.kitchen_screen_brightness") is not None
     assert hass.states.get("number.kitchen_device_volume") is not None
     assert hass.states.get("number.kitchen_dim_after") is not None

@@ -62,7 +62,6 @@ class PanelDeviceData:
     keep_screen_awake: bool | None = None
     show_connection_banner: bool | None = None
     show_photo_time_overlay: bool | None = None
-    show_photo_location_overlay: bool | None = None
     dim_after_seconds: float | None = None
     sleep_after_seconds: float | None = None
     task_refresh_seconds: float | None = None
@@ -95,7 +94,6 @@ class PanelDeviceData:
             keep_screen_awake=device.media.keep_screen_awake,
             show_connection_banner=device.media.show_connection_banner,
             show_photo_time_overlay=device.media.show_photo_time_overlay,
-            show_photo_location_overlay=device.media.show_photo_location_overlay,
             dim_after_seconds=device.media.dim_after_seconds,
             sleep_after_seconds=device.media.sleep_after_seconds,
             task_refresh_seconds=device.media.task_refresh_seconds,
@@ -170,7 +168,6 @@ class NativeOldPhoneKioskClient:
         keep_screen_awake: bool | None = None,
         show_connection_banner: bool | None = None,
         show_photo_time_overlay: bool | None = None,
-        show_photo_location_overlay: bool | None = None,
         dim_after_seconds: float | None = None,
         sleep_after_seconds: float | None = None,
         task_refresh_seconds: float | None = None,
@@ -194,10 +191,6 @@ class NativeOldPhoneKioskClient:
         if show_photo_time_overlay is not None:
             params["show_photo_time_overlay"] = (
                 "true" if show_photo_time_overlay else "false"
-            )
-        if show_photo_location_overlay is not None:
-            params["show_photo_location_overlay"] = (
-                "true" if show_photo_location_overlay else "false"
             )
         if dim_after_seconds is not None:
             params["dim_after_seconds"] = str(int(max(0, dim_after_seconds)))
@@ -228,8 +221,6 @@ class NativeOldPhoneKioskClient:
             config_kwargs["show_connection_banner"] = show_connection_banner
         if show_photo_time_overlay is not None:
             config_kwargs["show_photo_time_overlay"] = show_photo_time_overlay
-        if show_photo_location_overlay is not None:
-            config_kwargs["show_photo_location_overlay"] = show_photo_location_overlay
         if dim_after_seconds is not None:
             config_kwargs["dim_after_seconds"] = dim_after_seconds
         if sleep_after_seconds is not None:
