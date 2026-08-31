@@ -11,10 +11,12 @@ from homeassistant.core import HomeAssistant
 
 from .const import DOMAIN
 from .models import PanelCommand
+from .intercom import IntercomSessionError, validate_device_signal
 from .native_client import handle_device_message
 from .photos import async_get_photo_snapshot, async_photo_proxy_path
 from .registry import AuthError, ClaimError, Registry, UnknownDeviceError
 from .tasks import async_handle_task_action, async_push_task_snapshot_via_registry
+from .websocket_api import get_intercom_broker
 from .wstoken import WsTokenService
 
 _LOGGER = logging.getLogger(__name__)
@@ -193,6 +195,16 @@ class DeviceWebSocketView(HomeAssistantView):
                             await async_handle_task_action(
                                 hass, registry, device_id, raw
                             )
+                        elif raw.get("type") == "intercom_signal":
+                            try:
+                                await get_intercom_broker(hass).handle_device_signal(
+                                    device_id, validate_device_signal(raw)
+                                )
+                            except IntercomSessionError:
+                                _LOGGER.debug(
+                                    "Ignoring invalid device intercom signal",
+                                    exc_info=True,
+                                )
                         else:
                             handle_device_message(registry, device_id, raw)
                     except Exception:

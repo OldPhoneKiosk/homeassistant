@@ -11,8 +11,10 @@ from homeassistant.core import HomeAssistant
 from .backend import ensure_backend
 from .const import DOMAIN
 from .coordinator import OldPhoneKioskCoordinator
+from .frontend import async_setup_frontend, async_unload_frontend
 from .native_client import NativeOldPhoneKioskClient as BridgeClient
 from .services import async_setup_services, async_unload_services
+from .websocket_api import async_register_websocket_api
 
 PLATFORMS: list[Platform] = [
     Platform.BINARY_SENSOR,
@@ -50,11 +52,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     client = BridgeClient(registry)
     coordinator = OldPhoneKioskCoordinator(hass, entry, client)
     await coordinator.async_config_entry_first_refresh()
+    await async_setup_frontend(hass)
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     async_setup_services(hass)
+    async_register_websocket_api(hass)
     return True
 
 
@@ -64,5 +68,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if unload_ok:
         coordinator: OldPhoneKioskCoordinator = hass.data[DOMAIN].pop(entry.entry_id)
         await coordinator.client.close()
+        if not hass.data[DOMAIN]:
+            await async_unload_frontend(hass)
         async_unload_services(hass)
     return unload_ok
