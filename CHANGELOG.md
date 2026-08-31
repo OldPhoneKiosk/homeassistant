@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.28 - 2026-08-31
+
+- Keep the panel Camera entity visible on the Home Assistant device page even before the iOS app reports a live MJPEG URL.
+- Add camera diagnostics attributes (`video_url`, `camera_mode`, `stream`) so operators can verify whether Start front/back camera produced a stream URL.
+
 ## 0.1.27 - 2026-08-31
 
 - Make Start intercom establish a practical HA-side video connection by starting the panel's front-camera MJPEG publisher before setting intercom state.
