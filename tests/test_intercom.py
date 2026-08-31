@@ -33,6 +33,12 @@ class FakeRegistry:
             raise DeviceOfflineError(device_id)
         self.sent.append((device_id, message))
 
+    async def send_command_nowait(self, device_id: str, command, params: dict | None = None):
+        self.get_device(device_id)
+        if not self.is_online(device_id):
+            raise DeviceOfflineError(device_id)
+        self.sent.append((device_id, {"type": "command", "command": command.value, "params": params}))
+
 
 @pytest.mark.asyncio
 async def test_start_session_sends_start_signal_to_device() -> None:
@@ -47,6 +53,14 @@ async def test_start_session_sends_start_signal_to_device() -> None:
 
     assert session.device_id == "dev-1"
     assert registry.sent == [
+        (
+            "dev-1",
+            {"type": "command", "command": "start_stream", "params": {"camera_mode": "front"}},
+        ),
+        (
+            "dev-1",
+            {"type": "command", "command": "start_intercom", "params": {"mode": "talk"}},
+        ),
         (
             "dev-1",
             {
@@ -109,14 +123,24 @@ async def test_hangup_removes_session_and_notifies_device() -> None:
     session = await broker.start_session("dev-1", handler)
     await broker.hangup(session.session_id)
 
-    assert registry.sent[-1] == (
-        "dev-1",
-        {
-            "type": "intercom_signal",
-            "action": "hangup",
-            "session_id": session.session_id,
-        },
-    )
+    assert registry.sent[-3:] == [
+        (
+            "dev-1",
+            {
+                "type": "intercom_signal",
+                "action": "hangup",
+                "session_id": session.session_id,
+            },
+        ),
+        (
+            "dev-1",
+            {"type": "command", "command": "stop_intercom", "params": None},
+        ),
+        (
+            "dev-1",
+            {"type": "command", "command": "stop_stream", "params": None},
+        ),
+    ]
     with pytest.raises(IntercomSessionError):
         broker.get_session(session.session_id)
 

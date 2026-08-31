@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.34 - 2026-08-31
+
+- Change the intercom card to call/hold-to-talk/hangup UX: `Zadzwoń` starts intercom + front camera + speaker, `Mów` enables the browser microphone only while pressed, and `Rozłącz` stops intercom + camera.
+- Make websocket intercom start/hangup mirror the device-page start/stop behavior by controlling the front camera stream lifecycle.
+
 ## 0.1.33 - 2026-08-31
 
 - Show intercom card call/setup errors instead of immediately overwriting them with `Rozłączono`.
