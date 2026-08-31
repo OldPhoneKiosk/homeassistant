@@ -13,12 +13,28 @@ from typing import Awaitable, Callable, Protocol
 IntercomSignalHandler = Callable[[dict], Awaitable[None]]
 
 
+class _Command:
+    """Small command-value shim compatible with Registry.send_command_nowait."""
+
+    def __init__(self, value: str) -> None:
+        self.value = value
+
+
+CMD_START_STREAM = _Command("start_stream")
+CMD_STOP_STREAM = _Command("stop_stream")
+CMD_START_INTERCOM = _Command("start_intercom")
+CMD_STOP_INTERCOM = _Command("stop_intercom")
+
+
 class IntercomRegistry(Protocol):
     """Minimal device registry interface needed by the signaling broker."""
 
     def get_device(self, device_id: str): ...
     def is_online(self, device_id: str) -> bool: ...
     async def send_raw(self, device_id: str, message: dict) -> None: ...
+    async def send_command_nowait(
+        self, device_id: str, command: _Command, params: dict | None = None
+    ): ...
 
 
 async def _noop_handler(frame: dict) -> None:
@@ -63,6 +79,12 @@ class IntercomBroker:
             handler=handler or _noop_handler,
         )
         self._sessions[session.session_id] = session
+        await self._registry.send_command_nowait(
+            device_id, CMD_START_STREAM, {"camera_mode": "front"}
+        )
+        await self._registry.send_command_nowait(
+            device_id, CMD_START_INTERCOM, {"mode": "talk"}
+        )
         await self.send_to_device(
             session.session_id,
             {"type": "intercom_signal", "action": "start"},
@@ -112,12 +134,18 @@ class IntercomBroker:
         return self._sessions.pop(session_id, None)
 
     async def hangup(self, session_id: str) -> None:
-        """Tell the panel to hang up, then remove the runtime session."""
+        """Tell the panel to hang up, stop intercom/camera, then remove session."""
         session = self.get_session(session_id)
         try:
             await self.send_to_device(
                 session_id,
                 {"type": "intercom_signal", "action": "hangup"},
+            )
+            await self._registry.send_command_nowait(
+                session.device_id, CMD_STOP_INTERCOM
+            )
+            await self._registry.send_command_nowait(
+                session.device_id, CMD_STOP_STREAM
             )
         finally:
             self.end_session(session_id)

@@ -173,4 +173,5 @@ class PanelActionButton(OldPhoneKioskEntity, ButtonEntity):
             await client.async_start_intercom(self._device_id)
         elif self._key == "stop_intercom":
             await client.async_stop_intercom(self._device_id)
+            await client.async_stop_stream(self._device_id)
         await self.coordinator.async_request_refresh()

@@ -364,6 +364,7 @@ async def _async_stop_intercom(hass: HomeAssistant, call: ServiceCall) -> None:
         )
     try:
         await coordinator.client.async_stop_intercom(device_id)
+        await coordinator.client.async_stop_stream(device_id)
     except BridgeError as err:
         raise HomeAssistantError(f"Bridge stop_intercom failed: {err}") from err
     await coordinator.async_request_refresh()

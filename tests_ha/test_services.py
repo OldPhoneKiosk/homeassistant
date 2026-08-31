@@ -490,7 +490,7 @@ async def test_task_photo_sound_text_and_action_buttons(hass: HomeAssistant):
     assert hass.states.get("text.kitchen_custom_sound").state == "1007"
 
     # Action buttons dispatch beep / play_sound / start+stop intercom; start intercom
-    # also starts the front camera so HA gets a usable video connection.
+    # also starts the front camera and stop intercom stops it again.
     for entity in (
         "button.kitchen_beep",
         "button.kitchen_play_sound",
@@ -505,6 +505,7 @@ async def test_task_photo_sound_text_and_action_buttons(hass: HomeAssistant):
     kinds = [call[0] for call in fake.action_calls]
     assert kinds == ["beep", "play_sound", "start_intercom", "stop_intercom"]
     assert ("start", "dev-1", "front") in fake.stream_calls
+    assert ("stop", "dev-1", None) in fake.stream_calls
 
 
 async def test_source_selects_apply_from_ha_resources(hass: HomeAssistant):

@@ -92,7 +92,8 @@ class OldPhoneKioskIntercomCard extends HTMLElement {
         audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
         video: false,
       });
-      this._status = "Mikrofon OK — startuję sesję na iPadzie…";
+      this._setMicEnabled(false);
+      this._status = "Mikrofon gotowy — startuję interkom i kamerę…";
       this.render();
       this._pc = new RTCPeerConnection({ iceServers: this._config.ice_servers || [] });
       for (const track of this._localStream.getAudioTracks()) {
@@ -137,7 +138,7 @@ class OldPhoneKioskIntercomCard extends HTMLElement {
         session_id: this._sessionId,
         sdp: offer.sdp,
       });
-      this._status = "Oferta wysłana — czekam na iPada…";
+      this._status = "Interkom i kamera startują — czekam na iPada…";
       this.render();
     } catch (err) {
       await this._hangup(false, { status: `Błąd: ${err?.message || err}` });
@@ -151,7 +152,7 @@ class OldPhoneKioskIntercomCard extends HTMLElement {
     if (!this._pc || frame.session_id !== this._sessionId) return;
     if (frame.action === "answer" && frame.sdp) {
       await this._pc.setRemoteDescription({ type: "answer", sdp: frame.sdp });
-      this._status = "Rozmowa aktywna";
+      this._status = "Połączono — głośnik aktywny, przytrzymaj Mów";
       this.render();
       return;
     }
@@ -168,7 +169,36 @@ class OldPhoneKioskIntercomCard extends HTMLElement {
     }
   }
 
+  _setMicEnabled(enabled) {
+    this._talking = Boolean(enabled);
+    if (this._localStream) {
+      for (const track of this._localStream.getAudioTracks()) {
+        track.enabled = this._talking;
+      }
+    }
+  }
+
+  _startTalking(ev) {
+    ev?.preventDefault?.();
+    if (!this._sessionId || !this._localStream) return;
+    this._setMicEnabled(true);
+    window.addEventListener("pointerup", (event) => this._stopTalking(event), { once: true });
+    this._status = "Mówisz — puść przycisk, żeby wyciszyć";
+    this.render();
+  }
+
+  _stopTalking(ev) {
+    ev?.preventDefault?.();
+    if (!this._localStream) return;
+    this._setMicEnabled(false);
+    if (this._sessionId) {
+      this._status = "Mikrofon wyciszony — przytrzymaj Mów";
+    }
+    this.render();
+  }
+
   _cleanupMedia() {
+    this._talking = false;
     this._sessionId = null;
     if (this._unsubscribe) {
       this._unsubscribe();
@@ -232,6 +262,8 @@ class OldPhoneKioskIntercomCard extends HTMLElement {
         .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
         button { cursor: pointer; border: 0; border-radius: 10px; padding: 10px 14px; font-weight: 600; }
         button.call { background: var(--primary-color, #03a9f4); color: var(--text-primary-color, #fff); }
+        button.talk { background: var(--success-color, #2e7d32); color: #fff; min-width: 96px; touch-action: none; user-select: none; }
+        button.talk.active { filter: brightness(1.18); transform: scale(.98); box-shadow: inset 0 0 0 3px rgba(255,255,255,.35); }
         button.hangup { background: var(--error-color, #db4437); color: #fff; }
         button:disabled { opacity: .45; cursor: not-allowed; }
         .status { margin-top: 12px; font-size: 13px; color: var(--secondary-text-color); }
@@ -245,7 +277,8 @@ class OldPhoneKioskIntercomCard extends HTMLElement {
           <div class="title">${this._deviceName()}</div>
           <div class="subtitle"><span class="pill">${online ? "online" : "offline"}</span> ${deviceId ? `<code>${deviceId}</code>` : "brak device_id"}</div>
           <div class="row">
-            <button class="call" id="call" ${this._busy || inCall || !online || !deviceId ? "disabled" : ""}>${this._busy ? "Łączę…" : "Zadzwoń / mów"}</button>
+            <button class="call" id="call" ${this._busy || inCall || !online || !deviceId ? "disabled" : ""}>${this._busy ? "Łączę…" : "Zadzwoń"}</button>
+            <button class="talk ${this._talking ? "active" : ""}" id="talk" ${!inCall || this._busy ? "disabled" : ""}>Mów</button>
             <button class="hangup" id="hangup" ${!inCall ? "disabled" : ""}>Rozłącz</button>
           </div>
           <div class="status ${this._status.startsWith("Błąd") ? "error" : ""}">${this._status}</div>
@@ -253,6 +286,11 @@ class OldPhoneKioskIntercomCard extends HTMLElement {
         </div>
       </ha-card>`;
     this.shadowRoot.getElementById("call")?.addEventListener("click", () => this._call());
+    const talk = this.shadowRoot.getElementById("talk");
+    talk?.addEventListener("pointerdown", (ev) => this._startTalking(ev));
+    talk?.addEventListener("pointerup", (ev) => this._stopTalking(ev));
+    talk?.addEventListener("pointercancel", (ev) => this._stopTalking(ev));
+    talk?.addEventListener("pointerleave", (ev) => this._stopTalking(ev));
     this.shadowRoot.getElementById("hangup")?.addEventListener("click", () => this._hangup(true));
   }
 }

@@ -130,12 +130,12 @@ data:
 
 Open/close an intercom session on the panel. `start_intercom` first starts the panel's front-camera MJPEG publisher, so HA can immediately show the visual call through `camera.<panel>_camera`, then sets the panel intercom state to ringing/talking.
 
-For live two-way audio, add the Lovelace custom card next to the panel camera. The card asks the HA browser for microphone permission, shows the camera preview, creates an audio-only WebRTC peer connection, and uses the integration websocket API as signaling only. Audio media flows directly between the HA browser and the iOS app; Home Assistant does not proxy PCM/Opus audio chunks.
+For live two-way audio, add the Lovelace custom card next to the panel camera. The card asks the HA browser for microphone permission, shows the camera preview, creates an audio-only WebRTC peer connection, and uses the integration websocket API as signaling only. Audio media flows directly between the HA browser and the iOS app; Home Assistant does not proxy PCM/Opus audio chunks. Use **Zadzwoń** to start the intercom, iPad front camera, and speaker audio; hold **Mów** only while speaking; use **Rozłącz** to stop the intercom and camera.
 
 Add this dashboard resource after installing/updating the integration and restarting Home Assistant:
 
 ```text
-/oldphonekiosk_static/oldphonekiosk-intercom-card.js?v=0.1.33
+/oldphonekiosk_static/oldphonekiosk-intercom-card.js?v=0.1.34
 ```
 
 Then add a manual Lovelace card, using any OldPhoneKiosk entity with `bridge_device_id` plus the camera entity:

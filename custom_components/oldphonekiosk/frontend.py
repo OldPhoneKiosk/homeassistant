@@ -24,7 +24,7 @@ _LOGGER = logging.getLogger(__name__)
 DATA_FRONTEND_REGISTERED = "frontend_registered"
 DATA_LOVELACE_RESOURCE_REGISTERED = "lovelace_resource_registered"
 STATIC_URL = "/oldphonekiosk_static"
-INTERCOM_CARD_MODULE = f"{STATIC_URL}/oldphonekiosk-intercom-card.js?v=0.1.33"
+INTERCOM_CARD_MODULE = f"{STATIC_URL}/oldphonekiosk-intercom-card.js?v=0.1.34"
 INTERCOM_CARD_URL_PREFIX = f"{STATIC_URL}/oldphonekiosk-intercom-card.js"
 
 
