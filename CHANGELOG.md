@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.26 - 2026-08-31
+
+- Document the direct iOS local MJPEG camera path for front/back camera streaming into Home Assistant.
+- Refresh service descriptions so camera streaming no longer appears blocked on WebRTC/go2rtc.
+
 ## 0.1.25 - 2026-08-31
 
 - Remove the unused photo location overlay switch because Google Photos Picker does not provide location metadata.

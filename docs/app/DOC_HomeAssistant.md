@@ -79,7 +79,10 @@ data:
 
 ### `oldphonekiosk.start_stream` and `oldphonekiosk.stop_stream`
 
-Send stream-start/stream-stop intent to the panel. Full media publishing depends on iOS app support and local media/WebRTC setup.
+Start/stop the iOS panel's foreground local MJPEG camera publisher. After start,
+the panel reports a LAN `videoUrl` in its heartbeat; Home Assistant exposes that
+URL via `camera.<panel>_camera`. The clock/photo screens can keep running, but iOS
+must keep the app foreground for camera publishing.
 
 ### `oldphonekiosk.set_panel_ui`
 

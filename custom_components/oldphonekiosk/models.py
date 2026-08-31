@@ -75,10 +75,11 @@ class IntercomState(str, Enum):
 
 
 class StreamState(str, Enum):
-    """Publisher (device -> go2rtc) session state. Runtime only; not persisted.
+    """Publisher (device -> HA/go2rtc) session state. Runtime only; not persisted.
 
-    ``unsupported`` is reported by a device that has no real publisher yet (honest
-    placeholder while WebRTC capture is unimplemented)."""
+    Devices can publish either a direct local MJPEG URL (LAN path) or, when
+    configured, go2rtc/WebRTC. ``unsupported`` is retained for old app builds.
+    """
 
     IDLE = "idle"
     STARTING = "starting"
@@ -140,10 +141,10 @@ class DeviceState(BaseModel):
 
 
 class PanelDevice(BaseModel):
-    """A paired panel device known to the Bridge.
+    """A paired panel device known to the integration.
 
     Public + last-known-state data only. The device secret is never held here;
-    its salted hash lives in the store and is verified separately (see security.py).
+    its salted hash lives in the store and is verified separately.
     """
 
     device_id: str
