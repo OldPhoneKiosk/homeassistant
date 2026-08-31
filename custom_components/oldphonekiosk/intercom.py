@@ -7,8 +7,11 @@ WebRTC between the HA browser and the iOS panel peer connection.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import logging
 import uuid
 from typing import Awaitable, Callable, Protocol
+
+_LOGGER = logging.getLogger(__name__)
 
 IntercomSignalHandler = Callable[[dict], Awaitable[None]]
 
@@ -80,6 +83,7 @@ class IntercomBroker:
             handler=handler or _noop_handler,
         )
         self._sessions[session.session_id] = session
+        _LOGGER.info("OldPhoneKiosk intercom start session=%s device=%s", session.session_id, device_id)
         await self._registry.send_command_nowait(
             device_id, CMD_START_STREAM, {"camera_mode": "front"}
         )
@@ -113,6 +117,12 @@ class IntercomBroker:
         frame = dict(payload)
         frame["type"] = "intercom_signal"
         frame["session_id"] = session.session_id
+        _LOGGER.info(
+            "OldPhoneKiosk intercom browser->device session=%s device=%s action=%s",
+            session.session_id,
+            session.device_id,
+            frame.get("action"),
+        )
         await self._registry.send_raw(session.device_id, frame)
 
     async def handle_device_signal(self, device_id: str, payload: dict) -> None:
@@ -126,6 +136,12 @@ class IntercomBroker:
         frame = dict(payload)
         frame["type"] = "intercom_signal"
         frame["device_id"] = device_id
+        _LOGGER.info(
+            "OldPhoneKiosk intercom device->browser session=%s device=%s action=%s",
+            session_id,
+            device_id,
+            frame.get("action"),
+        )
         await session.handler(frame)
         if frame.get("action") in {"hangup", "error"}:
             self.end_session(session_id)
