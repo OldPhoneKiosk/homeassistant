@@ -22,9 +22,10 @@ pair_new_panel:
 start_stream:
   name: Start panel stream
   description: >-
-    Start a media publisher session through Home Assistant/go2rtc. Sets the viewer URL and
-    tells the panel to publish. Real publishing requires a device build with a
-    WebRTC publisher; otherwise the panel reports the stream as "unsupported".
+    Start the panel camera publisher. The current iOS app opens a foreground local MJPEG
+    server and reports its LAN `videoUrl` back to Home Assistant. If go2rtc is configured,
+    the integration may also provide go2rtc viewer/publish hints, but it is not required
+    for the direct MJPEG camera path.
   fields:
     device_id:
       name: Panel device id
@@ -53,8 +54,8 @@ stop_stream:
 set_media:
   name: Set panel media
   description: >-
-    Set a panel's media config in Home Assistant: the video/WebRTC player URL (e.g. a
-    go2rtc page) shown by the Lovelace card, and/or the camera mode.
+    Set a panel's media config in Home Assistant: the camera stream URL shown by the
+    HA camera entity/Lovelace card and/or the camera mode.
   fields:
     device_id:
       name: Panel device id
@@ -65,9 +66,9 @@ set_media:
         text:
     video_url:
       name: Video URL
-      description: WebRTC/go2rtc player URL (empty to clear).
+      description: Camera stream URL, usually reported automatically by the iOS local MJPEG publisher; empty to clear.
       required: false
-      example: "http://homeassistant.local:1984/stream.html?src=front_door"
+      example: "http://192.168.1.20:8765/stream.mjpg"
       selector:
         text:
     camera_mode:

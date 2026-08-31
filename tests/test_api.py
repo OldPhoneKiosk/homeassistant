@@ -94,6 +94,19 @@ async def test_from_json_media_defaults_when_absent():
     assert d.intercom is None
 
 
+async def test_from_json_accepts_direct_ios_mjpeg_video_url():
+    d = api.PanelDeviceData.from_json(
+        {
+            "device_id": "x",
+            "state": {"stream": "live", "camera": "front"},
+            "media": {"video_url": "http://192.168.1.20:8765/stream.mjpg"},
+        }
+    )
+    assert d.stream == "live"
+    assert d.camera_mode == "front"
+    assert d.video_url == "http://192.168.1.20:8765/stream.mjpg"
+
+
 async def test_set_media_puts_only_provided_fields():
     seen = {}
 
