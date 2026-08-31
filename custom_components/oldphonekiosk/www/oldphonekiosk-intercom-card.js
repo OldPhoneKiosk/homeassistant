@@ -8,14 +8,11 @@ class OldPhoneKioskIntercomCard extends HTMLElement {
     this._pc = null;
     this._localStream = null;
     this._unsubscribe = null;
-  }
-
-  static getConfigElement() {
-    return document.createElement("oldphonekiosk-intercom-card-editor");
+    this._busy = false;
   }
 
   static getStubConfig() {
-    return { type: "custom:oldphonekiosk-intercom-card", entity: "binary_sensor.oldphonekiosk_online" };
+    return { type: "custom:oldphonekiosk-intercom-card", entity: "binary_sensor.ipad_online" };
   }
 
   setConfig(config) {
@@ -32,7 +29,7 @@ class OldPhoneKioskIntercomCard extends HTMLElement {
   }
 
   disconnectedCallback() {
-    this._hangup(false);
+    this._cleanupMedia();
   }
 
   getCardSize() {
@@ -45,6 +42,10 @@ class OldPhoneKioskIntercomCard extends HTMLElement {
     return state?.attributes?.bridge_device_id || state?.attributes?.device_id || "";
   }
 
+  _stateByEntity(entityId) {
+    return entityId ? this._hass?.states?.[entityId] : undefined;
+  }
+
   _cameraEntity() {
     if (this._config.camera_entity) return this._config.camera_entity;
     const configured = this._config.entity;
@@ -52,40 +53,47 @@ class OldPhoneKioskIntercomCard extends HTMLElement {
     const deviceId = this._deviceId();
     if (!deviceId || !this._hass) return "";
     const candidates = Object.entries(this._hass.states)
-      .filter(([entityId, state]) => entityId.startsWith("camera.") && state.attributes?.bridge_device_id === deviceId)
+      .filter(([entityId, state]) => {
+        if (!entityId.startsWith("camera.")) return false;
+        return state.attributes?.bridge_device_id === deviceId || state.attributes?.device_id === deviceId;
+      })
       .map(([entityId]) => entityId);
     return candidates[0] || "";
   }
 
   _deviceName() {
-    const state = this._hass?.states?.[this._config.entity];
+    const state = this._stateByEntity(this._config.entity) || this._stateByEntity(this._cameraEntity());
     return this._config.name || state?.attributes?.friendly_name?.replace(/ online$/i, "") || this._deviceId() || "OldPhoneKiosk";
   }
 
   _online() {
-    const state = this._hass?.states?.[this._config.entity];
+    const state = this._stateByEntity(this._config.entity);
     if (!state) return true;
     if (state.entity_id?.startsWith("binary_sensor.")) return state.state === "on";
     return state.state !== "unavailable" && state.state !== "unknown";
   }
 
   async _call() {
+    if (this._busy) return;
     if (!this._hass) return;
     const deviceId = this._deviceId();
     if (!deviceId) {
-      this._setError("Brak bridge_device_id w encji/kartcie");
+      this._setError("Brak device_id. Dodaj w YAML: device_id: <wartość z encji/camera attributes bridge_device_id>.");
       return;
     }
+    this._busy = true;
     try {
-      this._status = "Proszę o mikrofon…";
+      this._status = "Klik odebrany — proszę o mikrofon…";
       this.render();
       if (!navigator.mediaDevices?.getUserMedia) {
-        throw new Error("Przeglądarka nie udostępnia mikrofonu dla tej strony. Użyj HTTPS albo zaufanego adresu HA.");
+        throw new Error("Przeglądarka nie udostępnia mikrofonu dla tej strony. Otwórz Home Assistant przez HTTPS albo zaufany adres lokalny.");
       }
       this._localStream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
         video: false,
       });
+      this._status = "Mikrofon OK — startuję sesję na iPadzie…";
+      this.render();
       this._pc = new RTCPeerConnection({ iceServers: this._config.ice_servers || [] });
       for (const track of this._localStream.getAudioTracks()) {
         this._pc.addTrack(track, this._localStream);
@@ -116,6 +124,8 @@ class OldPhoneKioskIntercomCard extends HTMLElement {
         device_id: deviceId,
       });
       this._sessionId = start.session_id;
+      this._status = "Sesja HA OK — zestawiam WebRTC…";
+      this.render();
       this._unsubscribe = await this._hass.connection.subscribeMessage(
         (event) => this._handleSignal(event),
         { type: "oldphonekiosk/intercom/subscribe", session_id: this._sessionId },
@@ -127,11 +137,13 @@ class OldPhoneKioskIntercomCard extends HTMLElement {
         session_id: this._sessionId,
         sdp: offer.sdp,
       });
-      this._status = "Łączenie audio…";
+      this._status = "Oferta wysłana — czekam na iPada…";
       this.render();
     } catch (err) {
-      this._setError(err);
-      await this._hangup(false);
+      await this._hangup(false, { status: `Błąd: ${err?.message || err}` });
+    } finally {
+      this._busy = false;
+      this.render();
     }
   }
 
@@ -148,17 +160,15 @@ class OldPhoneKioskIntercomCard extends HTMLElement {
       return;
     }
     if (frame.action === "hangup") {
-      await this._hangup(false);
+      await this._hangup(false, { status: "Rozłączono przez iPada" });
       return;
     }
     if (frame.action === "error") {
-      this._setError(frame.error || "Błąd interkomu");
-      await this._hangup(false);
+      await this._hangup(false, { status: `Błąd iPada: ${frame.error || "Błąd interkomu"}` });
     }
   }
 
-  async _hangup(send = true) {
-    const sessionId = this._sessionId;
+  _cleanupMedia() {
     this._sessionId = null;
     if (this._unsubscribe) {
       this._unsubscribe();
@@ -172,10 +182,15 @@ class OldPhoneKioskIntercomCard extends HTMLElement {
       for (const track of this._localStream.getTracks()) track.stop();
       this._localStream = null;
     }
+  }
+
+  async _hangup(send = true, options = {}) {
+    const sessionId = this._sessionId;
+    this._cleanupMedia();
     if (send && sessionId && this._hass) {
       await this._hass.callWS({ type: "oldphonekiosk/intercom/hangup", session_id: sessionId }).catch(() => {});
     }
-    this._status = "Rozłączono";
+    this._status = options.status || "Rozłączono";
     this.render();
   }
 
@@ -184,12 +199,18 @@ class OldPhoneKioskIntercomCard extends HTMLElement {
     this.render();
   }
 
+  _absoluteUrl(url) {
+    if (!url) return "";
+    if (/^https?:\/\//i.test(url)) return url;
+    return this._hass?.hassUrl(url) || url;
+  }
+
   _cameraMarkup(cameraEntity) {
     if (!cameraEntity || !this._hass?.states?.[cameraEntity]) return "";
     const camera = this._hass.states[cameraEntity];
     const picture = camera.attributes?.entity_picture;
     if (!picture) return `<div class="camera-placeholder">${cameraEntity}</div>`;
-    return `<img class="camera" src="${picture}" alt="${camera.attributes?.friendly_name || cameraEntity}" />`;
+    return `<img class="camera" src="${this._absoluteUrl(picture)}" alt="${camera.attributes?.friendly_name || cameraEntity}" />`;
   }
 
   render() {
@@ -207,13 +228,14 @@ class OldPhoneKioskIntercomCard extends HTMLElement {
         .camera-placeholder { color: var(--secondary-text-color); padding: 32px; text-align: center; }
         .body { padding: 16px; }
         .title { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
-        .subtitle { color: var(--secondary-text-color); font-size: 13px; margin-bottom: 12px; }
+        .subtitle { color: var(--secondary-text-color); font-size: 13px; margin-bottom: 12px; word-break: break-word; }
         .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
         button { cursor: pointer; border: 0; border-radius: 10px; padding: 10px 14px; font-weight: 600; }
         button.call { background: var(--primary-color, #03a9f4); color: var(--text-primary-color, #fff); }
         button.hangup { background: var(--error-color, #db4437); color: #fff; }
         button:disabled { opacity: .45; cursor: not-allowed; }
         .status { margin-top: 12px; font-size: 13px; color: var(--secondary-text-color); }
+        .status.error { color: var(--error-color, #db4437); font-weight: 600; }
         .pill { display: inline-block; border-radius: 999px; padding: 2px 8px; font-size: 12px; background: ${online ? "rgba(46, 125, 50, .14)" : "rgba(211, 47, 47, .14)"}; color: ${online ? "#2e7d32" : "#d32f2f"}; }
         code { font-size: 12px; }
       </style>
@@ -223,10 +245,10 @@ class OldPhoneKioskIntercomCard extends HTMLElement {
           <div class="title">${this._deviceName()}</div>
           <div class="subtitle"><span class="pill">${online ? "online" : "offline"}</span> ${deviceId ? `<code>${deviceId}</code>` : "brak device_id"}</div>
           <div class="row">
-            <button class="call" id="call" ${inCall || !online || !deviceId ? "disabled" : ""}>Zadzwoń / mów</button>
+            <button class="call" id="call" ${this._busy || inCall || !online || !deviceId ? "disabled" : ""}>${this._busy ? "Łączę…" : "Zadzwoń / mów"}</button>
             <button class="hangup" id="hangup" ${!inCall ? "disabled" : ""}>Rozłącz</button>
           </div>
-          <div class="status">${this._status}</div>
+          <div class="status ${this._status.startsWith("Błąd") ? "error" : ""}">${this._status}</div>
           <audio id="remote-audio" autoplay playsinline></audio>
         </div>
       </ha-card>`;

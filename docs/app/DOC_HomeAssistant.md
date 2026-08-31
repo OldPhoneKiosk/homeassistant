@@ -135,7 +135,7 @@ For live two-way audio, add the Lovelace custom card next to the panel camera. T
 Add this dashboard resource after installing/updating the integration and restarting Home Assistant:
 
 ```text
-/oldphonekiosk_static/oldphonekiosk-intercom-card.js?v=0.1.32
+/oldphonekiosk_static/oldphonekiosk-intercom-card.js?v=0.1.33
 ```
 
 Then add a manual Lovelace card, using any OldPhoneKiosk entity with `bridge_device_id` plus the camera entity:
@@ -144,6 +144,15 @@ Then add a manual Lovelace card, using any OldPhoneKiosk entity with `bridge_dev
 type: custom:oldphonekiosk-intercom-card
 entity: binary_sensor.<panel>_online
 camera_entity: camera.<panel>_camera
+```
+
+If the selected entity does not expose `bridge_device_id`, pass it explicitly from the card subtitle/device attributes:
+
+```yaml
+type: custom:oldphonekiosk-intercom-card
+device_id: 85e1c25b-2cc2-44dd-9f88-1e05ed208d98
+camera_entity: camera.ipad_camera
+name: iPad
 ```
 
 ```yaml

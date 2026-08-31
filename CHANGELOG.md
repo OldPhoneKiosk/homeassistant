@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.33 - 2026-08-31
+
+- Show intercom card call/setup errors instead of immediately overwriting them with `Rozłączono`.
+- Remove the unsupported visual editor hook warning from the custom card.
+- Support explicit `device_id` card config and absolute HA camera proxy URLs.
+
 ## 0.1.32 - 2026-08-31
 
 - Automatically add the `oldphonekiosk-intercom-card.js` Lovelace resource when Lovelace storage resources are available.
