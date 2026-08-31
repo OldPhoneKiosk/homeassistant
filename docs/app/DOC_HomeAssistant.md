@@ -27,7 +27,7 @@ After a panel is paired, OldPhoneKiosk exposes entities and services that can be
 | `number.<panel>_dim_after` | seconds before the app dims the panel UI while idle |
 | `number.<panel>_sleep_screen_after` | seconds before the app enters its sleep/blank screen while idle |
 | `number.<panel>_refresh_tasks_every` | seconds between automatic task refresh requests from the panel; `0` disables auto-refresh |
-| `camera.<panel>_camera` | live still/MJPEG view of the panel camera |
+| `camera.<panel>_camera` | panel camera entity; visible even before stream starts, then shows the live still/MJPEG view once `video_url` arrives |
 | `button.<panel>_wake` | send wake command |
 | `button.<panel>_sleep` | send sleep command |
 | `button.<panel>_start_front_camera` | start the front camera stream |

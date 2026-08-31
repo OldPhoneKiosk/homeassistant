@@ -305,6 +305,9 @@ async def test_pairing_button_creates_code_notification(hass: HomeAssistant):
     assert hass.states.get("number.kitchen_sleep_screen_after") is not None
     assert hass.states.get("number.kitchen_refresh_tasks_every") is not None
     assert hass.states.get("camera.kitchen_camera") is not None
+    assert hass.states.get("camera.kitchen_camera").state != "unavailable"
+    assert hass.states.get("camera.kitchen_camera").attributes["video_url"] is None
+    assert hass.states.get("camera.kitchen_camera").attributes["stream"] == "idle"
     assert hass.states.get("sensor.oldphonekiosk_panel_battery") is not None
     charging = hass.states.get("binary_sensor.kitchen_charging")
     assert charging is not None

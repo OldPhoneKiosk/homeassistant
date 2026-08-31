@@ -52,8 +52,22 @@ class PanelCamera(OldPhoneKioskEntity, Camera):
 
     @property
     def available(self) -> bool:
+        # Keep the camera entity visible on the HA device page even before the
+        # iOS app has reported its local MJPEG URL. The image/stream source stays
+        # empty until `video_url` arrives, but users must have somewhere obvious
+        # to open after pressing Start front/back camera.
+        return super().available and self.device is not None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, str | bool | float | None]:
         device = self.device
-        return super().available and device is not None and bool(device.video_url)
+        if device is None:
+            return {}
+        return {
+            "video_url": device.video_url,
+            "camera_mode": device.camera_mode,
+            "stream": device.stream,
+        }
 
     async def stream_source(self) -> str | None:
         """Return the MJPEG URL HA/frontend can use when available."""
