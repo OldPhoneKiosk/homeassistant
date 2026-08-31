@@ -303,7 +303,8 @@ async def test_async_check_unreachable():
 def test_screen_to_command_mapping():
     assert const.SCREEN_TO_COMMAND[const.SCREEN_TASKS] == const.CMD_SHOW_TASKS
     assert const.SCREEN_TO_COMMAND[const.SCREEN_SLEEP] == const.CMD_SLEEP
-    assert set(const.SCREENS) == {"photos", "tasks", "dashboard", "sleep"}
+    assert const.SCREEN_TO_COMMAND[const.SCREEN_CALENDAR] == const.CMD_CONFIGURE_CALENDAR
+    assert set(const.SCREENS) == {"photos", "tasks", "dashboard", "calendar", "sleep"}
 
 
 def test_from_json_handles_missing_state():

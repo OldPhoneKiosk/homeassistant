@@ -30,44 +30,111 @@
   },
   "entity": {
     "binary_sensor": {
-      "online": { "name": "Online" },
-      "charging": { "name": "Ładowanie" }
+      "online": {
+        "name": "Online"
+      },
+      "charging": {
+        "name": "Ładowanie"
+      }
     },
     "sensor": {
-      "battery": { "name": "Bateria" },
-      "last_seen": { "name": "Ostatnio widziany" },
-      "app_version": { "name": "Wersja aplikacji" }
+      "battery": {
+        "name": "Bateria"
+      },
+      "last_seen": {
+        "name": "Ostatnio widziany"
+      },
+      "app_version": {
+        "name": "Wersja aplikacji"
+      }
     },
     "select": {
-      "screen": { "name": "Ekran" },
-      "dashboard": { "name": "Dashboard" },
-      "task_list": { "name": "Lista zadań" },
-      "sound": { "name": "Dźwięk" },
-      "photo_source": { "name": "Źródło zdjęć" }
+      "screen": {
+        "name": "Ekran"
+      },
+      "dashboard": {
+        "name": "Dashboard"
+      },
+      "task_list": {
+        "name": "Lista zadań"
+      },
+      "sound": {
+        "name": "Dźwięk"
+      },
+      "photo_source": {
+        "name": "Źródło zdjęć"
+      },
+      "default_screen": {
+        "name": "Ekran domyślny"
+      },
+      "visible_screens": {
+        "name": "Widoczne ekrany"
+      },
+      "calendar_sources": {
+        "name": "Kalendarze"
+      },
+      "calendar_view": {
+        "name": "Widok kalendarza"
+      }
     },
     "button": {
-      "generate_pairing_code": { "name": "Wygeneruj kod parowania" },
-      "wake": { "name": "Wybudź" },
-      "sleep": { "name": "Uśpij" },
-      "start_front_camera": { "name": "Uruchom przednią kamerę" },
-      "start_back_camera": { "name": "Uruchom tylną kamerę" },
-      "stop_camera": { "name": "Zatrzymaj kamerę" },
-      "beep": { "name": "Sygnał" },
-      "play_sound": { "name": "Odtwórz dźwięk" },
-      "start_intercom": { "name": "Rozpocznij interkom" },
-      "stop_intercom": { "name": "Zakończ interkom" }
+      "generate_pairing_code": {
+        "name": "Wygeneruj kod parowania"
+      },
+      "wake": {
+        "name": "Wybudź"
+      },
+      "sleep": {
+        "name": "Uśpij"
+      },
+      "start_front_camera": {
+        "name": "Uruchom przednią kamerę"
+      },
+      "start_back_camera": {
+        "name": "Uruchom tylną kamerę"
+      },
+      "stop_camera": {
+        "name": "Zatrzymaj kamerę"
+      },
+      "beep": {
+        "name": "Sygnał"
+      },
+      "play_sound": {
+        "name": "Odtwórz dźwięk"
+      },
+      "start_intercom": {
+        "name": "Rozpocznij interkom"
+      },
+      "stop_intercom": {
+        "name": "Zakończ interkom"
+      }
     },
     "switch": {
-      "camera_rotate_180": { "name": "Obróć kamerę o 180°" }
+      "camera_rotate_180": {
+        "name": "Obróć kamerę o 180°"
+      }
     },
     "text": {
-      "custom_dashboard_url": { "name": "Własny adres dashboardu" },
-      "custom_task_source": { "name": "Własne źródło zadań" },
-      "custom_photo_source": { "name": "Własne źródło zdjęć" },
-      "custom_sound": { "name": "Własny dźwięk" }
+      "custom_dashboard_url": {
+        "name": "Własny adres dashboardu"
+      },
+      "custom_task_source": {
+        "name": "Własne źródło zadań"
+      },
+      "custom_photo_source": {
+        "name": "Własne źródło zdjęć"
+      },
+      "custom_sound": {
+        "name": "Własny dźwięk"
+      },
+      "custom_calendar_sources": {
+        "name": "Własne kalendarze"
+      }
     },
     "camera": {
-      "camera": { "name": "Kamera" }
+      "camera": {
+        "name": "Kamera"
+      }
     }
   }
 }

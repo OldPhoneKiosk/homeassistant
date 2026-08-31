@@ -42,8 +42,9 @@ SCREEN_TASKS = "tasks"
 SCREEN_HOME = "home"
 SCREEN_ACTIONS = "actions"
 SCREEN_DASHBOARD = "dashboard"
+SCREEN_CALENDAR = "calendar"
 SCREEN_SLEEP = "sleep"
-SCREENS = [SCREEN_PHOTOS, SCREEN_TASKS, SCREEN_DASHBOARD, SCREEN_SLEEP]
+SCREENS = [SCREEN_PHOTOS, SCREEN_TASKS, SCREEN_DASHBOARD, SCREEN_CALENDAR, SCREEN_SLEEP]
 
 # Commands (mirror of Bridge PanelCommand)
 CMD_SHOW_PHOTOS = "show_photos"
@@ -53,6 +54,7 @@ CMD_SHOW_ACTIONS = "show_actions"
 CMD_SHOW_DASHBOARD = "show_dashboard"
 CMD_CONFIGURE_UI = "configure_ui"
 CMD_CONFIGURE_TASKS = "configure_tasks"
+CMD_CONFIGURE_CALENDAR = "configure_calendar"
 CMD_SLEEP = "sleep"
 CMD_WAKE = "wake"
 CMD_BEEP = "beep"
@@ -69,6 +71,7 @@ SCREEN_TO_COMMAND = {
     SCREEN_HOME: CMD_SHOW_HOME,
     SCREEN_ACTIONS: CMD_SHOW_ACTIONS,
     SCREEN_DASHBOARD: CMD_SHOW_DASHBOARD,
+    SCREEN_CALENDAR: CMD_CONFIGURE_CALENDAR,
     SCREEN_SLEEP: CMD_SLEEP,
 }
 
@@ -96,6 +99,8 @@ ATTR_SHOW_BOTTOM_MENU = "show_bottom_menu"
 ATTR_DASHBOARD_URL = "dashboard_url"
 ATTR_TASK_SOURCE = "task_source"
 ATTR_PHOTO_SOURCE = "photo_source"
+ATTR_CALENDAR_SOURCES = "calendar_sources"
+ATTR_CALENDAR_VIEW = "calendar_view"
 ATTR_SOUND = "sound"
 ATTR_SOUND_URL = "url"
 ATTR_AUDIO_URL = "audio_url"

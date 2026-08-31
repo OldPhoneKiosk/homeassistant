@@ -394,6 +394,8 @@ class Registry:
         dashboard_url: str | None | object = _UNSET,
         task_source: str | None | object = _UNSET,
         photo_source: str | None | object = _UNSET,
+        calendar_sources: str | None | object = _UNSET,
+        calendar_view: str | None | object = _UNSET,
         sound: str | None | object = _UNSET,
         enabled_screens: str | None | object = _UNSET,
         show_bottom_menu: bool | None | object = _UNSET,
@@ -417,6 +419,10 @@ class Registry:
             device.media.task_source = task_source or None
         if photo_source is not _UNSET:
             device.media.photo_source = photo_source or None
+        if calendar_sources is not _UNSET:
+            device.media.calendar_sources = calendar_sources or None
+        if calendar_view is not _UNSET:
+            device.media.calendar_view = calendar_view or None
         if sound is not _UNSET:
             device.media.sound = sound or None
         if enabled_screens is not _UNSET:

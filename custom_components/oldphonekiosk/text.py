@@ -14,7 +14,8 @@ from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN, SCREEN_DASHBOARD
+from .calendar import async_push_calendar_snapshot
+from .const import DOMAIN, SCREEN_CALENDAR, SCREEN_DASHBOARD
 from .coordinator import OldPhoneKioskCoordinator
 from .entity import OldPhoneKioskEntity
 from .tasks import async_push_task_snapshot
@@ -34,6 +35,7 @@ async def async_setup_entry(
             entities.append(DashboardUrlText(coordinator, device_id))
             entities.append(TaskSourceText(coordinator, device_id))
             entities.append(PhotoSourceText(coordinator, device_id))
+            entities.append(CalendarSourcesText(coordinator, device_id))
             entities.append(SoundText(coordinator, device_id))
         return entities
 
@@ -145,6 +147,34 @@ class PhotoSourceText(_PanelText):
             self._device_id, photo_source=photo_source
         )
         self._attr_native_value = photo_source or None
+        self.async_write_ha_state()
+        await self.coordinator.async_request_refresh()
+
+
+class CalendarSourcesText(_PanelText):
+    """Advanced/manual comma-separated calendar.* entity ids feeding the calendar screen."""
+
+    _key = "calendar_sources"
+    _attr_translation_key = "custom_calendar_sources"
+    _attr_name = "Custom calendar sources"
+    _attr_icon = "mdi:calendar-multiple"
+    _attr_entity_category = EntityCategory.CONFIG
+
+    def _device_value(self) -> str | None:
+        device = self.device
+        return getattr(device, "calendar_sources", None) if device else None
+
+    async def async_set_value(self, value: str) -> None:
+        sources = value.strip()
+        view = getattr(self.device, "calendar_view", None) or "month"
+        await self.coordinator.client.async_set_panel_ui(
+            self._device_id, default_screen=SCREEN_CALENDAR if sources else None, calendar_sources=sources, calendar_view=view
+        )
+        if sources:
+            await async_push_calendar_snapshot(
+                self.hass, self.coordinator.client, self._device_id, sources, view=view, show=True
+            )
+        self._attr_native_value = sources or None
         self.async_write_ha_state()
         await self.coordinator.async_request_refresh()
 

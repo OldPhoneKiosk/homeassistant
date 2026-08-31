@@ -18,10 +18,14 @@ After a panel is paired, OldPhoneKiosk exposes entities and services that can be
 | `sensor.<panel>_battery` | battery percentage reported by the app |
 | `sensor.<panel>_last_seen` | last heartbeat timestamp |
 | `sensor.<panel>_app_version` | iOS app build/version |
-| `select.<panel>_screen` | requested panel screen (photos/tasks/actions/dashboard/home/sleep) |
+| `select.<panel>_screen` | requested panel screen (photos/tasks/actions/dashboard/calendar/home/sleep) |
+| `select.<panel>_default_screen` | default screen the iOS app returns to after launch/config updates |
+| `select.<panel>_visible_screens` | bottom-menu screens enabled on the iOS app |
 | `text.<panel>_dashboard_url` | dashboard the panel shows on the dashboard screen |
 | `text.<panel>_task_source` | task list id/URL feeding the tasks screen |
 | `text.<panel>_photo_source` / `select.<panel>_photo_source` | photo feed/camera feeding the photos screen; `camera.*` entities are served through the authenticated panel snapshot endpoint. When HA exposes an `entity_picture` camera proxy property, the panel follows that same tokenized proxy path, matching dashboard rendering. The select refreshes camera options dynamically, so cameras from integrations such as Google Photos Album appear even if they load after OldPhoneKiosk. |
+| `select.<panel>_calendar_sources` / `text.<panel>_calendar_sources` | one or more `calendar.*` entities feeding the native iOS Calendar screen; the select offers single calendars plus common multi-calendar combinations, while the text entity accepts comma-separated ids |
+| `select.<panel>_calendar_view` | default Calendar layout on the iOS app: `month`, `week`, `day`, or `list` |
 | `text.<panel>_sound` | sound name/id/URL dispatched by the Play sound button |
 | `switch.<panel>_photo_time_overlay` | shows/hides the fixed-position clock overlay on the native Photos screen |
 | `number.<panel>_dim_after` | seconds before the app dims the panel UI while idle |
@@ -92,12 +96,23 @@ Push kiosk navigation/config to a panel. Only provided fields change; they persi
 service: oldphonekiosk.set_panel_ui
 data:
   device_id: b1e7c2a0-...
-  default_screen: dashboard
+  default_screen: calendar
+  enabled_screens:
+    - photos
+    - tasks
+    - dashboard
+    - calendar
   dashboard_url: "http://homeassistant.local:8123/lovelace/kitchen"
   task_source: todo.kitchen
   task_refresh_seconds: 60
   photo_source: album.family
+  calendar_sources:
+    - calendar.family
+    - calendar.school
+  calendar_view: week
 ```
+
+`calendar_sources` may be one `calendar.*` entity or a list of several calendars. Home Assistant fetches upcoming events with `calendar.get_events`, sends a compact snapshot to the iOS app, and the app renders it on the native Calendar screen. `calendar_view` controls the default layout: `month`, `week`, `day`, or `list`.
 
 The same cadence is exposed on each panel device page as `number.<panel>_refresh_tasks_every`. Setting it to `0` disables automatic refresh; otherwise the connected iOS app periodically asks Home Assistant for a fresh snapshot of the configured `todo.*` source.
 

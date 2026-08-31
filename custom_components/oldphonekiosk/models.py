@@ -20,6 +20,7 @@ class PanelScreen(str, Enum):
     TASKS = "tasks"
     ACTIONS = "actions"
     DASHBOARD = "dashboard"
+    CALENDAR = "calendar"
     HOME = "home"
     SLEEP = "sleep"
 
@@ -42,6 +43,7 @@ class PanelCommand(str, Enum):
     SHOW_DASHBOARD = "show_dashboard"
     CONFIGURE_UI = "configure_ui"
     CONFIGURE_TASKS = "configure_tasks"
+    CONFIGURE_CALENDAR = "configure_calendar"
     SLEEP = "sleep"
     WAKE = "wake"
     START_STREAM = "start_stream"
@@ -61,6 +63,7 @@ COMMAND_TARGET_SCREEN: dict[PanelCommand, PanelScreen] = {
     PanelCommand.SHOW_HOME: PanelScreen.HOME,
     PanelCommand.SHOW_ACTIONS: PanelScreen.ACTIONS,
     PanelCommand.SHOW_DASHBOARD: PanelScreen.DASHBOARD,
+    PanelCommand.CONFIGURE_CALENDAR: PanelScreen.CALENDAR,
     PanelCommand.SLEEP: PanelScreen.SLEEP,
     # WAKE has no fixed target screen; device restores previous/home.
 }
@@ -95,6 +98,7 @@ class DeviceCapabilities(BaseModel):
     microphone: bool = False
     photos: bool = True
     tasks: bool = True
+    calendar: bool = True
 
 
 class DeviceMedia(BaseModel):
@@ -107,6 +111,8 @@ class DeviceMedia(BaseModel):
     - ``dashboard_url``: dashboard the panel shows on the ``dashboard`` screen.
     - ``task_source``: task list id / URL feeding the ``tasks`` screen.
     - ``photo_source``: photo feed id / URL feeding the ``photos`` screen.
+    - ``calendar_sources``: comma-separated HA calendar entity ids feeding the ``calendar`` screen.
+    - ``calendar_view``: default calendar view: month/week/day/list.
     - ``sound``: the sound name/id/URL the ``play_sound`` button dispatches.
     """
 
@@ -114,6 +120,8 @@ class DeviceMedia(BaseModel):
     dashboard_url: str | None = None
     task_source: str | None = None
     photo_source: str | None = None
+    calendar_sources: str | None = None
+    calendar_view: str | None = None
     sound: str | None = None
     enabled_screens: str | None = None
     show_bottom_menu: bool | None = None

@@ -30,44 +30,111 @@
   },
   "entity": {
     "binary_sensor": {
-      "online": { "name": "Online" },
-      "charging": { "name": "Charging" }
+      "online": {
+        "name": "Online"
+      },
+      "charging": {
+        "name": "Charging"
+      }
     },
     "sensor": {
-      "battery": { "name": "Battery" },
-      "last_seen": { "name": "Last seen" },
-      "app_version": { "name": "App version" }
+      "battery": {
+        "name": "Battery"
+      },
+      "last_seen": {
+        "name": "Last seen"
+      },
+      "app_version": {
+        "name": "App version"
+      }
     },
     "select": {
-      "screen": { "name": "Screen" },
-      "dashboard": { "name": "Dashboard" },
-      "task_list": { "name": "Task list" },
-      "sound": { "name": "Sound" },
-      "photo_source": { "name": "Photo source" }
+      "screen": {
+        "name": "Screen"
+      },
+      "dashboard": {
+        "name": "Dashboard"
+      },
+      "task_list": {
+        "name": "Task list"
+      },
+      "sound": {
+        "name": "Sound"
+      },
+      "photo_source": {
+        "name": "Photo source"
+      },
+      "default_screen": {
+        "name": "Default screen"
+      },
+      "visible_screens": {
+        "name": "Visible screens"
+      },
+      "calendar_sources": {
+        "name": "Calendar sources"
+      },
+      "calendar_view": {
+        "name": "Calendar view"
+      }
     },
     "button": {
-      "generate_pairing_code": { "name": "Generate pairing code" },
-      "wake": { "name": "Wake" },
-      "sleep": { "name": "Sleep" },
-      "start_front_camera": { "name": "Start front camera" },
-      "start_back_camera": { "name": "Start back camera" },
-      "stop_camera": { "name": "Stop camera" },
-      "beep": { "name": "Beep" },
-      "play_sound": { "name": "Play sound" },
-      "start_intercom": { "name": "Start intercom" },
-      "stop_intercom": { "name": "Stop intercom" }
+      "generate_pairing_code": {
+        "name": "Generate pairing code"
+      },
+      "wake": {
+        "name": "Wake"
+      },
+      "sleep": {
+        "name": "Sleep"
+      },
+      "start_front_camera": {
+        "name": "Start front camera"
+      },
+      "start_back_camera": {
+        "name": "Start back camera"
+      },
+      "stop_camera": {
+        "name": "Stop camera"
+      },
+      "beep": {
+        "name": "Beep"
+      },
+      "play_sound": {
+        "name": "Play sound"
+      },
+      "start_intercom": {
+        "name": "Start intercom"
+      },
+      "stop_intercom": {
+        "name": "Stop intercom"
+      }
     },
     "switch": {
-      "camera_rotate_180": { "name": "Rotate camera 180°" }
+      "camera_rotate_180": {
+        "name": "Rotate camera 180°"
+      }
     },
     "text": {
-      "custom_dashboard_url": { "name": "Custom dashboard URL" },
-      "custom_task_source": { "name": "Custom task source" },
-      "custom_photo_source": { "name": "Custom photo source" },
-      "custom_sound": { "name": "Custom sound" }
+      "custom_dashboard_url": {
+        "name": "Custom dashboard URL"
+      },
+      "custom_task_source": {
+        "name": "Custom task source"
+      },
+      "custom_photo_source": {
+        "name": "Custom photo source"
+      },
+      "custom_sound": {
+        "name": "Custom sound"
+      },
+      "custom_calendar_sources": {
+        "name": "Custom calendar sources"
+      }
     },
     "camera": {
-      "camera": { "name": "Camera" }
+      "camera": {
+        "name": "Camera"
+      }
     }
   }
 }

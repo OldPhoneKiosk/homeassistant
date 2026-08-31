@@ -17,8 +17,11 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
 
 from .api import BridgeError, BridgeNotFoundError
+from .calendar import CALENDAR_VIEWS, async_push_calendar_snapshot
 from .const import (
     ATTR_AUDIO_URL,
+    ATTR_CALENDAR_SOURCES,
+    ATTR_CALENDAR_VIEW,
     ATTR_CAMERA_MODE,
     ATTR_DASHBOARD_URL,
     ATTR_DEFAULT_SCREEN,
@@ -92,6 +95,8 @@ SET_PANEL_UI_SCHEMA = vol.Schema(
         vol.Optional(ATTR_DASHBOARD_URL): vol.Any(None, cv.string),
         vol.Optional(ATTR_TASK_SOURCE): vol.Any(None, cv.string),
         vol.Optional(ATTR_PHOTO_SOURCE): vol.Any(None, cv.string),
+        vol.Optional(ATTR_CALENDAR_SOURCES): vol.Any(None, vol.All(cv.ensure_list, [cv.string]), cv.string),
+        vol.Optional(ATTR_CALENDAR_VIEW): vol.In(CALENDAR_VIEWS),
     }
 )
 
@@ -267,6 +272,11 @@ async def _async_set_panel_ui(hass: HomeAssistant, call: ServiceCall) -> None:
         params[ATTR_TASK_SOURCE] = call.data[ATTR_TASK_SOURCE] or ""
     if ATTR_PHOTO_SOURCE in call.data:
         params[ATTR_PHOTO_SOURCE] = call.data[ATTR_PHOTO_SOURCE] or ""
+    if ATTR_CALENDAR_SOURCES in call.data:
+        raw_sources = call.data[ATTR_CALENDAR_SOURCES]
+        params[ATTR_CALENDAR_SOURCES] = ",".join(raw_sources) if isinstance(raw_sources, list) else (raw_sources or "")
+    if ATTR_CALENDAR_VIEW in call.data:
+        params[ATTR_CALENDAR_VIEW] = call.data[ATTR_CALENDAR_VIEW]
 
     if not params:
         raise ServiceValidationError("Set at least one panel UI option.")
@@ -286,9 +296,24 @@ async def _async_set_panel_ui(hass: HomeAssistant, call: ServiceCall) -> None:
             photo_source=call.data.get(ATTR_PHOTO_SOURCE)
             if ATTR_PHOTO_SOURCE in call.data
             else None,
+            calendar_sources=params.get(ATTR_CALENDAR_SOURCES)
+            if ATTR_CALENDAR_SOURCES in call.data
+            else None,
+            calendar_view=call.data.get(ATTR_CALENDAR_VIEW)
+            if ATTR_CALENDAR_VIEW in call.data
+            else None,
         )
     except BridgeError as err:
         raise HomeAssistantError(f"Bridge set_panel_ui failed: {err}") from err
+    if ATTR_CALENDAR_SOURCES in call.data:
+        await async_push_calendar_snapshot(
+            hass,
+            coordinator.client,
+            device_id,
+            params.get(ATTR_CALENDAR_SOURCES, ""),
+            view=params.get(ATTR_CALENDAR_VIEW, "month"),
+            show=call.data.get(ATTR_DEFAULT_SCREEN) == "calendar",
+        )
     await coordinator.async_request_refresh()
 
 
