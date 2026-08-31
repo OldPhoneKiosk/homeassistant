@@ -10,20 +10,15 @@ from dataclasses import dataclass, field
 import uuid
 from typing import Awaitable, Callable, Protocol
 
+from .models import PanelCommand
+
 IntercomSignalHandler = Callable[[dict], Awaitable[None]]
 
 
-class _Command:
-    """Small command-value shim compatible with Registry.send_command_nowait."""
-
-    def __init__(self, value: str) -> None:
-        self.value = value
-
-
-CMD_START_STREAM = _Command("start_stream")
-CMD_STOP_STREAM = _Command("stop_stream")
-CMD_START_INTERCOM = _Command("start_intercom")
-CMD_STOP_INTERCOM = _Command("stop_intercom")
+CMD_START_STREAM = PanelCommand.START_STREAM
+CMD_STOP_STREAM = PanelCommand.STOP_STREAM
+CMD_START_INTERCOM = PanelCommand.START_INTERCOM
+CMD_STOP_INTERCOM = PanelCommand.STOP_INTERCOM
 
 
 class IntercomRegistry(Protocol):
@@ -33,7 +28,7 @@ class IntercomRegistry(Protocol):
     def is_online(self, device_id: str) -> bool: ...
     async def send_raw(self, device_id: str, message: dict) -> None: ...
     async def send_command_nowait(
-        self, device_id: str, command: _Command, params: dict | None = None
+        self, device_id: str, command: PanelCommand, params: dict | None = None
     ): ...
 
 
