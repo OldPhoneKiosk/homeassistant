@@ -13,11 +13,12 @@ from typing import Awaitable, Callable, Protocol
 IntercomSignalHandler = Callable[[dict], Awaitable[None]]
 
 
-class _Command:
-    """Small command-value shim compatible with Registry.send_command_nowait."""
+class _Command(str):
+    """String command shim compatible with Registry and Pydantic validation."""
 
-    def __init__(self, value: str) -> None:
-        self.value = value
+    @property
+    def value(self) -> str:
+        return str(self)
 
 
 CMD_START_STREAM = _Command("start_stream")

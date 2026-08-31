@@ -25,6 +25,10 @@ Most failures are URL reachability issues. The phone must reach your Home Assist
 
 Check iPhone Wi‑Fi, iOS app build, Home Assistant logs for `oldphonekiosk`, and whether the panel was revoked and needs re-pairing.
 
+## Intercom card shows a command validation error after pressing Zadzwoń
+
+Upgrade the OldPhoneKiosk Home Assistant integration to `0.1.37` or newer and restart Home Assistant. Older intercom card/backend combinations could start the WebRTC session but fail when the broker sent the panel `start_stream`/`start_intercom` commands, producing a Pydantic `Command command` validation error in the Lovelace card.
+
 ## Safe logs to share
 
 Share Home Assistant version, integration version or commit, iOS app build, relevant HA log lines and reproduction steps. Do **not** share active pairing codes or claim tokens, device secrets or full Home Assistant tokens.
