@@ -152,3 +152,16 @@ def test_validate_device_signal_rejects_invalid_payload() -> None:
         validate_device_signal({"type": "intercom_signal", "session_id": "s"})
     with pytest.raises(IntercomSessionError):
         validate_device_signal({"type": "intercom_signal", "session_id": "s", "action": "bogus"})
+
+
+def test_validate_device_signal_accepts_hangup_and_ice_candidate() -> None:
+    hangup = validate_device_signal({"type": "intercom_signal", "session_id": "s", "action": "hangup"})
+    ice = validate_device_signal({
+        "type": "intercom_signal",
+        "session_id": "s",
+        "action": "ice_candidate",
+        "candidate": {"candidate": "candidate:1", "sdpMid": "0", "sdpMLineIndex": 0},
+    })
+
+    assert hangup["action"] == "hangup"
+    assert ice["candidate"]["candidate"] == "candidate:1"
