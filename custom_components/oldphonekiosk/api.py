@@ -84,6 +84,8 @@ class PanelDeviceData:
     last_seen: datetime | None
     task_source: str | None = None
     photo_source: str | None = None
+    calendar_sources: str | None = None
+    calendar_view: str | None = None
     sound: str | None = None
     enabled_screens: str | None = None
     show_bottom_menu: bool | None = None
@@ -118,6 +120,8 @@ class PanelDeviceData:
             last_seen=_parse_dt(state.get("last_seen")),
             task_source=media.get("task_source"),
             photo_source=media.get("photo_source"),
+            calendar_sources=media.get("calendar_sources"),
+            calendar_view=media.get("calendar_view"),
             sound=media.get("sound"),
             enabled_screens=media.get("enabled_screens"),
             show_bottom_menu=media.get("show_bottom_menu"),
@@ -231,6 +235,10 @@ class BridgeClient:
         dim_after_seconds: float | None = None,
         sleep_after_seconds: float | None = None,
         dashboard_url: str | None = None,
+        task_source: str | None = None,
+        photo_source: str | None = None,
+        calendar_sources: str | None = None,
+        calendar_view: str | None = None,
     ) -> PanelDeviceData:
         """Push panel UI config via the legacy HTTP Bridge command endpoint."""
         params: dict[str, Any] = {}
@@ -258,6 +266,14 @@ class BridgeClient:
             params["sleep_after_seconds"] = str(int(max(0, sleep_after_seconds)))
         if dashboard_url is not None:
             params["dashboard_url"] = dashboard_url
+        if task_source is not None:
+            params["task_source"] = task_source
+        if photo_source is not None:
+            params["photo_source"] = photo_source
+        if calendar_sources is not None:
+            params["calendar_sources"] = calendar_sources
+        if calendar_view is not None:
+            params["calendar_view"] = calendar_view
         await self._request(
             "POST",
             ENDPOINT_COMMANDS.format(device_id=device_id),

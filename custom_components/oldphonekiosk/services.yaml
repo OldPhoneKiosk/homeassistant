@@ -96,14 +96,14 @@ set_panel_ui:
       required: false
       selector:
         select:
-          options: ["photos", "tasks", "dashboard"]
+          options: ["photos", "tasks", "dashboard", "calendar"]
     enabled_screens:
       name: Enabled screens
       required: false
       selector:
         select:
           multiple: true
-          options: ["photos", "tasks", "dashboard"]
+          options: ["photos", "tasks", "dashboard", "calendar"]
     show_bottom_menu:
       name: Show bottom menu
       required: false
@@ -130,6 +130,21 @@ set_panel_ui:
       required: false
       selector:
         text:
+    calendar_sources:
+      name: Calendar sources
+      description: One or more calendar.* entities feeding the calendar screen.
+      required: false
+      selector:
+        entity:
+          domain: calendar
+          multiple: true
+    calendar_view:
+      name: Calendar view
+      description: Default calendar layout on the iPad.
+      required: false
+      selector:
+        select:
+          options: ["month", "week", "day", "list"]
 
 beep:
   name: Beep panel

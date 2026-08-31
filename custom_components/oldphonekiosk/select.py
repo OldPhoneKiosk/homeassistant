@@ -16,6 +16,7 @@ values (a full URL, a bundled sound name, an id HA cannot enumerate).
 from __future__ import annotations
 
 import logging
+from itertools import combinations
 from typing import ClassVar
 
 from homeassistant.components.select import SelectEntity
@@ -24,7 +25,8 @@ from homeassistant.const import EVENT_STATE_CHANGED
 from homeassistant.core import Event, HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN, SCREEN_DASHBOARD, SCREEN_PHOTOS, SCREEN_TO_COMMAND, SCREENS
+from .calendar import CALENDAR_VIEWS, async_push_calendar_snapshot, calendar_entity_ids
+from .const import DOMAIN, SCREEN_CALENDAR, SCREEN_DASHBOARD, SCREEN_PHOTOS, SCREEN_TO_COMMAND, SCREENS
 from .coordinator import OldPhoneKioskCoordinator
 from .entity import OldPhoneKioskEntity
 from .media_sources import async_media_source_options
@@ -151,11 +153,14 @@ async def async_setup_entry(
         entities: list[SelectEntity] = []
         for device_id in device_ids:
             entities.append(ScreenSelect(coordinator, device_id))
+            entities.append(DefaultScreenSelect(coordinator, device_id))
             entities.append(VisibleScreensSelect(coordinator, device_id))
             entities.append(DashboardSelect(coordinator, device_id))
             entities.append(TaskListSelect(coordinator, device_id))
             entities.append(SoundSelect(coordinator, device_id))
             entities.append(PhotoSourceSelect(coordinator, device_id))
+            entities.append(CalendarSourcesSelect(coordinator, device_id))
+            entities.append(CalendarViewSelect(coordinator, device_id))
         return entities
 
     async_add_entities(_entities(known_devices))
@@ -188,8 +193,53 @@ class ScreenSelect(OldPhoneKioskEntity, SelectEntity):
         return device.screen
 
     async def async_select_option(self, option: str) -> None:
-        command = SCREEN_TO_COMMAND[option]
-        await self.coordinator.client.async_send_command(self._device_id, command)
+        if option == SCREEN_CALENDAR:
+            sources = getattr(self.device, "calendar_sources", None) or ""
+            view = getattr(self.device, "calendar_view", None) or "month"
+            if sources:
+                await async_push_calendar_snapshot(
+                    self.hass,
+                    self.coordinator.client,
+                    self._device_id,
+                    sources,
+                    view=view,
+                    show=True,
+                )
+            else:
+                await self.coordinator.client.async_send_command(
+                    self._device_id,
+                    SCREEN_TO_COMMAND[option],
+                    params={"items": "[]", "view": view, "show": "true"},
+                )
+        else:
+            command = SCREEN_TO_COMMAND[option]
+            await self.coordinator.client.async_send_command(self._device_id, command)
+        await self.coordinator.async_request_refresh()
+
+
+class DefaultScreenSelect(OldPhoneKioskEntity, SelectEntity):
+    """Pick the screen the iPad returns to after launch/config changes."""
+
+    _attr_translation_key = "default_screen"
+    _attr_name = "Default screen"
+    _attr_icon = "mdi:tablet-dashboard"
+    _attr_options = [s for s in SCREENS if s != "sleep"]
+
+    def __init__(self, coordinator, device_id) -> None:
+        super().__init__(coordinator, device_id)
+        self._attr_unique_id = f"{device_id}_default_screen"
+        self._selected: str | None = None
+
+    @property
+    def current_option(self) -> str | None:
+        return self._selected or "dashboard"
+
+    async def async_select_option(self, option: str) -> None:
+        self._selected = option
+        await self.coordinator.client.async_set_panel_ui(
+            self._device_id, default_screen=option
+        )
+        self.async_write_ha_state()
         await self.coordinator.async_request_refresh()
 
 
@@ -203,7 +253,8 @@ class VisibleScreensSelect(OldPhoneKioskEntity, SelectEntity):
         "dashboard",
         "tasks,dashboard",
         "photos,tasks,dashboard",
-        "photos,tasks,dashboard,sleep",
+        "photos,tasks,dashboard,calendar",
+        "photos,tasks,dashboard,calendar,sleep",
     ]
 
     def __init__(self, coordinator, device_id) -> None:
@@ -471,4 +522,80 @@ class PhotoSourceSelect(_SourceSelect):
         await self.coordinator.client.async_send_command(
             self._device_id, SCREEN_TO_COMMAND[SCREEN_PHOTOS]
         )
+        await self.coordinator.async_request_refresh()
+
+
+class CalendarSourcesSelect(_SourceSelect):
+    """Pick one or more HA calendar entities feeding the calendar screen."""
+
+    _key = "calendar_sources"
+    _attr_translation_key = "calendar_sources"
+    _attr_name = "Calendar sources"
+    _attr_icon = "mdi:calendar-multiple"
+
+    def _discovered(self) -> list[str]:
+        entities = calendar_entity_ids(self.hass)
+        options = list(entities)
+        for size in range(2, min(len(entities), 4) + 1):
+            options.extend(",".join(combo) for combo in combinations(entities, size))
+        return options
+
+    def _stored(self) -> str | None:
+        device = self.device
+        return getattr(device, "calendar_sources", None) if device else None
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        self.async_on_remove(
+            self.hass.bus.async_listen(EVENT_STATE_CHANGED, self._handle_state_changed)
+        )
+
+    @callback
+    def _handle_state_changed(self, event: Event) -> None:
+        entity_id = event.data.get("entity_id")
+        if isinstance(entity_id, str) and entity_id.startswith("calendar."):
+            self.async_write_ha_state()
+
+    async def async_select_option(self, option: str) -> None:
+        view = getattr(self.device, "calendar_view", None) or "month"
+        await self.coordinator.client.async_set_panel_ui(
+            self._device_id, default_screen=SCREEN_CALENDAR, calendar_sources=option, calendar_view=view
+        )
+        await async_push_calendar_snapshot(
+            self.hass, self.coordinator.client, self._device_id, option, view=view, show=True
+        )
+        self._apply_selected(option)
+        await self.coordinator.async_request_refresh()
+
+
+class CalendarViewSelect(_SourceSelect):
+    """Pick the default calendar layout shown on the iPad."""
+
+    _key = "calendar_view"
+    _attr_translation_key = "calendar_view"
+    _attr_name = "Calendar view"
+    _attr_icon = "mdi:calendar-month"
+    _attr_options = CALENDAR_VIEWS
+
+    def _discovered(self) -> list[str]:
+        return list(CALENDAR_VIEWS)
+
+    def _stored(self) -> str | None:
+        device = self.device
+        return getattr(device, "calendar_view", None) if device else None
+
+    @property
+    def current_option(self) -> str | None:
+        return self._selected or self._stored() or "month"
+
+    async def async_select_option(self, option: str) -> None:
+        sources = getattr(self.device, "calendar_sources", None) or ""
+        await self.coordinator.client.async_set_panel_ui(
+            self._device_id, default_screen=SCREEN_CALENDAR, calendar_sources=sources, calendar_view=option
+        )
+        if sources:
+            await async_push_calendar_snapshot(
+                self.hass, self.coordinator.client, self._device_id, sources, view=option, show=True
+            )
+        self._apply_selected(option)
         await self.coordinator.async_request_refresh()

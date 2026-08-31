@@ -56,6 +56,8 @@ class PanelDeviceData:
     last_seen: datetime | None
     task_source: str | None = None
     photo_source: str | None = None
+    calendar_sources: str | None = None
+    calendar_view: str | None = None
     sound: str | None = None
     enabled_screens: str | None = None
     show_bottom_menu: bool | None = None
@@ -89,6 +91,8 @@ class PanelDeviceData:
             last_seen=state.last_seen,
             task_source=device.media.task_source,
             photo_source=device.media.photo_source,
+            calendar_sources=device.media.calendar_sources,
+            calendar_view=device.media.calendar_view,
             sound=device.media.sound,
             enabled_screens=device.media.enabled_screens,
             show_bottom_menu=device.media.show_bottom_menu,
@@ -177,6 +181,8 @@ class NativeOldPhoneKioskClient:
         dashboard_url: str | None = None,
         task_source: str | None = None,
         photo_source: str | None = None,
+        calendar_sources: str | None = None,
+        calendar_view: str | None = None,
     ) -> PanelDeviceData:
         params: dict[str, str] = {}
         if default_screen is not None:
@@ -209,6 +215,10 @@ class NativeOldPhoneKioskClient:
             params["task_source"] = task_source
         if photo_source is not None:
             params["photo_source"] = photo_source
+        if calendar_sources is not None:
+            params["calendar_sources"] = calendar_sources
+        if calendar_view is not None:
+            params["calendar_view"] = calendar_view
         config_kwargs: dict[str, Any] = {}
         if dashboard_url is not None:
             config_kwargs["dashboard_url"] = dashboard_url
@@ -216,6 +226,10 @@ class NativeOldPhoneKioskClient:
             config_kwargs["task_source"] = task_source
         if photo_source is not None:
             config_kwargs["photo_source"] = photo_source
+        if calendar_sources is not None:
+            config_kwargs["calendar_sources"] = calendar_sources
+        if calendar_view is not None:
+            config_kwargs["calendar_view"] = calendar_view
         if enabled_screens is not None:
             config_kwargs["enabled_screens"] = ",".join(enabled_screens)
         if show_bottom_menu is not None:

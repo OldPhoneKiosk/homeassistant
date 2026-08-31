@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.39 - 2026-08-31
+
+- Add a native `calendar` panel screen backed by Home Assistant `calendar.*` entities.
+- Add panel device controls for Calendar sources (including multi-calendar combinations) and Calendar view (`month`, `week`, `day`, `list`).
+- Extend `oldphonekiosk.set_panel_ui` with `calendar_sources` and `calendar_view`, and push calendar event snapshots to connected iOS panels.
+
 ## 0.1.38 - 2026-08-31
 
 - Fix the Lovelace intercom card `Rozłącz` flow so it sends the HA/iPad hangup before unsubscribing from the session.
