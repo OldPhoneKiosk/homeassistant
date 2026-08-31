@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.29 - 2026-08-31
+
+- Add a per-panel **Rotate camera 180°** switch that persists in Home Assistant and is replayed to the iOS app on reconnect.
+- The camera rotation setting is sent through `configure_ui` as `camera_rotate_180`, allowing the iOS MJPEG publisher to correct upside-down camera output.
+
 ## 0.1.28 - 2026-08-31
 
 - Keep the panel Camera entity visible on the Home Assistant device page even before the iOS app reports a live MJPEG URL.

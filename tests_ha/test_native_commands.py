@@ -89,6 +89,7 @@ async def test_set_panel_ui_pushes_sources_and_persists():
         task_source="todo.kitchen",
         photo_source="album.family",
         task_refresh_seconds=45,
+        camera_rotate_180=True,
     )
     cmd = conn.commands()[-1]
     assert cmd["command"] == "configure_ui"
@@ -96,11 +97,13 @@ async def test_set_panel_ui_pushes_sources_and_persists():
         "task_source": "todo.kitchen",
         "photo_source": "album.family",
         "task_refresh_seconds": "45",
+        "camera_rotate_180": "true",
     }
     device = registry.get_device(device_id)
     assert device.media.task_source == "todo.kitchen"
     assert device.media.photo_source == "album.family"
     assert device.media.task_refresh_seconds == 45
+    assert device.media.camera_rotate_180 is True
 
 
 async def test_media_config_persists_across_reload():
@@ -115,6 +118,7 @@ async def test_media_config_persists_across_reload():
         photo_source="album.family",
         sound="1007",
         task_refresh_seconds=60,
+        camera_rotate_180=True,
     )
 
     # A fresh registry over the same store reloads the persisted config.
@@ -125,3 +129,4 @@ async def test_media_config_persists_across_reload():
     assert media.photo_source == "album.family"
     assert media.sound == "1007"
     assert media.task_refresh_seconds == 60
+    assert media.camera_rotate_180 is True

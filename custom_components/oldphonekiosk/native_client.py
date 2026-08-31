@@ -62,6 +62,7 @@ class PanelDeviceData:
     keep_screen_awake: bool | None = None
     show_connection_banner: bool | None = None
     show_photo_time_overlay: bool | None = None
+    camera_rotate_180: bool | None = None
     dim_after_seconds: float | None = None
     sleep_after_seconds: float | None = None
     task_refresh_seconds: float | None = None
@@ -94,6 +95,7 @@ class PanelDeviceData:
             keep_screen_awake=device.media.keep_screen_awake,
             show_connection_banner=device.media.show_connection_banner,
             show_photo_time_overlay=device.media.show_photo_time_overlay,
+            camera_rotate_180=device.media.camera_rotate_180,
             dim_after_seconds=device.media.dim_after_seconds,
             sleep_after_seconds=device.media.sleep_after_seconds,
             task_refresh_seconds=device.media.task_refresh_seconds,
@@ -171,6 +173,7 @@ class NativeOldPhoneKioskClient:
         dim_after_seconds: float | None = None,
         sleep_after_seconds: float | None = None,
         task_refresh_seconds: float | None = None,
+        camera_rotate_180: bool | None = None,
         dashboard_url: str | None = None,
         task_source: str | None = None,
         photo_source: str | None = None,
@@ -192,6 +195,8 @@ class NativeOldPhoneKioskClient:
             params["show_photo_time_overlay"] = (
                 "true" if show_photo_time_overlay else "false"
             )
+        if camera_rotate_180 is not None:
+            params["camera_rotate_180"] = "true" if camera_rotate_180 else "false"
         if dim_after_seconds is not None:
             params["dim_after_seconds"] = str(int(max(0, dim_after_seconds)))
         if sleep_after_seconds is not None:
@@ -221,6 +226,8 @@ class NativeOldPhoneKioskClient:
             config_kwargs["show_connection_banner"] = show_connection_banner
         if show_photo_time_overlay is not None:
             config_kwargs["show_photo_time_overlay"] = show_photo_time_overlay
+        if camera_rotate_180 is not None:
+            config_kwargs["camera_rotate_180"] = camera_rotate_180
         if dim_after_seconds is not None:
             config_kwargs["dim_after_seconds"] = dim_after_seconds
         if sleep_after_seconds is not None:

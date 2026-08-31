@@ -101,6 +101,8 @@ data:
 
 The same cadence is exposed on each panel device page as `number.<panel>_refresh_tasks_every`. Setting it to `0` disables automatic refresh; otherwise the connected iOS app periodically asks Home Assistant for a fresh snapshot of the configured `todo.*` source.
 
+Each panel also exposes `switch.<panel>_rotate_camera_180deg` (**Rotate camera 180°** / **Obróć kamerę o 180°**). Turn it on when the live camera preview is upside down; Home Assistant persists the setting and replays it to the iOS app as `camera_rotate_180` on reconnect.
+
 Task snapshots include the standard HA todo fields (`uid`, `summary`, `status`, `due`, `description`) and may include `assignee` plus a compact JSON `details` object for extra metadata. The iOS app renders these fields in a read-only task detail modal when the user taps a task row.
 
 ### `oldphonekiosk.beep`

@@ -55,6 +55,15 @@ async def async_setup_entry(
                 PanelUISwitch(
                     coordinator,
                     device_id,
+                    key="camera_rotate_180",
+                    name="Rotate camera 180°",
+                    icon="mdi:rotate-3d-variant",
+                    field="camera_rotate_180",
+                    default=False,
+                ),
+                PanelUISwitch(
+                    coordinator,
+                    device_id,
                     key="photo_time_overlay",
                     name="Photo time overlay",
                     icon="mdi:clock-outline",

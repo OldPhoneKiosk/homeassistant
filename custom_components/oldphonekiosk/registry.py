@@ -400,6 +400,7 @@ class Registry:
         keep_screen_awake: bool | None | object = _UNSET,
         show_connection_banner: bool | None | object = _UNSET,
         show_photo_time_overlay: bool | None | object = _UNSET,
+        camera_rotate_180: bool | None | object = _UNSET,
         dim_after_seconds: float | None | object = _UNSET,
         sleep_after_seconds: float | None | object = _UNSET,
         task_refresh_seconds: float | None | object = _UNSET,
@@ -441,6 +442,10 @@ class Registry:
                 bool(show_photo_time_overlay)
                 if show_photo_time_overlay is not None
                 else None
+            )
+        if camera_rotate_180 is not _UNSET:
+            device.media.camera_rotate_180 = (
+                bool(camera_rotate_180) if camera_rotate_180 is not None else None
             )
         if dim_after_seconds is not _UNSET:
             device.media.dim_after_seconds = (
