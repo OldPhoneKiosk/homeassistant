@@ -7,6 +7,7 @@ class OldPhoneKioskIntercomCard extends HTMLElement {
     this._sessionId = null;
     this._pc = null;
     this._localStream = null;
+    this._audioSender = null;
     this._unsubscribe = null;
     this._busy = false;
   }
@@ -83,23 +84,11 @@ class OldPhoneKioskIntercomCard extends HTMLElement {
     }
     this._busy = true;
     try {
-      this._status = "Klik odebrany — proszę o mikrofon…";
-      this.render();
-      if (!navigator.mediaDevices?.getUserMedia) {
-        throw new Error("Przeglądarka nie udostępnia mikrofonu dla tej strony. Otwórz Home Assistant przez HTTPS albo zaufany adres lokalny.");
-      }
-      this._localStream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-        video: false,
-      });
-      this._setMicEnabled(false);
-      this._status = "Mikrofon gotowy — startuję interkom i kamerę…";
+      this._status = "Startuję interkom, kamerę i głośnik…";
       this.render();
       this._pc = new RTCPeerConnection({ iceServers: this._config.ice_servers || [] });
-      for (const track of this._localStream.getAudioTracks()) {
-        this._pc.addTrack(track, this._localStream);
-      }
-      this._pc.addTransceiver("audio", { direction: "sendrecv" });
+      const audioTransceiver = this._pc.addTransceiver("audio", { direction: "sendrecv" });
+      this._audioSender = audioTransceiver.sender;
       this._pc.ontrack = (event) => {
         const audio = this.shadowRoot.getElementById("remote-audio");
         if (audio && event.streams[0]) {
@@ -178,9 +167,36 @@ class OldPhoneKioskIntercomCard extends HTMLElement {
     }
   }
 
-  _startTalking(ev) {
+  async _ensureLocalAudio() {
+    if (this._localStream) return true;
+    if (!navigator.mediaDevices?.getUserMedia) {
+      this._setError("Przeglądarka nie udostępnia mikrofonu dla tej strony. Otwórz Home Assistant przez HTTPS albo zaufany adres lokalny.");
+      return false;
+    }
+    try {
+      this._status = "Proszę o mikrofon…";
+      this.render();
+      this._localStream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+        video: false,
+      });
+      this._setMicEnabled(false);
+      const track = this._localStream.getAudioTracks()[0];
+      if (this._audioSender && track) {
+        await this._audioSender.replaceTrack(track);
+      }
+      return true;
+    } catch (err) {
+      this._setError(`Mikrofon: ${err?.message || err}`);
+      return false;
+    }
+  }
+
+  async _startTalking(ev) {
     ev?.preventDefault?.();
-    if (!this._sessionId || !this._localStream) return;
+    if (!this._sessionId) return;
+    const hasAudio = await this._ensureLocalAudio();
+    if (!hasAudio) return;
     this._setMicEnabled(true);
     window.addEventListener("pointerup", (event) => this._stopTalking(event), { once: true });
     this._status = "Mówisz — puść przycisk, żeby wyciszyć";
@@ -208,6 +224,7 @@ class OldPhoneKioskIntercomCard extends HTMLElement {
       this._pc.close();
       this._pc = null;
     }
+    this._audioSender = null;
     if (this._localStream) {
       for (const track of this._localStream.getTracks()) track.stop();
       this._localStream = null;
@@ -238,9 +255,13 @@ class OldPhoneKioskIntercomCard extends HTMLElement {
   _cameraMarkup(cameraEntity) {
     if (!cameraEntity || !this._hass?.states?.[cameraEntity]) return "";
     const camera = this._hass.states[cameraEntity];
-    const picture = camera.attributes?.entity_picture;
-    if (!picture) return `<div class="camera-placeholder">${cameraEntity}</div>`;
-    return `<img class="camera" src="${this._absoluteUrl(picture)}" alt="${camera.attributes?.friendly_name || cameraEntity}" />`;
+    const attrs = camera.attributes || {};
+    const hasPanelVideoUrl = Object.prototype.hasOwnProperty.call(attrs, "video_url");
+    const source = hasPanelVideoUrl ? attrs.video_url : attrs.entity_picture;
+    if (!source) {
+      return `<div class="camera-placeholder">${cameraEntity}<br><small>Kamera wystartuje po kliknięciu Zadzwoń</small></div>`;
+    }
+    return `<img class="camera" src="${this._absoluteUrl(source)}" alt="${attrs.friendly_name || cameraEntity}" />`;
   }
 
   render() {

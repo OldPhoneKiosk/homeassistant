@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.36 - 2026-08-31
+
+- Make `Zadzwoń` start the intercom/camera/speaker without requiring browser microphone access; the browser asks for microphone only when holding `Mów`.
+- Make the intercom card prefer the panel-reported `video_url` and avoid HA `/api/camera_proxy` fallback for OldPhoneKiosk camera entities while no stream URL is available.
+- Prevent repeated `500 Internal Server Error` camera proxy requests before/while the iPad camera stream is starting.
+
 ## 0.1.35 - 2026-08-31
 
 - Update an existing stale Lovelace resource URL for `oldphonekiosk-intercom-card.js` to the current cache-busted version instead of treating any old `?v=` as current.

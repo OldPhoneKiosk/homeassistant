@@ -11,7 +11,7 @@ def test_frontend_registers_static_assets_not_sidebar_panel():
     assert "async_remove_panel" not in source
     assert "StaticPathConfig" in source
     assert "async_ensure_lovelace_resource" in source
-    assert "oldphonekiosk-intercom-card.js?v=0.1.35" in source
+    assert "oldphonekiosk-intercom-card.js?v=0.1.36" in source
 
 
 def test_lovelace_intercom_card_asset_exists_and_is_registered():
@@ -22,7 +22,12 @@ def test_lovelace_intercom_card_asset_exists_and_is_registered():
     assert "customElements.define(\"oldphonekiosk-intercom-card\"" in content
     assert "window.customCards" in content
     assert "navigator.mediaDevices.getUserMedia" in content
+    assert "async _ensureLocalAudio()" in content
+    assert "replaceTrack(track)" in content
     assert "oldphonekiosk/intercom/start" in content
     assert "track.enabled = this._talking" in content
     assert "pointerdown" in content
     assert "Mów" in content
+    assert "Object.prototype.hasOwnProperty.call(attrs, \"video_url\")" in content
+    assert "hasPanelVideoUrl ? attrs.video_url : attrs.entity_picture" in content
+    assert "Kamera wystartuje po kliknięciu Zadzwoń" in content
