@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.32 - 2026-08-31
+
+- Automatically add the `oldphonekiosk-intercom-card.js` Lovelace resource when Lovelace storage resources are available.
+- Keep the manual resource URL documented as a fallback for YAML-mode Lovelace setups.
+
 ## 0.1.31 - 2026-08-31
 
 - Replace the experimental `/oldphonekiosk` sidebar page with a Lovelace custom card.
