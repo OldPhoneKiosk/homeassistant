@@ -47,7 +47,7 @@ async def test_ensure_lovelace_resource_creates_module_resource():
 
     assert resources.load_calls == 1
     assert resources.created == [
-        {"res_type": "module", "url": "/oldphonekiosk_static/oldphonekiosk-intercom-card.js?v=0.1.32"}
+        {"res_type": "module", "url": "/oldphonekiosk_static/oldphonekiosk-intercom-card.js?v=0.1.33"}
     ]
     assert hass.data["oldphonekiosk"]["lovelace_resource_registered"] is True
 
