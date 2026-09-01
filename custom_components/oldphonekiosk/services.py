@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from typing import Any
 
 import voluptuous as vol
 from homeassistant.components import persistent_notification
@@ -53,6 +54,7 @@ from .const import (
 )
 from .coordinator import OldPhoneKioskCoordinator
 from .media_sources import async_resolve_media_source_url, is_media_source
+from .ui_config import build_configure_ui_params
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -257,26 +259,24 @@ async def _async_set_panel_ui(hass: HomeAssistant, call: ServiceCall) -> None:
             f"No configured OldPhoneKiosk backend knows device '{device_id}'."
         )
 
-    params: dict[str, str] = {}
+    ui_values: dict[str, Any] = {}
     if ATTR_DEFAULT_SCREEN in call.data:
-        params[ATTR_DEFAULT_SCREEN] = call.data[ATTR_DEFAULT_SCREEN]
+        ui_values[ATTR_DEFAULT_SCREEN] = call.data[ATTR_DEFAULT_SCREEN]
     if ATTR_ENABLED_SCREENS in call.data:
-        params[ATTR_ENABLED_SCREENS] = ",".join(call.data[ATTR_ENABLED_SCREENS])
+        ui_values[ATTR_ENABLED_SCREENS] = call.data[ATTR_ENABLED_SCREENS]
     if ATTR_SHOW_BOTTOM_MENU in call.data:
-        params[ATTR_SHOW_BOTTOM_MENU] = (
-            "true" if call.data[ATTR_SHOW_BOTTOM_MENU] else "false"
-        )
+        ui_values[ATTR_SHOW_BOTTOM_MENU] = call.data[ATTR_SHOW_BOTTOM_MENU]
     if ATTR_DASHBOARD_URL in call.data:
-        params[ATTR_DASHBOARD_URL] = call.data[ATTR_DASHBOARD_URL] or ""
+        ui_values[ATTR_DASHBOARD_URL] = call.data[ATTR_DASHBOARD_URL]
     if ATTR_TASK_SOURCE in call.data:
-        params[ATTR_TASK_SOURCE] = call.data[ATTR_TASK_SOURCE] or ""
+        ui_values[ATTR_TASK_SOURCE] = call.data[ATTR_TASK_SOURCE]
     if ATTR_PHOTO_SOURCE in call.data:
-        params[ATTR_PHOTO_SOURCE] = call.data[ATTR_PHOTO_SOURCE] or ""
+        ui_values[ATTR_PHOTO_SOURCE] = call.data[ATTR_PHOTO_SOURCE]
     if ATTR_CALENDAR_SOURCES in call.data:
-        raw_sources = call.data[ATTR_CALENDAR_SOURCES]
-        params[ATTR_CALENDAR_SOURCES] = ",".join(raw_sources) if isinstance(raw_sources, list) else (raw_sources or "")
+        ui_values[ATTR_CALENDAR_SOURCES] = call.data[ATTR_CALENDAR_SOURCES]
     if ATTR_CALENDAR_VIEW in call.data:
-        params[ATTR_CALENDAR_VIEW] = call.data[ATTR_CALENDAR_VIEW]
+        ui_values[ATTR_CALENDAR_VIEW] = call.data[ATTR_CALENDAR_VIEW]
+    params = build_configure_ui_params(**ui_values)
 
     if not params:
         raise ServiceValidationError("Set at least one panel UI option.")

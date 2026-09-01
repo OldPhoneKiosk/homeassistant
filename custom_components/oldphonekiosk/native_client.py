@@ -21,6 +21,7 @@ from .models import (
     StreamState,
 )
 from .registry import DeviceOfflineError, Registry, UnknownDeviceError
+from .ui_config import build_configure_ui_params, build_media_config_kwargs
 
 _UNSET = object()
 
@@ -184,70 +185,29 @@ class NativeOldPhoneKioskClient:
         calendar_sources: str | None = None,
         calendar_view: str | None = None,
     ) -> PanelDeviceData:
-        params: dict[str, str] = {}
-        if default_screen is not None:
-            params["default_screen"] = default_screen
-        if enabled_screens is not None:
-            params["enabled_screens"] = ",".join(enabled_screens)
-        if show_bottom_menu is not None:
-            params["show_bottom_menu"] = "true" if show_bottom_menu else "false"
-        if keep_screen_awake is not None:
-            params["keep_screen_awake"] = "true" if keep_screen_awake else "false"
-        if show_connection_banner is not None:
-            params["show_connection_banner"] = (
-                "true" if show_connection_banner else "false"
-            )
-        if show_photo_time_overlay is not None:
-            params["show_photo_time_overlay"] = (
-                "true" if show_photo_time_overlay else "false"
-            )
-        if camera_rotate_180 is not None:
-            params["camera_rotate_180"] = "true" if camera_rotate_180 else "false"
-        if dim_after_seconds is not None:
-            params["dim_after_seconds"] = str(int(max(0, dim_after_seconds)))
-        if sleep_after_seconds is not None:
-            params["sleep_after_seconds"] = str(int(max(0, sleep_after_seconds)))
-        if task_refresh_seconds is not None:
-            params["task_refresh_seconds"] = str(int(max(0, task_refresh_seconds)))
-        if dashboard_url is not None:
-            params["dashboard_url"] = dashboard_url
-        if task_source is not None:
-            params["task_source"] = task_source
-        if photo_source is not None:
-            params["photo_source"] = photo_source
-        if calendar_sources is not None:
-            params["calendar_sources"] = calendar_sources
-        if calendar_view is not None:
-            params["calendar_view"] = calendar_view
-        config_kwargs: dict[str, Any] = {}
-        if dashboard_url is not None:
-            config_kwargs["dashboard_url"] = dashboard_url
-        if task_source is not None:
-            config_kwargs["task_source"] = task_source
-        if photo_source is not None:
-            config_kwargs["photo_source"] = photo_source
-        if calendar_sources is not None:
-            config_kwargs["calendar_sources"] = calendar_sources
-        if calendar_view is not None:
-            config_kwargs["calendar_view"] = calendar_view
-        if enabled_screens is not None:
-            config_kwargs["enabled_screens"] = ",".join(enabled_screens)
-        if show_bottom_menu is not None:
-            config_kwargs["show_bottom_menu"] = show_bottom_menu
-        if keep_screen_awake is not None:
-            config_kwargs["keep_screen_awake"] = keep_screen_awake
-        if show_connection_banner is not None:
-            config_kwargs["show_connection_banner"] = show_connection_banner
-        if show_photo_time_overlay is not None:
-            config_kwargs["show_photo_time_overlay"] = show_photo_time_overlay
-        if camera_rotate_180 is not None:
-            config_kwargs["camera_rotate_180"] = camera_rotate_180
-        if dim_after_seconds is not None:
-            config_kwargs["dim_after_seconds"] = dim_after_seconds
-        if sleep_after_seconds is not None:
-            config_kwargs["sleep_after_seconds"] = sleep_after_seconds
-        if task_refresh_seconds is not None:
-            config_kwargs["task_refresh_seconds"] = task_refresh_seconds
+        ui_values = {
+            key: value
+            for key, value in {
+                "default_screen": default_screen,
+                "enabled_screens": enabled_screens,
+                "show_bottom_menu": show_bottom_menu,
+                "keep_screen_awake": keep_screen_awake,
+                "show_connection_banner": show_connection_banner,
+                "show_photo_time_overlay": show_photo_time_overlay,
+                "dim_after_seconds": dim_after_seconds,
+                "sleep_after_seconds": sleep_after_seconds,
+                "task_refresh_seconds": task_refresh_seconds,
+                "camera_rotate_180": camera_rotate_180,
+                "dashboard_url": dashboard_url,
+                "task_source": task_source,
+                "photo_source": photo_source,
+                "calendar_sources": calendar_sources,
+                "calendar_view": calendar_view,
+            }.items()
+            if value is not None
+        }
+        params = build_configure_ui_params(**ui_values)
+        config_kwargs = build_media_config_kwargs(ui_values)
         try:
             device = self.registry.set_media_config(device_id, **config_kwargs)
             if self.registry.is_online(device_id):
