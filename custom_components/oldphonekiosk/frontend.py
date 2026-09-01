@@ -11,6 +11,7 @@ from homeassistant.const import CONF_ID, CONF_TYPE, CONF_URL
 from homeassistant.core import HomeAssistant
 
 from .const import DOMAIN
+from .frontend_resources import INTERCOM_CARD_MODULE, STATIC_URL, is_intercom_card_resource
 
 try:
     from homeassistant.components.lovelace.const import CONF_RESOURCE_TYPE_WS
@@ -23,9 +24,8 @@ _LOGGER = logging.getLogger(__name__)
 
 DATA_FRONTEND_REGISTERED = "frontend_registered"
 DATA_LOVELACE_RESOURCE_REGISTERED = "lovelace_resource_registered"
-STATIC_URL = "/oldphonekiosk_static"
-INTERCOM_CARD_MODULE = f"{STATIC_URL}/oldphonekiosk-intercom-card.js?v=0.1.45"
-INTERCOM_CARD_URL_PREFIX = f"{STATIC_URL}/oldphonekiosk-intercom-card.js"
+def _mark_lovelace_registered(hass: HomeAssistant) -> None:
+    hass.data.setdefault(DOMAIN, {})[DATA_LOVELACE_RESOURCE_REGISTERED] = True
 
 
 async def async_setup_frontend(hass: HomeAssistant) -> None:
@@ -59,22 +59,10 @@ async def async_ensure_lovelace_resource(hass: HomeAssistant) -> None:
     if not getattr(resources, "loaded", True):
         await resources.async_load()
         resources.loaded = True
-    existing = list(resources.async_items() or [])
-    for item in existing:
-        url = item.get(CONF_URL, "")
-        if isinstance(url, str) and url.startswith(INTERCOM_CARD_URL_PREFIX):
-            if url != INTERCOM_CARD_MODULE:
-                update_item = getattr(resources, "async_update_item", None)
-                item_id = item.get(CONF_ID)
-                if update_item is not None and item_id is not None:
-                    await update_item(item_id, {CONF_RESOURCE_TYPE_WS: "module", CONF_URL: INTERCOM_CARD_MODULE})
-                else:
-                    _LOGGER.info(
-                        "OldPhoneKiosk card resource is stale (%s); update it manually to %s",
-                        url,
-                        INTERCOM_CARD_MODULE,
-                    )
-            domain_data[DATA_LOVELACE_RESOURCE_REGISTERED] = True
+    for item in list(resources.async_items() or []):
+        if is_intercom_card_resource(item, CONF_URL):
+            await _update_stale_intercom_card_resource(resources, item)
+            _mark_lovelace_registered(hass)
             return
     create_item = getattr(resources, "async_create_item", None)
     if create_item is None:
@@ -84,7 +72,24 @@ async def async_ensure_lovelace_resource(hass: HomeAssistant) -> None:
         )
         return
     await create_item({CONF_RESOURCE_TYPE_WS: "module", CONF_URL: INTERCOM_CARD_MODULE})
-    domain_data[DATA_LOVELACE_RESOURCE_REGISTERED] = True
+    _mark_lovelace_registered(hass)
+
+
+async def _update_stale_intercom_card_resource(resources: Any, item: dict[str, Any]) -> None:
+    """Update an existing card resource when only the cache-busting version is stale."""
+    url = item.get(CONF_URL, "")
+    if url == INTERCOM_CARD_MODULE:
+        return
+    update_item = getattr(resources, "async_update_item", None)
+    item_id = item.get(CONF_ID)
+    if update_item is not None and item_id is not None:
+        await update_item(item_id, {CONF_RESOURCE_TYPE_WS: "module", CONF_URL: INTERCOM_CARD_MODULE})
+        return
+    _LOGGER.info(
+        "OldPhoneKiosk card resource is stale (%s); update it manually to %s",
+        url,
+        INTERCOM_CARD_MODULE,
+    )
 
 
 async def async_unload_frontend(hass: HomeAssistant) -> None:
