@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.45 - 2026-09-01
+
+- Keep the iPad WebRTC remote audio stream attached after Lovelace card re-renders so diagnostic/status refreshes do not break playback.
+
 ## 0.1.44 - 2026-09-01
 
 - Show all iPad intercom audio diagnostics in the HA card, including local WebRTC media-source and outbound RTP stats from iOS builds.
