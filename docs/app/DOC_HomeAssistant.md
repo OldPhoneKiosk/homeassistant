@@ -150,7 +150,7 @@ For live two-way audio, add the Lovelace custom card next to the panel camera. T
 Add this dashboard resource after installing/updating the integration and restarting Home Assistant:
 
 ```text
-/oldphonekiosk_static/oldphonekiosk-intercom-card.js?v=0.1.46
+/oldphonekiosk_static/oldphonekiosk-intercom-card.js?v=1.0.0
 ```
 
 Then add a manual Lovelace card, using any OldPhoneKiosk entity with `bridge_device_id` plus the camera entity:
