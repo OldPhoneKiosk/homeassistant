@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.44 - 2026-09-01
+
+- Show all iPad intercom audio diagnostics in the HA card, including local WebRTC media-source and outbound RTP stats from iOS builds.
+
 ## 0.1.43 - 2026-09-01
 
 - Add iPad audio-route diagnostics to the intercom card for persistent iPad→HA `level=0` capture debugging.
