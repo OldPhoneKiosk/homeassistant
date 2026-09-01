@@ -91,10 +91,14 @@ class OldPhoneKioskIntercomCard extends HTMLElement {
       this._audioSender = audioTransceiver.sender;
       this._pc.ontrack = (event) => {
         const audio = this.shadowRoot.getElementById("remote-audio");
-        if (audio && event.streams[0]) {
-          audio.srcObject = event.streams[0];
-          audio.play().catch(() => {});
-        }
+        if (!audio) return;
+        const stream = event.streams?.[0] || new MediaStream([event.track]);
+        audio.srcObject = stream;
+        audio.muted = false;
+        audio.play().catch((err) => {
+          this._status = `Audio z iPada wymaga kliknięcia/głośnika: ${err?.message || err}`;
+          this.render();
+        });
       };
       this._pc.oniceconnectionstatechange = () => {
         if (!this._pc) return;
