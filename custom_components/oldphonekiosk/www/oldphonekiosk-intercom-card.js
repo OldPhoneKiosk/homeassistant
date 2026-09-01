@@ -9,6 +9,7 @@ class OldPhoneKioskIntercomCard extends HTMLElement {
     this._localStream = null;
     this._audioSender = null;
     this._unsubscribe = null;
+    this._statsTimer = null;
     this._busy = false;
   }
 
@@ -149,7 +150,9 @@ class OldPhoneKioskIntercomCard extends HTMLElement {
     if (!this._pc || frame.session_id !== this._sessionId) return;
     if (frame.action === "answer" && frame.sdp) {
       await this._pc.setRemoteDescription({ type: "answer", sdp: frame.sdp });
-      this._status = "Połączono — głośnik aktywny, przytrzymaj Mów";
+      const direction = this._audioDirectionFromSdp(frame.sdp);
+      this._status = `Połączono — iPad audio: ${direction || "nieznane"}; przytrzymaj Mów`;
+      this._startInboundAudioStats();
       this.render();
       return;
     }
@@ -164,6 +167,40 @@ class OldPhoneKioskIntercomCard extends HTMLElement {
     if (frame.action === "error") {
       await this._hangup(false, { status: `Błąd iPada: ${frame.error || "Błąd interkomu"}` });
     }
+  }
+
+  _audioDirectionFromSdp(sdp) {
+    const lines = String(sdp || "").split(/\r?\n/);
+    let inAudio = false;
+    for (const line of lines) {
+      if (line.startsWith("m=")) inAudio = line.startsWith("m=audio");
+      if (inAudio && ["a=sendrecv", "a=sendonly", "a=recvonly", "a=inactive"].includes(line)) {
+        return line.slice(2);
+      }
+    }
+    return "unknown";
+  }
+
+  _startInboundAudioStats() {
+    if (this._statsTimer) clearInterval(this._statsTimer);
+    this._statsTimer = setInterval(async () => {
+      if (!this._pc || !this._sessionId) return;
+      try {
+        const stats = await this._pc.getStats();
+        for (const report of stats.values()) {
+          if (report.type === "inbound-rtp" && report.kind === "audio") {
+            const bytes = report.bytesReceived ?? 0;
+            const packets = report.packetsReceived ?? 0;
+            const level = report.audioLevel;
+            this._status = `iPad→HA RTP bytes=${bytes} packets=${packets}${level !== undefined ? ` level=${level}` : ""}`;
+            this.render();
+            return;
+          }
+        }
+        this._status = "iPad→HA: brak inbound-rtp audio w stats";
+        this.render();
+      } catch (_) {}
+    }, 2000);
   }
 
   _setMicEnabled(enabled) {
@@ -227,6 +264,10 @@ class OldPhoneKioskIntercomCard extends HTMLElement {
     if (this._unsubscribe) {
       this._unsubscribe();
       this._unsubscribe = null;
+    }
+    if (this._statsTimer) {
+      clearInterval(this._statsTimer);
+      this._statsTimer = null;
     }
     if (this._pc) {
       this._pc.close();
