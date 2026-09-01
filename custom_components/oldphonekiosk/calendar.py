@@ -174,3 +174,26 @@ async def async_push_calendar_snapshot_via_registry(
         await registry.send_command_nowait(device_id, PanelCommand.CONFIGURE_CALENDAR, params=params)
     except DeviceOfflineError:
         return
+
+
+async def async_handle_calendar_action(
+    hass: HomeAssistant,
+    registry: Registry,
+    device_id: str,
+    payload: dict[str, Any],
+) -> None:
+    """Handle a device-initiated calendar refresh request."""
+    if payload.get("action") != "refresh":
+        return
+    sources = payload.get("sources") or payload.get(CONF_ENTITY_ID) or ""
+    view = payload.get("view") or "month"
+    if view not in CALENDAR_VIEWS:
+        view = "month"
+    await async_push_calendar_snapshot_via_registry(
+        hass,
+        registry,
+        device_id,
+        sources,
+        view=view,
+        show=False,
+    )
