@@ -7,6 +7,7 @@ class OldPhoneKioskIntercomCard extends HTMLElement {
     this._sessionId = null;
     this._pc = null;
     this._localStream = null;
+    this._remoteStream = null;
     this._audioSender = null;
     this._unsubscribe = null;
     this._statsTimer = null;
@@ -92,15 +93,8 @@ class OldPhoneKioskIntercomCard extends HTMLElement {
       const audioTransceiver = this._pc.addTransceiver("audio", { direction: "sendrecv" });
       this._audioSender = audioTransceiver.sender;
       this._pc.ontrack = (event) => {
-        const audio = this.shadowRoot.getElementById("remote-audio");
-        if (!audio) return;
-        const stream = event.streams?.[0] || new MediaStream([event.track]);
-        audio.srcObject = stream;
-        audio.muted = false;
-        audio.play().catch((err) => {
-          this._status = `Audio z iPada wymaga kliknięcia/głośnika: ${err?.message || err}`;
-          this.render();
-        });
+        this._remoteStream = event.streams?.[0] || new MediaStream([event.track]);
+        this._bindRemoteAudio(true);
       };
       this._pc.oniceconnectionstatechange = () => {
         if (!this._pc) return;
@@ -309,6 +303,10 @@ class OldPhoneKioskIntercomCard extends HTMLElement {
       this._pc.close();
       this._pc = null;
     }
+    if (this._remoteStream) {
+      for (const track of this._remoteStream.getTracks()) track.stop();
+      this._remoteStream = null;
+    }
     this._audioSender = null;
     if (this._localStream) {
       for (const track of this._localStream.getTracks()) track.stop();
@@ -404,6 +402,24 @@ class OldPhoneKioskIntercomCard extends HTMLElement {
     talk?.addEventListener("pointercancel", (ev) => this._stopTalking(ev));
     talk?.addEventListener("pointerleave", (ev) => this._stopTalking(ev));
     this.shadowRoot.getElementById("hangup")?.addEventListener("click", () => this._hangup(true));
+    this._bindRemoteAudio(false);
+  }
+
+  _bindRemoteAudio(shouldPlay) {
+    const audio = this.shadowRoot?.getElementById("remote-audio");
+    if (!audio || !this._remoteStream) return;
+    if (audio.srcObject !== this._remoteStream) {
+      audio.srcObject = this._remoteStream;
+    }
+    audio.muted = false;
+    audio.autoplay = true;
+    audio.playsInline = true;
+    if (shouldPlay || audio.paused) {
+      audio.play().catch((err) => {
+        this._status = `Audio z iPada wymaga kliknięcia/głośnika: ${err?.message || err}`;
+        this.render();
+      });
+    }
   }
 }
 
