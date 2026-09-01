@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.46 - 2026-09-01
+
+- Release the production-readiness cleanup that centralizes Home Assistant-owned `configure_ui` payload formatting across services, reconnect replay and the native client.
+- Include the latest internal frontend resource helper refactor so Lovelace card cache-busting remains consistent after upgrades.
+
 ## 0.1.45 - 2026-09-01
 
 - Keep the iPad WebRTC remote audio stream attached after Lovelace card re-renders so diagnostic/status refreshes do not break playback.

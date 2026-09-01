@@ -84,7 +84,7 @@ async def test_ensure_lovelace_resource_creates_module_resource():
 
     assert resources.load_calls == 1
     assert resources.created == [
-        {"res_type": "module", "url": "/oldphonekiosk_static/oldphonekiosk-intercom-card.js?v=0.1.45"}
+        {"res_type": "module", "url": "/oldphonekiosk_static/oldphonekiosk-intercom-card.js?v=0.1.46"}
     ]
     assert hass.data["oldphonekiosk"]["lovelace_resource_registered"] is True
 
@@ -103,7 +103,7 @@ async def test_ensure_lovelace_resource_updates_stale_existing_resource():
     assert resources.updated == [
         (
             "res-1",
-            {"res_type": "module", "url": "/oldphonekiosk_static/oldphonekiosk-intercom-card.js?v=0.1.45"},
+            {"res_type": "module", "url": "/oldphonekiosk_static/oldphonekiosk-intercom-card.js?v=0.1.46"},
         )
     ]
     assert hass.data["oldphonekiosk"]["lovelace_resource_registered"] is True
@@ -113,7 +113,7 @@ async def test_ensure_lovelace_resource_updates_stale_existing_resource():
 async def test_ensure_lovelace_resource_does_not_duplicate_current_resource():
     module = _load_frontend_module()
     resources = FakeResources(
-        [{"id": "res-1", "type": "module", "url": "/oldphonekiosk_static/oldphonekiosk-intercom-card.js?v=0.1.45"}]
+        [{"id": "res-1", "type": "module", "url": "/oldphonekiosk_static/oldphonekiosk-intercom-card.js?v=0.1.46"}]
     )
     hass = SimpleNamespace(data={"lovelace": {"resources": resources}})
 
