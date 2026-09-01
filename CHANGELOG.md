@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.41 - 2026-09-01
+
+- Fix intercom WebRTC negotiation by acquiring and attaching the HA browser microphone track before creating the offer; **Mów** now only toggles the already-negotiated track.
+- Re-send persisted calendar configuration and a fresh calendar snapshot when a panel reconnects, and handle device-initiated calendar refresh requests.
+
 ## 0.1.40 - 2026-09-01
 
 - Fix Lovelace intercom audio playback for WebRTC remote audio tracks that arrive without an attached stream.

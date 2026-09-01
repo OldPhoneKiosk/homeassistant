@@ -9,6 +9,10 @@ from aiohttp import WSMsgType, web
 from homeassistant.components.http import HomeAssistantView
 from homeassistant.core import HomeAssistant
 
+from .calendar import (
+    async_handle_calendar_action,
+    async_push_calendar_snapshot_via_registry,
+)
 from .const import DOMAIN
 from .models import PanelCommand
 from .intercom import IntercomSessionError, validate_device_signal
@@ -67,6 +71,10 @@ async def _send_persisted_config(
         params["sleep_after_seconds"] = str(int(media.sleep_after_seconds))
     if media.task_refresh_seconds is not None:
         params["task_refresh_seconds"] = str(int(media.task_refresh_seconds))
+    if media.calendar_sources:
+        params["calendar_sources"] = media.calendar_sources
+    if media.calendar_view:
+        params["calendar_view"] = media.calendar_view
     if params:
         await registry.send_command_nowait(
             device_id, PanelCommand.CONFIGURE_UI, params=params
@@ -74,6 +82,14 @@ async def _send_persisted_config(
     if media.task_source:
         await async_push_task_snapshot_via_registry(
             hass, registry, device_id, media.task_source
+        )
+    if media.calendar_sources:
+        await async_push_calendar_snapshot_via_registry(
+            hass,
+            registry,
+            device_id,
+            media.calendar_sources,
+            view=media.calendar_view or "month",
         )
 
 
@@ -193,6 +209,10 @@ class DeviceWebSocketView(HomeAssistantView):
                         raw = json.loads(msg.data)
                         if raw.get("type") == "task_action":
                             await async_handle_task_action(
+                                hass, registry, device_id, raw
+                            )
+                        elif raw.get("type") == "calendar_action":
+                            await async_handle_calendar_action(
                                 hass, registry, device_id, raw
                             )
                         elif raw.get("type") == "intercom_signal":

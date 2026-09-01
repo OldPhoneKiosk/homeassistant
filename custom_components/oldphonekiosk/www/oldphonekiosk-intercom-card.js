@@ -113,6 +113,10 @@ class OldPhoneKioskIntercomCard extends HTMLElement {
           candidate: event.candidate.toJSON(),
         }).catch((err) => this._setError(err));
       };
+      const hasLocalAudio = await this._ensureLocalAudio();
+      if (!hasLocalAudio) {
+        throw new Error("Nie udało się przygotować mikrofonu HA przed zestawieniem WebRTC");
+      }
       const start = await this._hass.callWS({
         type: "oldphonekiosk/intercom/start",
         device_id: deviceId,

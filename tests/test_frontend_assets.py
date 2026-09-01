@@ -11,7 +11,7 @@ def test_frontend_registers_static_assets_not_sidebar_panel():
     assert "async_remove_panel" not in source
     assert "StaticPathConfig" in source
     assert "async_ensure_lovelace_resource" in source
-    assert "oldphonekiosk-intercom-card.js?v=0.1.40" in source
+    assert "oldphonekiosk-intercom-card.js?v=0.1.41" in source
 
 
 def test_lovelace_intercom_card_asset_exists_and_is_registered():
@@ -24,6 +24,7 @@ def test_lovelace_intercom_card_asset_exists_and_is_registered():
     assert "navigator.mediaDevices.getUserMedia" in content
     assert "async _ensureLocalAudio()" in content
     assert "replaceTrack(track)" in content
+    assert "const hasLocalAudio = await this._ensureLocalAudio()" in content
     assert "new MediaStream([event.track])" in content
     assert "oldphonekiosk/intercom/start" in content
     assert "track.enabled = this._talking" in content
