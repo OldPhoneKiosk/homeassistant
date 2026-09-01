@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.42 - 2026-09-01
+
+- Add Lovelace intercom diagnostics for iPad→HA answer audio direction and inbound RTP stats.
+
 ## 0.1.41 - 2026-09-01
 
 - Fix intercom WebRTC negotiation by acquiring and attaching the HA browser microphone track before creating the offer; **Mów** now only toggles the already-negotiated track.
