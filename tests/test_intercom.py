@@ -154,7 +154,7 @@ def test_validate_device_signal_rejects_invalid_payload() -> None:
         validate_device_signal({"type": "intercom_signal", "session_id": "s", "action": "bogus"})
 
 
-def test_validate_device_signal_accepts_hangup_and_ice_candidate() -> None:
+def test_validate_device_signal_accepts_hangup_ice_candidate_and_audio_diagnostics() -> None:
     hangup = validate_device_signal({"type": "intercom_signal", "session_id": "s", "action": "hangup"})
     ice = validate_device_signal({
         "type": "intercom_signal",
@@ -162,6 +162,13 @@ def test_validate_device_signal_accepts_hangup_and_ice_candidate() -> None:
         "action": "ice_candidate",
         "candidate": {"candidate": "candidate:1", "sdpMid": "0", "sdpMLineIndex": 0},
     })
+    diagnostics = validate_device_signal({
+        "type": "intercom_signal",
+        "session_id": "s",
+        "action": "audio_diagnostics",
+        "diagnostics": {"currentInputs": "Built-In Microphone", "inputChannels": "1"},
+    })
 
     assert hangup["action"] == "hangup"
     assert ice["candidate"]["candidate"] == "candidate:1"
+    assert diagnostics["diagnostics"]["inputChannels"] == "1"

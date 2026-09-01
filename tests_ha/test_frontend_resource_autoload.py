@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import importlib
+import importlib.util
 import sys
+import types
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -12,9 +14,35 @@ FRONTEND = ROOT / "custom_components" / "oldphonekiosk" / "frontend.py"
 
 
 def _load_frontend_module():
-    if str(ROOT) not in sys.path:
-        sys.path.insert(0, str(ROOT))
-    return importlib.import_module("custom_components.oldphonekiosk.frontend")
+    previous_parent = sys.modules.get("custom_components")
+    previous_package = sys.modules.get("custom_components.oldphonekiosk")
+    previous_frontend = sys.modules.get("custom_components.oldphonekiosk.frontend")
+    try:
+        parent = types.ModuleType("custom_components")
+        parent.__path__ = [str(ROOT / "custom_components")]
+        package = types.ModuleType("custom_components.oldphonekiosk")
+        package.__path__ = [str(ROOT / "custom_components" / "oldphonekiosk")]
+        sys.modules["custom_components"] = parent
+        sys.modules["custom_components.oldphonekiosk"] = package
+        spec = importlib.util.spec_from_file_location(
+            "custom_components.oldphonekiosk.frontend", FRONTEND
+        )
+        assert spec is not None
+        module = importlib.util.module_from_spec(spec)
+        assert spec.loader is not None
+        sys.modules["custom_components.oldphonekiosk.frontend"] = module
+        spec.loader.exec_module(module)
+        return module
+    finally:
+        for name, previous in (
+            ("custom_components.oldphonekiosk.frontend", previous_frontend),
+            ("custom_components.oldphonekiosk", previous_package),
+            ("custom_components", previous_parent),
+        ):
+            if previous is None:
+                sys.modules.pop(name, None)
+            else:
+                sys.modules[name] = previous
 
 
 class FakeResources:
@@ -56,7 +84,7 @@ async def test_ensure_lovelace_resource_creates_module_resource():
 
     assert resources.load_calls == 1
     assert resources.created == [
-        {"res_type": "module", "url": "/oldphonekiosk_static/oldphonekiosk-intercom-card.js?v=0.1.42"}
+        {"res_type": "module", "url": "/oldphonekiosk_static/oldphonekiosk-intercom-card.js?v=0.1.43"}
     ]
     assert hass.data["oldphonekiosk"]["lovelace_resource_registered"] is True
 
@@ -75,7 +103,7 @@ async def test_ensure_lovelace_resource_updates_stale_existing_resource():
     assert resources.updated == [
         (
             "res-1",
-            {"res_type": "module", "url": "/oldphonekiosk_static/oldphonekiosk-intercom-card.js?v=0.1.42"},
+            {"res_type": "module", "url": "/oldphonekiosk_static/oldphonekiosk-intercom-card.js?v=0.1.43"},
         )
     ]
     assert hass.data["oldphonekiosk"]["lovelace_resource_registered"] is True
@@ -85,7 +113,7 @@ async def test_ensure_lovelace_resource_updates_stale_existing_resource():
 async def test_ensure_lovelace_resource_does_not_duplicate_current_resource():
     module = _load_frontend_module()
     resources = FakeResources(
-        [{"id": "res-1", "type": "module", "url": "/oldphonekiosk_static/oldphonekiosk-intercom-card.js?v=0.1.42"}]
+        [{"id": "res-1", "type": "module", "url": "/oldphonekiosk_static/oldphonekiosk-intercom-card.js?v=0.1.43"}]
     )
     hass = SimpleNamespace(data={"lovelace": {"resources": resources}})
 

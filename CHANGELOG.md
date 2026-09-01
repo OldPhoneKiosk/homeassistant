@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.43 - 2026-09-01
+
+- Add iPad audio-route diagnostics to the intercom card for persistent iPad→HA `level=0` capture debugging.
+
 ## 0.1.42 - 2026-09-01
 
 - Add Lovelace intercom diagnostics for iPad→HA answer audio direction and inbound RTP stats.
