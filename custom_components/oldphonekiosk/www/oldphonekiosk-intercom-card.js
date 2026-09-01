@@ -11,6 +11,7 @@ class OldPhoneKioskIntercomCard extends HTMLElement {
     this._unsubscribe = null;
     this._statsTimer = null;
     this._busy = false;
+    this._ipadDiagnostics = "";
   }
 
   static getStubConfig() {
@@ -164,9 +165,22 @@ class OldPhoneKioskIntercomCard extends HTMLElement {
       await this._hangup(false, { status: "Rozłączono przez iPada" });
       return;
     }
+    if (frame.action === "audio_diagnostics") {
+      this._ipadDiagnostics = this._formatIpadDiagnostics(frame.diagnostics || {});
+      this.render();
+      return;
+    }
     if (frame.action === "error") {
       await this._hangup(false, { status: `Błąd iPada: ${frame.error || "Błąd interkomu"}` });
     }
+  }
+
+  _formatIpadDiagnostics(diagnostics) {
+    const keys = ["stage", "isActive", "inputAvailable", "inputChannels", "preferredInput", "currentInputs", "currentOutputs", "availableInputs", "category", "mode"];
+    return keys
+      .filter((key) => diagnostics[key] !== undefined && diagnostics[key] !== "")
+      .map((key) => `${key}=${diagnostics[key]}`)
+      .join("; ");
   }
 
   _audioDirectionFromSdp(sdp) {
@@ -261,6 +275,7 @@ class OldPhoneKioskIntercomCard extends HTMLElement {
   _cleanupMedia() {
     this._talking = false;
     this._sessionId = null;
+    this._ipadDiagnostics = "";
     if (this._unsubscribe) {
       this._unsubscribe();
       this._unsubscribe = null;
@@ -341,6 +356,7 @@ class OldPhoneKioskIntercomCard extends HTMLElement {
         button.hangup { background: var(--error-color, #db4437); color: #fff; }
         button:disabled { opacity: .45; cursor: not-allowed; }
         .status { margin-top: 12px; font-size: 13px; color: var(--secondary-text-color); }
+        .diag { margin-top: 6px; font-size: 11px; color: var(--secondary-text-color); word-break: break-word; }
         .status.error { color: var(--error-color, #db4437); font-weight: 600; }
         .pill { display: inline-block; border-radius: 999px; padding: 2px 8px; font-size: 12px; background: ${online ? "rgba(46, 125, 50, .14)" : "rgba(211, 47, 47, .14)"}; color: ${online ? "#2e7d32" : "#d32f2f"}; }
         code { font-size: 12px; }
@@ -356,6 +372,7 @@ class OldPhoneKioskIntercomCard extends HTMLElement {
             <button class="hangup" id="hangup" ${!inCall ? "disabled" : ""}>Rozłącz</button>
           </div>
           <div class="status ${this._status.startsWith("Błąd") ? "error" : ""}">${this._status}</div>
+          ${this._ipadDiagnostics ? `<div class="diag">iPad audio route: ${this._ipadDiagnostics}</div>` : ""}
           <audio id="remote-audio" autoplay playsinline></audio>
         </div>
       </ha-card>`;

@@ -186,7 +186,7 @@ def validate_device_signal(payload: dict) -> dict:
     session_id = payload.get("session_id")
     if not isinstance(action, str) or not isinstance(session_id, str):
         raise IntercomSessionError("intercom signal requires action and session_id")
-    allowed = {"start", "offer", "answer", "ice_candidate", "hangup", "error"}
+    allowed = {"start", "offer", "answer", "ice_candidate", "hangup", "error", "audio_diagnostics"}
     if action not in allowed:
         raise IntercomSessionError(f"unsupported intercom action: {action}")
     return dict(payload)
