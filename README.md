@@ -7,10 +7,20 @@
 [![Open your Home Assistant instance and add this repository to HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=OldPhoneKiosk&repository=homeassistant&category=integration)
 [![HA integration tests](https://github.com/OldPhoneKiosk/homeassistant/actions/workflows/tests.yml/badge.svg)](https://github.com/OldPhoneKiosk/homeassistant/actions/workflows/tests.yml)
 [![Repository checks](https://github.com/OldPhoneKiosk/homeassistant/actions/workflows/lint.yml/badge.svg)](https://github.com/OldPhoneKiosk/homeassistant/actions/workflows/lint.yml)
+[![Latest release](https://img.shields.io/github/v/release/OldPhoneKiosk/homeassistant?label=HACS%20release)](https://github.com/OldPhoneKiosk/homeassistant/releases/latest)
+![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2025.6%2B-41BDF5)
 
 OldPhoneKiosk turns an old iPhone into a local Home Assistant wall panel: a dashboard/control surface that can be paired, monitored, woken, put to sleep, and directed from Home Assistant.
 
 This repository is the **public Home Assistant integration package**. It installs through HACS and contains the backend that runs inside Home Assistant. The companion iOS app lives in a separate repository and can stay private.
+
+## At a glance
+
+- **Install method:** HACS custom repository using normal release/tag source downloads; no ZIP asset is required.
+- **Minimum Home Assistant:** 2025.6.0.
+- **Branding:** `icon.png` is present at repo root and in `custom_components/oldphonekiosk/` for README/HACS/component display.
+- **Distribution:** this repository is public; companion app repositories can remain private.
+- **Best fit:** old iPhones/iPads as local wall panels with HA-driven dashboard, camera, intercom and kiosk controls.
 
 ## What it does
 
