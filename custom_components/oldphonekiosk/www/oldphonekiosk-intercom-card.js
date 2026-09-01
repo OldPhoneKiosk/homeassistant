@@ -176,7 +176,28 @@ class OldPhoneKioskIntercomCard extends HTMLElement {
   }
 
   _formatIpadDiagnostics(diagnostics) {
-    const keys = ["stage", "isActive", "inputAvailable", "inputChannels", "preferredInput", "currentInputs", "currentOutputs", "availableInputs", "category", "mode"];
+    const preferredKeys = [
+      "stage",
+      "localTrackEnabled",
+      "senderCount",
+      "audioSenderTrackIds",
+      "mediaSourceAudioLevel",
+      "mediaSourceTotalAudioEnergy",
+      "mediaSourceTotalSamplesDuration",
+      "outboundBytesSent",
+      "outboundPacketsSent",
+      "isActive",
+      "inputAvailable",
+      "inputChannels",
+      "preferredInput",
+      "currentInputs",
+      "currentOutputs",
+      "availableInputs",
+      "category",
+      "mode",
+    ];
+    const seen = new Set(preferredKeys);
+    const keys = preferredKeys.concat(Object.keys(diagnostics || {}).filter((key) => !seen.has(key)).sort());
     return keys
       .filter((key) => diagnostics[key] !== undefined && diagnostics[key] !== "")
       .map((key) => `${key}=${diagnostics[key]}`)
