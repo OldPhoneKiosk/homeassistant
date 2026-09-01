@@ -45,6 +45,8 @@ If you need a custom panel name or room, use **Developer Tools → Actions → `
 
 If the button does not open your HA instance, open **HACS → Integrations → Custom repositories**, add `https://github.com/OldPhoneKiosk/homeassistant`, choose category **Integration**, then download and restart HA.
 
+OldPhoneKiosk's HACS metadata is configured for normal release/tag source downloads. It does not require a separate ZIP release asset.
+
 ## Manual developer install
 
 ```bash

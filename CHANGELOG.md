@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.47 - 2026-09-01
+
+- Expand HACS repository metadata so HACS renders the release/tag source, README, minimum Home Assistant version, and hides the default branch from install choices.
+
 ## 0.1.46 - 2026-09-01
 
 - Release the production-readiness cleanup that centralizes Home Assistant-owned `configure_ui` payload formatting across services, reconnect replay and the native client.
