@@ -20,6 +20,7 @@ from .native_client import handle_device_message
 from .photos import async_get_photo_snapshot, async_photo_proxy_path
 from .registry import AuthError, ClaimError, Registry, UnknownDeviceError
 from .tasks import async_handle_task_action, async_push_task_snapshot_via_registry
+from .ui_config import build_configure_ui_params_from_media
 from .websocket_api import get_intercom_broker
 from .wstoken import WsTokenService
 
@@ -42,39 +43,7 @@ async def _send_persisted_config(
 ) -> None:
     """Send HA-owned panel config and task snapshot immediately after WS connect."""
     media = registry.get_device(device_id).media
-    params: dict[str, str] = {}
-    if media.dashboard_url:
-        params["dashboard_url"] = media.dashboard_url
-    if media.task_source:
-        params["task_source"] = media.task_source
-    if media.photo_source:
-        params["photo_source"] = media.photo_source
-    if media.enabled_screens:
-        params["enabled_screens"] = media.enabled_screens
-    if media.show_bottom_menu is not None:
-        params["show_bottom_menu"] = "true" if media.show_bottom_menu else "false"
-    if media.keep_screen_awake is not None:
-        params["keep_screen_awake"] = "true" if media.keep_screen_awake else "false"
-    if media.show_connection_banner is not None:
-        params["show_connection_banner"] = (
-            "true" if media.show_connection_banner else "false"
-        )
-    if media.show_photo_time_overlay is not None:
-        params["show_photo_time_overlay"] = (
-            "true" if media.show_photo_time_overlay else "false"
-        )
-    if media.camera_rotate_180 is not None:
-        params["camera_rotate_180"] = "true" if media.camera_rotate_180 else "false"
-    if media.dim_after_seconds is not None:
-        params["dim_after_seconds"] = str(int(media.dim_after_seconds))
-    if media.sleep_after_seconds is not None:
-        params["sleep_after_seconds"] = str(int(media.sleep_after_seconds))
-    if media.task_refresh_seconds is not None:
-        params["task_refresh_seconds"] = str(int(media.task_refresh_seconds))
-    if media.calendar_sources:
-        params["calendar_sources"] = media.calendar_sources
-    if media.calendar_view:
-        params["calendar_view"] = media.calendar_view
+    params = build_configure_ui_params_from_media(media)
     if params:
         await registry.send_command_nowait(
             device_id, PanelCommand.CONFIGURE_UI, params=params
