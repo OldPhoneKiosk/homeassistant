@@ -13,7 +13,7 @@ def test_frontend_registers_static_assets_not_sidebar_panel():
     assert "async_remove_panel" not in source
     assert "StaticPathConfig" in source
     assert "async_ensure_lovelace_resource" in source
-    assert INTERCOM_CARD_MODULE == "/oldphonekiosk_static/oldphonekiosk-intercom-card.js?v=1.0.0"
+    assert INTERCOM_CARD_MODULE == "/oldphonekiosk_static/oldphonekiosk-intercom-card.js?v=1.1.0"
 
 
 def test_lovelace_intercom_card_asset_exists_and_is_registered():
@@ -49,5 +49,5 @@ def test_lovelace_intercom_card_asset_exists_and_is_registered():
 
 def test_intercom_card_resource_matcher_handles_cache_busted_urls():
     assert is_intercom_card_resource({"url": "/oldphonekiosk_static/oldphonekiosk-intercom-card.js?v=0.1.44"})
-    assert is_intercom_card_resource({"url": "/oldphonekiosk_static/oldphonekiosk-intercom-card.js?v=1.0.0"})
+    assert is_intercom_card_resource({"url": "/oldphonekiosk_static/oldphonekiosk-intercom-card.js?v=1.1.0"})
     assert not is_intercom_card_resource({"url": "/local/other-card.js"})

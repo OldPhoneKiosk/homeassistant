@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.0 - 2026-09-01
+
+- Polish the public HACS/GitHub presentation for the stable release: repository topics, homepage, description, source-tag HACS metadata, README install guidance, and visible branding.
+- Bump the Lovelace intercom card cache-busting URL to `?v=1.1.0` so HACS users load the latest public card after upgrade.
+
 ## 1.0.0 - 2026-09-01
 
 - Mark OldPhoneKiosk's Home Assistant integration as the first stable HACS release.
