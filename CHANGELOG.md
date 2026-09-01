@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.40 - 2026-09-01
+
+- Fix Lovelace intercom audio playback for WebRTC remote audio tracks that arrive without an attached stream.
+- Bump the intercom custom-card resource URL so browsers load the fixed card JavaScript after upgrade.
+
 ## 0.1.39 - 2026-08-31
 
 - Add a native `calendar` panel screen backed by Home Assistant `calendar.*` entities.
