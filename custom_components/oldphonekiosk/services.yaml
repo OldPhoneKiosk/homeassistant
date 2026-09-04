@@ -19,6 +19,27 @@ pair_new_panel:
       selector:
         text:
 
+create_web_display:
+  name: Create web/Kindle display
+  description: >-
+    Create a read-only OldPhoneKiosk web display from Home Assistant and return a ready URL
+    to open on an old Kindle browser. The Kindle does not pair or receive Home Assistant tokens.
+  fields:
+    name:
+      name: Display name
+      description: Display name for the Kindle/web display.
+      required: true
+      example: "Kitchen Kindle"
+      selector:
+        text:
+    room:
+      name: Room
+      description: Optional room/area for the display.
+      required: false
+      example: "Kitchen"
+      selector:
+        text:
+
 start_stream:
   name: Start panel stream
   description: >-

@@ -27,7 +27,7 @@ def _load_component_modules() -> None:
     pkg.__path__ = [str(_COMPONENT_DIR)]
     sys.modules[_PKG] = pkg
 
-    for name in ("const", "frontend_resources", "ui_config", "api", "pairing", "intercom"):
+    for name in ("const", "frontend_resources", "ui_config", "api", "pairing", "intercom", "kindle_display"):
         spec = importlib.util.spec_from_file_location(
             f"{_PKG}.{name}", _COMPONENT_DIR / f"{name}.py"
         )

@@ -8,7 +8,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 
-from .backend import ensure_backend
+from .backend import DATA_HTTP_REGISTERED, ensure_backend
 from .const import DOMAIN
 from .coordinator import OldPhoneKioskCoordinator
 from .frontend import async_setup_frontend, async_unload_frontend
@@ -56,6 +56,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    hass.data.setdefault(DOMAIN, {}).pop(DATA_HTTP_REGISTERED, None)
+    ensure_backend(hass)
 
     async_setup_services(hass)
     async_register_websocket_api(hass)

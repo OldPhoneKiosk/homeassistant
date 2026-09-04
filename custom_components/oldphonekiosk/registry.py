@@ -26,6 +26,7 @@ from .models import (
     PairingRequest,
     PanelCommand,
     PanelDevice,
+    PanelScreen,
     utcnow,
 )
 from .security import hash_secret, verify_secret
@@ -230,6 +231,33 @@ class Registry:
         secret = secrets.token_urlsafe(32)
         self._store.update_secret_hash(device_id, hash_secret(secret))
         return secret
+
+    def create_web_display(
+        self, *, name: str, room: str | None = None
+    ) -> NewDeviceCredentials:
+        """Create a read-only Kindle/web display without on-device pairing.
+
+        Home Assistant returns the ready URL containing this secret; the Kindle
+        simply opens that URL and renders the server-side display page.
+        """
+        device = PanelDevice(
+            device_id=str(uuid.uuid4()),
+            name=name,
+            room=room,
+            model="Kindle Web Display",
+            capabilities=DeviceCapabilities(
+                camera=False,
+                microphone=False,
+                photos=False,
+                tasks=True,
+                calendar=True,
+            ),
+            state=DeviceState(screen=PanelScreen.DASHBOARD),
+        )
+        secret = secrets.token_urlsafe(32)
+        self._store.upsert_device(device, hash_secret(secret))
+        self._devices[device.device_id] = device
+        return NewDeviceCredentials(device_id=device.device_id, device_secret=secret)
 
     def _delete_claim_and_orphan(self, claim: Claim) -> None:
         """Drop an unredeemed claim and the device provisioned for it."""
