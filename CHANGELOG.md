@@ -1,11 +1,14 @@
 # Changelog
 
-## 1.2.0 - 2026-09-04
+## 1.2.1 - 2026-09-04
 
-- Add Kindle/web display support: Home Assistant can create a web display and return a ready URL without any pairing flow on the Kindle.
-- Add a lightweight `/api/oldphonekiosk/web-display/{device_id}` HTML endpoint optimized for old/e-ink browsers and fed by HA dashboard/task/calendar configuration.
 - Add signed Kindle quick actions: selected `light.*`, `switch.*`, and `input_boolean.*` entities can be toggled from the Kindle page, and existing `todo.*` items can be marked Done without creating or editing tasks on the Kindle.
 - Extend `oldphonekiosk.set_panel_ui` with `kindle_actions` and persist the setting for web displays.
+
+## 1.2.0 - 2026-09-04
+
+- Add read-only Kindle/web display support: Home Assistant can create a web display and return a ready URL without any pairing flow on the Kindle.
+- Add a lightweight `/api/oldphonekiosk/web-display/{device_id}` HTML endpoint optimized for old/e-ink browsers and fed by HA dashboard/task/calendar configuration.
 
 ## 1.1.0 - 2026-09-01
 
