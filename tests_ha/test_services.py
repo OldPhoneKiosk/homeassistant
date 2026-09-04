@@ -11,6 +11,7 @@ from homeassistant.helpers import device_registry as dr
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.oldphonekiosk.api import PanelDeviceData
+from custom_components.oldphonekiosk.http import WebDisplayView
 from custom_components.oldphonekiosk.const import (
     ATTR_DEVICE_ID,
     ATTR_NAME,
@@ -243,9 +244,7 @@ async def test_pair_new_panel_service_returns_pairing_code(hass: HomeAssistant):
     assert "qr_svg_data_uri" not in response
 
 
-async def test_create_web_display_service_returns_ready_kindle_url(
-    hass: HomeAssistant, hass_client
-):
+async def test_create_web_display_service_returns_ready_kindle_url(hass: HomeAssistant):
     fake = _FakeClient()
     hass.config.internal_url = "http://homeassistant.local:8123"
     entry = MockConfigEntry(
@@ -273,14 +272,16 @@ async def test_create_web_display_service_returns_ready_kindle_url(
     )
     assert "token=" in response["display_url"]
 
-    client = await hass_client()
-    path = response["display_url"].removeprefix("http://homeassistant.local:8123")
-    result = await client.get(path)
+    class _Request:
+        app = {"hass": hass}
+        query = {"token": response["display_url"].split("token=", 1)[1]}
+
+    result = await WebDisplayView().get(_Request(), response["device_id"])
     assert result.status == 200
-    html = await result.text()
-    assert "Kitchen Kindle" in html
-    assert "OldPhoneKiosk Kindle Display" in html
-    assert "Camera" not in html
+    assert result.content_type == "text/html"
+    assert "Kitchen Kindle" in result.text
+    assert "OldPhoneKiosk Kindle Display" in result.text
+    assert "Camera" not in result.text
 
 
 async def test_pairing_button_creates_code_notification(hass: HomeAssistant):

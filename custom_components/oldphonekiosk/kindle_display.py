@@ -11,15 +11,13 @@ import html
 from dataclasses import dataclass, field
 from typing import Any
 
-from .models import PanelScreen
-
 
 @dataclass(frozen=True)
 class KindleSnapshot:
     """Server-rendered snapshot for a low-power Kindle/e-ink browser."""
 
     name: str
-    screen: PanelScreen = PanelScreen.DASHBOARD
+    screen: str = "dashboard"
     dashboard_url: str | None = None
     tasks: list[dict[str, Any]] = field(default_factory=list)
     calendar: list[dict[str, Any]] = field(default_factory=list)
@@ -57,7 +55,7 @@ def render_kindle_html(snapshot: KindleSnapshot) -> str:
     refresh = max(30, min(int(snapshot.refresh_seconds or 60), 3600))
     title = _esc(snapshot.name)
     dashboard = _esc(snapshot.dashboard_url or "Home Assistant dashboard configured in HA")
-    screen = _esc(snapshot.screen.value)
+    screen = _esc(snapshot.screen)
     return f"""<!doctype html>
 <html lang="en">
 <head>

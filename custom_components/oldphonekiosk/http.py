@@ -192,7 +192,7 @@ class WebDisplayView(HomeAssistantView):
         html = render_kindle_html(
             KindleSnapshot(
                 name=device.name,
-                screen=screen,
+                screen=screen.value,
                 dashboard_url=media.dashboard_url,
                 tasks=tasks,
                 calendar=calendar,

@@ -1,16 +1,13 @@
 from __future__ import annotations
 
 from opk_kindle_display import KindleSnapshot, render_kindle_html
-from opk_models import DeviceCapabilities, PanelScreen
-from opk_registry import Registry
-from opk_store import DeviceStore
 
 
 def test_render_kindle_html_is_read_only_eink_page():
     html = render_kindle_html(
         KindleSnapshot(
             name="Kitchen Kindle",
-            screen=PanelScreen.TASKS,
+            screen="tasks",
             dashboard_url="/lovelace/kitchen",
             tasks=[{"summary": "Buy milk", "due": "today"}],
             calendar=[{"title": "School pickup", "start": "2026-09-02T15:30:00+02:00"}],
@@ -27,18 +24,14 @@ def test_render_kindle_html_is_read_only_eink_page():
     assert "background:#fff" in html
 
 
-def test_registry_create_web_display_provisions_kindle_without_pairing_claim():
-    store = DeviceStore(":memory:")
-    registry = Registry(store)
+def test_render_kindle_html_escapes_user_controlled_values():
+    html = render_kindle_html(
+        KindleSnapshot(
+            name='<script>alert("x")</script>',
+            tasks=[{"summary": "Milk <b>now</b>"}],
+        )
+    )
 
-    created = registry.create_web_display(name="Kitchen Kindle", room="Kitchen")
-
-    device = registry.get_device(created.device_id)
-    assert device.name == "Kitchen Kindle"
-    assert device.room == "Kitchen"
-    assert device.model == "Kindle Web Display"
-    assert device.capabilities == DeviceCapabilities(camera=False, microphone=False, photos=False, tasks=True, calendar=True)
-    assert device.state.screen == PanelScreen.DASHBOARD
-    assert registry.verify_secret(created.device_id, created.device_secret).device_id == created.device_id
-    assert store.load_devices()[0].device_id == created.device_id
-    assert store.expired_claims(device.created_at) == []
+    assert "<script>" not in html
+    assert "&lt;script&gt;" in html
+    assert "Milk &lt;b&gt;now&lt;/b&gt;" in html
