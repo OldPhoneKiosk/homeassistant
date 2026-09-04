@@ -110,15 +110,22 @@ data:
     - calendar.family
     - calendar.school
   calendar_view: week
+  kindle_actions:
+    - light.kitchen
+    - switch.coffee_machine
 ```
 
 `calendar_sources` may be one `calendar.*` entity or a list of several calendars. Home Assistant fetches upcoming events with `calendar.get_events`, sends a compact snapshot to the iOS app, and the app renders it on the native Calendar screen. `calendar_view` controls the default layout: `month`, `week`, `day`, or `list`.
+
+`kindle_actions` configures optional action links for Kindle/web displays created with `oldphonekiosk.create_web_display`. The Kindle never receives a Home Assistant admin token and does not run a pairing flow; the local display URL includes the display secret and action links call the Home Assistant endpoint with that signed URL. Only safe toggle domains are rendered: `light.*`, `switch.*`, and `input_boolean.*`. Existing tasks from a configured `todo.*` source may be marked Done from Kindle, but creating/editing tasks remains on Home Assistant or richer iOS surfaces.
 
 The same cadence is exposed on each panel device page as `number.<panel>_refresh_tasks_every`. Setting it to `0` disables automatic refresh; otherwise the connected iOS app periodically asks Home Assistant for a fresh snapshot of the configured `todo.*` source.
 
 Each panel also exposes `switch.<panel>_rotate_camera_180deg` (**Rotate camera 180°** / **Obróć kamerę o 180°**). Turn it on when the live camera preview is upside down; Home Assistant persists the setting and replays it to the iOS app as `camera_rotate_180` on reconnect.
 
 Task snapshots include the standard HA todo fields (`uid`, `summary`, `status`, `due`, `description`) and may include `assignee` plus a compact JSON `details` object for extra metadata. The iOS app renders these fields in a read-only task detail modal when the user taps a task row.
+
+Kindle/web displays render the same task snapshot as lightweight HTML. Each existing item with a `uid` gets a **Done** link that calls the local signed action endpoint and then returns to the display page. Kindle does not create new todo items.
 
 ### `oldphonekiosk.beep`
 
