@@ -35,3 +35,32 @@ def test_render_kindle_html_escapes_user_controlled_values():
     assert "<script>" not in html
     assert "&lt;script&gt;" in html
     assert "Milk &lt;b&gt;now&lt;/b&gt;" in html
+
+
+def test_render_kindle_html_includes_safe_action_links_for_controls_and_todos():
+    html = render_kindle_html(
+        KindleSnapshot(
+            name="Kitchen Kindle",
+            tasks=[
+                {
+                    "uid": "task-1",
+                    "summary": "Buy milk",
+                    "complete_url": "/api/oldphonekiosk/web-display/dev-1/action?token=s&action=complete_task&uid=task-1",
+                }
+            ],
+            actions=[
+                {
+                    "label": "Hallway light",
+                    "state": "off",
+                    "url": "/api/oldphonekiosk/web-display/dev-1/action?token=s&action=toggle&entity_id=light.hallway",
+                }
+            ],
+        )
+    )
+
+    assert "Quick actions" in html
+    assert "Hallway light" in html
+    assert "Toggle" in html
+    assert "Done" in html
+    assert "complete_task" in html
+    assert "light.hallway" in html

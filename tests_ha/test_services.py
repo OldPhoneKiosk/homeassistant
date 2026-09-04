@@ -16,12 +16,14 @@ from custom_components.oldphonekiosk.const import (
     ATTR_DEVICE_ID,
     ATTR_NAME,
     ATTR_ROOM,
+    ATTR_KINDLE_ACTIONS,
     CONF_API_KEY,
     CONF_BRIDGE_URL,
     DOMAIN,
     SERVICE_CREATE_WEB_DISPLAY,
     SERVICE_PAIR_NEW_PANEL,
     SERVICE_REVOKE_PANEL,
+    SERVICE_SET_PANEL_UI,
 )
 
 
@@ -282,6 +284,131 @@ async def test_create_web_display_service_returns_ready_kindle_url(hass: HomeAss
     assert "Kitchen Kindle" in result.text
     assert "OldPhoneKiosk Kindle Display" in result.text
     assert "Camera" not in result.text
+
+
+async def test_kindle_display_renders_and_runs_quick_toggle_actions(hass: HomeAssistant):
+    fake = _FakeClient()
+    hass.config.internal_url = "http://homeassistant.local:8123"
+    hass.states.async_set("light.hallway", "off", {"friendly_name": "Hallway light"})
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={CONF_BRIDGE_URL: "http://bridge.local:8788", CONF_API_KEY: "k"},
+    )
+    entry.add_to_hass(hass)
+    with patch("custom_components.oldphonekiosk.BridgeClient", return_value=fake):
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+    response = await hass.services.async_call(
+        DOMAIN,
+        SERVICE_CREATE_WEB_DISPLAY,
+        {ATTR_NAME: "Hallway Kindle", ATTR_ROOM: "Hallway"},
+        blocking=True,
+        return_response=True,
+    )
+    token = response["display_url"].split("token=", 1)[1]
+    await hass.services.async_call(
+        DOMAIN,
+        SERVICE_SET_PANEL_UI,
+        {
+            ATTR_DEVICE_ID: response["device_id"],
+            ATTR_KINDLE_ACTIONS: ["light.hallway"],
+        },
+        blocking=True,
+    )
+    await hass.async_block_till_done()
+
+    class _DisplayRequest:
+        app = {"hass": hass}
+        query = {"token": token}
+
+    html = await WebDisplayView().get(_DisplayRequest(), response["device_id"])
+    assert "Hallway light" in html.text
+    assert "action=toggle" in html.text
+
+    calls: list[tuple[str, str, dict]] = []
+
+    async def fake_light_toggle(call):
+        calls.append(("light", "toggle", dict(call.data)))
+
+    hass.services.async_register("light", "toggle", fake_light_toggle)
+
+    class _ActionRequest:
+        app = {"hass": hass}
+        query = {"token": token, "action": "toggle", "entity_id": "light.hallway"}
+
+    result = await WebDisplayView().get_action(
+        _ActionRequest(), response["device_id"]
+    )
+
+    assert calls == [("light", "toggle", {"entity_id": "light.hallway"})]
+    assert result.status == 302
+
+
+async def test_kindle_display_complete_task_action_dispatches_to_todo_handler(hass: HomeAssistant):
+    fake = _FakeClient()
+    hass.config.internal_url = "http://homeassistant.local:8123"
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={CONF_BRIDGE_URL: "http://bridge.local:8788", CONF_API_KEY: "k"},
+    )
+    entry.add_to_hass(hass)
+    with patch("custom_components.oldphonekiosk.BridgeClient", return_value=fake):
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+    response = await hass.services.async_call(
+        DOMAIN,
+        SERVICE_CREATE_WEB_DISPLAY,
+        {ATTR_NAME: "Kitchen Kindle", ATTR_ROOM: "Kitchen"},
+        blocking=True,
+        return_response=True,
+    )
+    token = response["display_url"].split("token=", 1)[1]
+    await hass.services.async_call(
+        DOMAIN,
+        SERVICE_SET_PANEL_UI,
+        {
+            ATTR_DEVICE_ID: response["device_id"],
+            "task_source": "todo.kitchen",
+        },
+        blocking=True,
+    )
+    await hass.async_block_till_done()
+
+    dispatched: list[dict] = []
+
+    async def fake_task_action(hass_arg, registry_arg, device_id_arg, raw):
+        dispatched.append(
+            {"device_id": device_id_arg, "action": raw["action"], "source": raw["source"], "uid": raw["uid"]}
+        )
+
+    class _ActionRequest:
+        app = {"hass": hass}
+        query = {
+            "token": token,
+            "action": "complete_task",
+            "source": "todo.kitchen",
+            "uid": "task-1",
+        }
+
+    with patch(
+        "custom_components.oldphonekiosk.http.async_handle_task_action",
+        side_effect=fake_task_action,
+    ):
+        result = await WebDisplayView().get_action(
+            _ActionRequest(), response["device_id"]
+        )
+
+    assert dispatched == [
+        {
+            "device_id": response["device_id"],
+            "action": "complete",
+            "source": "todo.kitchen",
+            "uid": "task-1",
+        }
+    ]
+    assert result.status == 302
 
 
 async def test_pairing_button_creates_code_notification(hass: HomeAssistant):

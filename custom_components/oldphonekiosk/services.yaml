@@ -22,8 +22,9 @@ pair_new_panel:
 create_web_display:
   name: Create web/Kindle display
   description: >-
-    Create a read-only OldPhoneKiosk web display from Home Assistant and return a ready URL
-    to open on an old Kindle browser. The Kindle does not pair or receive Home Assistant tokens.
+    Create an OldPhoneKiosk web display from Home Assistant and return a ready URL
+    to open on an old Kindle browser. The Kindle does not pair or receive Home Assistant tokens;
+    optional actions use local signed links.
   fields:
     name:
       name: Display name
@@ -103,7 +104,8 @@ set_panel_ui:
   name: Set panel UI
   description: >-
     Push Home-Assistant-owned kiosk navigation/config to a panel: the default and
-    enabled screens, bottom menu, dashboard URL, and the tasks/photos sources. Only
+    enabled screens, bottom menu, dashboard URL, the tasks/photos sources, and Kindle
+    quick-action entities. Only
     provided fields change; they persist and re-apply after a restart.
   fields:
     device_id:
@@ -166,6 +168,15 @@ set_panel_ui:
       selector:
         select:
           options: ["month", "week", "day", "list"]
+    kindle_actions:
+      name: Kindle quick actions
+      description: >-
+        Optional comma-separated/list of safe entities the Kindle web display may toggle.
+        Only light.*, switch.* and input_boolean.* are rendered as action links.
+      required: false
+      selector:
+        entity:
+          multiple: true
 
 beep:
   name: Beep panel

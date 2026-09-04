@@ -1,8 +1,8 @@
-"""Read-only Kindle/web display rendering for OldPhoneKiosk.
+"""Kindle/web display rendering for OldPhoneKiosk.
 
 Kindle displays do not pair on-device. Home Assistant creates the display and
-shows a ready-to-open URL; the Kindle browser only renders this lightweight,
-read-only HTML endpoint.
+shows a ready-to-open URL; the Kindle browser renders lightweight HTML with
+optional signed action links for safe toggles and completing existing tasks.
 """
 
 from __future__ import annotations
@@ -21,6 +21,7 @@ class KindleSnapshot:
     dashboard_url: str | None = None
     tasks: list[dict[str, Any]] = field(default_factory=list)
     calendar: list[dict[str, Any]] = field(default_factory=list)
+    actions: list[dict[str, Any]] = field(default_factory=list)
     refresh_seconds: int = 60
 
 
@@ -35,7 +36,24 @@ def _task_rows(tasks: list[dict[str, Any]]) -> str:
     for item in tasks[:12]:
         title = _esc(item.get("summary") or item.get("title") or "Task")
         due = _esc(item.get("due") or "")
-        rows.append(f"<li><strong>{title}</strong><span>{due}</span></li>")
+        complete_url = _esc(item.get("complete_url") or "")
+        action = (
+            f'<a class="action" href="{complete_url}">Done</a>' if complete_url else ""
+        )
+        rows.append(f"<li><strong>{title}</strong><span>{due}</span>{action}</li>")
+    return "".join(rows)
+
+
+def _action_rows(actions: list[dict[str, Any]]) -> str:
+    if not actions:
+        return '<li class="empty">No quick actions configured.</li>'
+    rows = []
+    for item in actions[:12]:
+        label = _esc(item.get("label") or item.get("entity_id") or "Action")
+        state = _esc(item.get("state") or "")
+        url = _esc(item.get("url") or "")
+        button = f'<a class="action" href="{url}">Toggle</a>' if url else ""
+        rows.append(f"<li><strong>{label}</strong><span>{state}</span>{button}</li>")
     return "".join(rows)
 
 
@@ -51,7 +69,7 @@ def _calendar_rows(events: list[dict[str, Any]]) -> str:
 
 
 def render_kindle_html(snapshot: KindleSnapshot) -> str:
-    """Render a Kindle-safe, read-only, high-contrast HTML page."""
+    """Render a Kindle-safe, action-capable, high-contrast HTML page."""
     refresh = max(30, min(int(snapshot.refresh_seconds or 60), 3600))
     title = _esc(snapshot.name)
     dashboard = _esc(snapshot.dashboard_url or "Home Assistant dashboard configured in HA")
@@ -64,16 +82,17 @@ def render_kindle_html(snapshot: KindleSnapshot) -> str:
 <meta http-equiv="refresh" content="{refresh}">
 <title>{title} — OldPhoneKiosk</title>
 <style>
-html{{background:#fff;color:#000}}body{{margin:0;background:#fff;color:#000;font-family:Georgia,serif;font-size:22px;line-height:1.35}}main{{max-width:820px;margin:0 auto;padding:28px}}header{{border-bottom:4px solid #000;margin-bottom:22px;padding-bottom:14px}}h1{{font-size:44px;line-height:1;margin:0 0 8px}}.meta{{font:16px sans-serif;text-transform:uppercase;letter-spacing:.08em}}section{{border:3px solid #000;margin:18px 0;padding:18px;break-inside:avoid}}h2{{font:700 24px sans-serif;margin:0 0 12px;text-transform:uppercase}}ul{{list-style:none;margin:0;padding:0}}li{{display:flex;justify-content:space-between;gap:20px;border-top:1px solid #777;padding:10px 0}}li:first-child{{border-top:0}}li span{{font:16px sans-serif;text-align:right}}.empty{{color:#555}}.dashboard{{font:18px sans-serif;word-break:break-all}}footer{{border-top:2px solid #000;margin-top:24px;padding-top:10px;font:14px sans-serif;color:#333}}
+html{{background:#fff;color:#000}}body{{margin:0;background:#fff;color:#000;font-family:Georgia,serif;font-size:22px;line-height:1.35}}main{{max-width:820px;margin:0 auto;padding:28px}}header{{border-bottom:4px solid #000;margin-bottom:22px;padding-bottom:14px}}h1{{font-size:44px;line-height:1;margin:0 0 8px}}.meta{{font:16px sans-serif;text-transform:uppercase;letter-spacing:.08em}}section{{border:3px solid #000;margin:18px 0;padding:18px;break-inside:avoid}}h2{{font:700 24px sans-serif;margin:0 0 12px;text-transform:uppercase}}ul{{list-style:none;margin:0;padding:0}}li{{display:grid;grid-template-columns:1fr auto auto;justify-content:space-between;align-items:center;gap:20px;border-top:1px solid #777;padding:10px 0}}li:first-child{{border-top:0}}li span{{font:16px sans-serif;text-align:right}}a.action{{font:700 18px sans-serif;color:#000;border:2px solid #000;padding:8px 12px;text-decoration:none;text-transform:uppercase}}.empty{{color:#555}}.dashboard{{font:18px sans-serif;word-break:break-all}}footer{{border-top:2px solid #000;margin-top:24px;padding-top:10px;font:14px sans-serif;color:#333}}
 </style>
 </head>
 <body>
 <main>
 <header><h1>{title}</h1><div class="meta">OldPhoneKiosk Kindle Display · {screen} · refresh {refresh}s</div></header>
 <section><h2>Dashboard</h2><div class="dashboard">{dashboard}</div></section>
+<section><h2>Quick actions</h2><ul>{_action_rows(snapshot.actions)}</ul></section>
 <section><h2>Tasks</h2><ul>{_task_rows(snapshot.tasks)}</ul></section>
 <section><h2>Calendar</h2><ul>{_calendar_rows(snapshot.calendar)}</ul></section>
-<footer>Read-only local Home Assistant display generated by OldPhoneKiosk.</footer>
+<footer>Local Home Assistant display generated by OldPhoneKiosk. Selected actions use signed local links.</footer>
 </main>
 </body>
 </html>"""

@@ -26,7 +26,7 @@ from .models import (
 )
 
 # Current schema version. Bump when adding a migration below.
-SCHEMA_VERSION = 9
+SCHEMA_VERSION = 10
 
 # Migration to version 1: the devices table. IF NOT EXISTS makes it idempotent so
 # pre-migration databases (created before user_version tracking) upgrade cleanly.
@@ -98,6 +98,9 @@ ALTER TABLE devices ADD COLUMN task_refresh_seconds REAL;
 _MIGRATION_9 = """
 ALTER TABLE devices ADD COLUMN camera_rotate_180 INTEGER;
 """
+_MIGRATION_10 = """
+ALTER TABLE devices ADD COLUMN kindle_actions TEXT;
+"""
 
 
 def _configure_connection(conn: sqlite3.Connection, db_path: str) -> None:
@@ -139,6 +142,8 @@ def _migrate(conn: sqlite3.Connection) -> None:
         conn.executescript(_MIGRATION_8)
     if version < 9:
         conn.executescript(_MIGRATION_9)
+    if version < 10:
+        conn.executescript(_MIGRATION_10)
     conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
     conn.commit()
 
@@ -193,8 +198,8 @@ class DeviceStore:
                     app_version, last_seen, video_url, dashboard_url, intercom,
                     task_source, photo_source, sound, enabled_screens, show_bottom_menu,
                     keep_screen_awake, show_connection_banner, dim_after_seconds, sleep_after_seconds,
-                    task_refresh_seconds, camera_rotate_180
-                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                    task_refresh_seconds, camera_rotate_180, kindle_actions
+                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                 ON CONFLICT(device_id) DO UPDATE SET
                     name=excluded.name, room=excluded.room, model=excluded.model,
                     ios_version=excluded.ios_version, capabilities=excluded.capabilities,
@@ -241,6 +246,7 @@ class DeviceStore:
                     None
                     if device.media.camera_rotate_180 is None
                     else int(device.media.camera_rotate_180),
+                    device.media.kindle_actions,
                 ),
             )
             self._conn.commit()
@@ -277,7 +283,7 @@ class DeviceStore:
                     video_url=?, dashboard_url=?, task_source=?, photo_source=?, sound=?,
                     enabled_screens=?, show_bottom_menu=?, keep_screen_awake=?,
                     show_connection_banner=?, dim_after_seconds=?, sleep_after_seconds=?,
-                    task_refresh_seconds=?, camera_rotate_180=?
+                    task_refresh_seconds=?, camera_rotate_180=?, kindle_actions=?
                 WHERE device_id=?
                 """,
                 (
@@ -302,6 +308,7 @@ class DeviceStore:
                     None
                     if media.camera_rotate_180 is None
                     else int(media.camera_rotate_180),
+                    media.kindle_actions,
                     device_id,
                 ),
             )
@@ -416,6 +423,7 @@ class DeviceStore:
         camera_rotate_180 = (
             row["camera_rotate_180"] if "camera_rotate_180" in keys else None
         )
+        kindle_actions = row["kindle_actions"] if "kindle_actions" in keys else None
         state = DeviceState(
             online=False,  # never persisted true; requires a live connection
             battery=row["battery"],
@@ -458,6 +466,7 @@ class DeviceStore:
                 camera_rotate_180=None
                 if camera_rotate_180 is None
                 else bool(camera_rotate_180),
+                kindle_actions=kindle_actions,
             ),
             created_at=_dt(row["created_at"]) or datetime.now().astimezone(),
         )

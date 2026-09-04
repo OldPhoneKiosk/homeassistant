@@ -17,6 +17,7 @@ UI_STRING_FIELDS = (
     "photo_source",
     "calendar_sources",
     "calendar_view",
+    "kindle_actions",
 )
 UI_BOOL_FIELDS = (
     "show_bottom_menu",
@@ -36,6 +37,7 @@ UI_CONFIG_FIELDS = (
     "photo_source",
     "calendar_sources",
     "calendar_view",
+    "kindle_actions",
     "enabled_screens",
     *UI_BOOL_FIELDS,
     *UI_SECONDS_FIELDS,
@@ -78,6 +80,7 @@ def build_configure_ui_params(
     photo_source: Any = _UNSET,
     calendar_sources: Any = _UNSET,
     calendar_view: Any = _UNSET,
+    kindle_actions: Any = _UNSET,
     include_empty: bool = True,
 ) -> dict[str, str]:
     """Build device-facing `configure_ui` params from explicit values.
@@ -93,6 +96,7 @@ def build_configure_ui_params(
         "photo_source": photo_source,
         "calendar_sources": calendar_sources,
         "calendar_view": calendar_view,
+        "kindle_actions": kindle_actions,
         "enabled_screens": enabled_screens,
         "show_bottom_menu": show_bottom_menu,
         "keep_screen_awake": keep_screen_awake,
