@@ -18,6 +18,7 @@ from custom_components.oldphonekiosk.const import (
     CONF_API_KEY,
     CONF_BRIDGE_URL,
     DOMAIN,
+    SERVICE_CREATE_WEB_DISPLAY,
     SERVICE_PAIR_NEW_PANEL,
     SERVICE_REVOKE_PANEL,
 )
@@ -240,6 +241,46 @@ async def test_pair_new_panel_service_returns_pairing_code(hass: HomeAssistant):
     assert response["pairing_code"] == "claim-abc"
     assert "payload" not in response
     assert "qr_svg_data_uri" not in response
+
+
+async def test_create_web_display_service_returns_ready_kindle_url(
+    hass: HomeAssistant, hass_client
+):
+    fake = _FakeClient()
+    hass.config.internal_url = "http://homeassistant.local:8123"
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={CONF_BRIDGE_URL: "http://bridge.local:8788", CONF_API_KEY: "k"},
+    )
+    entry.add_to_hass(hass)
+    with patch("custom_components.oldphonekiosk.BridgeClient", return_value=fake):
+        assert await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+    assert hass.services.has_service(DOMAIN, SERVICE_CREATE_WEB_DISPLAY)
+
+    response = await hass.services.async_call(
+        DOMAIN,
+        SERVICE_CREATE_WEB_DISPLAY,
+        {ATTR_NAME: "Kitchen Kindle", ATTR_ROOM: "Kitchen"},
+        blocking=True,
+        return_response=True,
+    )
+
+    assert response["device_id"]
+    assert response["display_url"].startswith(
+        "http://homeassistant.local:8123/api/oldphonekiosk/web-display/"
+    )
+    assert "token=" in response["display_url"]
+
+    client = await hass_client()
+    path = response["display_url"].removeprefix("http://homeassistant.local:8123")
+    result = await client.get(path)
+    assert result.status == 200
+    html = await result.text()
+    assert "Kitchen Kindle" in html
+    assert "OldPhoneKiosk Kindle Display" in html
+    assert "Camera" not in html
 
 
 async def test_pairing_button_creates_code_notification(hass: HomeAssistant):

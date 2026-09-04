@@ -16,6 +16,7 @@ from homeassistant.core import (
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers.network import get_url
 
 from .api import BridgeError, BridgeNotFoundError
 from .calendar import CALENDAR_VIEWS, async_push_calendar_snapshot
@@ -42,6 +43,7 @@ from .const import (
     DOMAIN,
     SCREENS,
     SERVICE_BEEP,
+    SERVICE_CREATE_WEB_DISPLAY,
     SERVICE_PAIR_NEW_PANEL,
     SERVICE_PLAY_SOUND,
     SERVICE_REVOKE_PANEL,
@@ -53,6 +55,7 @@ from .const import (
     SERVICE_STOP_STREAM,
 )
 from .coordinator import OldPhoneKioskCoordinator
+from .http import DATA_REGISTRY
 from .media_sources import async_resolve_media_source_url, is_media_source
 from .ui_config import build_configure_ui_params
 
@@ -66,6 +69,8 @@ PAIR_NEW_PANEL_SCHEMA = vol.Schema(
         vol.Optional(ATTR_ROOM): cv.string,
     }
 )
+
+CREATE_WEB_DISPLAY_SCHEMA = PAIR_NEW_PANEL_SCHEMA
 
 SET_MEDIA_SCHEMA = vol.All(
     vol.Schema(
@@ -198,6 +203,42 @@ async def _async_pair_new_panel(
         name=call.data[ATTR_NAME],
         room=call.data.get(ATTR_ROOM),
     )
+
+
+def _ha_base_url(hass: HomeAssistant) -> str:
+    """Return a HA URL suitable for typing/opening on a Kindle in the LAN."""
+    for candidate in (hass.config.internal_url, hass.config.external_url):
+        if candidate:
+            return str(candidate).rstrip("/")
+    try:
+        return get_url(hass, prefer_external=False).rstrip("/")
+    except Exception:
+        base = getattr(hass.config.api, "base_url", None) or ""
+        return str(base).rstrip("/")
+
+
+async def _async_create_web_display(
+    hass: HomeAssistant, call: ServiceCall
+) -> ServiceResponse:
+    """Create a Kindle/web display and return its ready-to-open URL."""
+    registry = hass.data.get(DOMAIN, {}).get(DATA_REGISTRY)
+    if registry is None:
+        raise ServiceValidationError("No OldPhoneKiosk backend is configured.")
+    created = registry.create_web_display(
+        name=call.data[ATTR_NAME], room=call.data.get(ATTR_ROOM)
+    )
+    base_url = _ha_base_url(hass)
+    path = f"/api/oldphonekiosk/web-display/{created.device_id}?token={created.device_secret}"
+    display_url = f"{base_url}{path}" if base_url else path
+    persistent_notification.async_create(
+        hass,
+        "Open this read-only display URL on the Kindle browser:\n\n"
+        f"`{display_url}`\n\n"
+        "Configure dashboard/tasks/calendar for this display from the OldPhoneKiosk device controls in Home Assistant.",
+        title="OldPhoneKiosk — Kindle display URL",
+        notification_id=f"{DOMAIN}_web_display_{created.device_id}",
+    )
+    return {"device_id": created.device_id, "display_url": display_url}
 
 
 async def _async_revoke_panel(hass: HomeAssistant, call: ServiceCall) -> None:
@@ -436,6 +477,9 @@ def async_setup_services(hass: HomeAssistant) -> None:
     async def _handle_pair_new_panel(call: ServiceCall) -> ServiceResponse:
         return await _async_pair_new_panel(hass, call)
 
+    async def _handle_create_web_display(call: ServiceCall) -> ServiceResponse:
+        return await _async_create_web_display(hass, call)
+
     async def _handle_set_media(call: ServiceCall) -> None:
         await _async_set_media(hass, call)
 
@@ -507,6 +551,13 @@ def async_setup_services(hass: HomeAssistant) -> None:
         schema=PAIR_NEW_PANEL_SCHEMA,
         supports_response=SupportsResponse.ONLY,
     )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_CREATE_WEB_DISPLAY,
+        _handle_create_web_display,
+        schema=CREATE_WEB_DISPLAY_SCHEMA,
+        supports_response=SupportsResponse.ONLY,
+    )
 
 
 def async_unload_services(hass: HomeAssistant) -> None:
@@ -514,6 +565,7 @@ def async_unload_services(hass: HomeAssistant) -> None:
     if not hass.data.get(DOMAIN):
         hass.services.async_remove(DOMAIN, SERVICE_REVOKE_PANEL)
         hass.services.async_remove(DOMAIN, SERVICE_PAIR_NEW_PANEL)
+        hass.services.async_remove(DOMAIN, SERVICE_CREATE_WEB_DISPLAY)
         hass.services.async_remove(DOMAIN, SERVICE_SET_MEDIA)
         hass.services.async_remove(DOMAIN, SERVICE_SET_PANEL_UI)
         hass.services.async_remove(DOMAIN, SERVICE_START_STREAM)

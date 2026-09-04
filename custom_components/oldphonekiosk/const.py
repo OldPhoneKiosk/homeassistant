@@ -80,6 +80,7 @@ MANUFACTURER = "OldPhoneKiosk"
 # Services
 SERVICE_REVOKE_PANEL = "revoke_panel"
 SERVICE_PAIR_NEW_PANEL = "pair_new_panel"
+SERVICE_CREATE_WEB_DISPLAY = "create_web_display"
 SERVICE_SET_MEDIA = "set_media"
 SERVICE_SET_PANEL_UI = "set_panel_ui"
 SERVICE_START_STREAM = "start_stream"
