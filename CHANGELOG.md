@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.2.0 - 2026-09-04
 
 - Add read-only Kindle/web display support: Home Assistant can create a web display and return a ready URL without any pairing flow on the Kindle.
 - Add a lightweight `/api/oldphonekiosk/web-display/{device_id}` HTML endpoint optimized for old/e-ink browsers and fed by HA dashboard/task/calendar configuration.
