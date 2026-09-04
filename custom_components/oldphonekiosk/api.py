@@ -96,6 +96,7 @@ class PanelDeviceData:
     dim_after_seconds: float | None = None
     sleep_after_seconds: float | None = None
     task_refresh_seconds: float | None = None
+    kindle_actions: str | None = None
 
     @classmethod
     def from_json(cls, data: dict[str, Any]) -> PanelDeviceData:
@@ -132,6 +133,7 @@ class PanelDeviceData:
             dim_after_seconds=media.get("dim_after_seconds"),
             sleep_after_seconds=media.get("sleep_after_seconds"),
             task_refresh_seconds=media.get("task_refresh_seconds"),
+            kindle_actions=media.get("kindle_actions"),
         )
 
 
@@ -239,6 +241,7 @@ class BridgeClient:
         photo_source: str | None = None,
         calendar_sources: str | None = None,
         calendar_view: str | None = None,
+        kindle_actions: str | None = None,
     ) -> PanelDeviceData:
         """Push panel UI config via the legacy HTTP Bridge command endpoint."""
         params: dict[str, Any] = {}
@@ -274,6 +277,8 @@ class BridgeClient:
             params["calendar_sources"] = calendar_sources
         if calendar_view is not None:
             params["calendar_view"] = calendar_view
+        if kindle_actions is not None:
+            params["kindle_actions"] = kindle_actions
         await self._request(
             "POST",
             ENDPOINT_COMMANDS.format(device_id=device_id),

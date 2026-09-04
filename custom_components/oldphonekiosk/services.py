@@ -29,6 +29,7 @@ from .const import (
     ATTR_DEFAULT_SCREEN,
     ATTR_DEVICE_ID,
     ATTR_ENABLED_SCREENS,
+    ATTR_KINDLE_ACTIONS,
     ATTR_INTERCOM_MODE,
     ATTR_NAME,
     ATTR_PHOTO_SOURCE,
@@ -104,6 +105,7 @@ SET_PANEL_UI_SCHEMA = vol.Schema(
         vol.Optional(ATTR_PHOTO_SOURCE): vol.Any(None, cv.string),
         vol.Optional(ATTR_CALENDAR_SOURCES): vol.Any(None, vol.All(cv.ensure_list, [cv.string]), cv.string),
         vol.Optional(ATTR_CALENDAR_VIEW): vol.In(CALENDAR_VIEWS),
+        vol.Optional(ATTR_KINDLE_ACTIONS): vol.Any(None, vol.All(cv.ensure_list, [cv.string]), cv.string),
     }
 )
 
@@ -217,6 +219,16 @@ def _ha_base_url(hass: HomeAssistant) -> str:
         return str(base).rstrip("/")
 
 
+def _csv(value: Any) -> str | None:
+    if value is None:
+        return None
+    if isinstance(value, str):
+        return value
+    if isinstance(value, list):
+        return ",".join(str(item).strip() for item in value if str(item).strip())
+    return str(value)
+
+
 async def _async_create_web_display(
     hass: HomeAssistant, call: ServiceCall
 ) -> ServiceResponse:
@@ -232,7 +244,7 @@ async def _async_create_web_display(
     display_url = f"{base_url}{path}" if base_url else path
     persistent_notification.async_create(
         hass,
-        "Open this read-only display URL on the Kindle browser:\n\n"
+        "Open this Kindle display URL on the Kindle browser:\n\n"
         f"`{display_url}`\n\n"
         "Configure dashboard/tasks/calendar for this display from the OldPhoneKiosk device controls in Home Assistant.",
         title="OldPhoneKiosk — Kindle display URL",
@@ -295,10 +307,6 @@ async def _async_set_panel_ui(hass: HomeAssistant, call: ServiceCall) -> None:
     """Push kiosk navigation/default-screen/dashboard config to an online panel."""
     device_id: str = call.data[ATTR_DEVICE_ID]
     coordinator = _find_coordinator(hass, device_id)
-    if coordinator is None:
-        raise ServiceValidationError(
-            f"No configured OldPhoneKiosk backend knows device '{device_id}'."
-        )
 
     ui_values: dict[str, Any] = {}
     if ATTR_DEFAULT_SCREEN in call.data:
@@ -317,10 +325,52 @@ async def _async_set_panel_ui(hass: HomeAssistant, call: ServiceCall) -> None:
         ui_values[ATTR_CALENDAR_SOURCES] = call.data[ATTR_CALENDAR_SOURCES]
     if ATTR_CALENDAR_VIEW in call.data:
         ui_values[ATTR_CALENDAR_VIEW] = call.data[ATTR_CALENDAR_VIEW]
+    if ATTR_KINDLE_ACTIONS in call.data:
+        ui_values[ATTR_KINDLE_ACTIONS] = _csv(call.data[ATTR_KINDLE_ACTIONS])
     params = build_configure_ui_params(**ui_values)
 
     if not params:
         raise ServiceValidationError("Set at least one panel UI option.")
+
+    registry = hass.data.get(DOMAIN, {}).get(DATA_REGISTRY)
+    if coordinator is None and registry is not None:
+        try:
+            registry.set_media_config(
+                device_id,
+                dashboard_url=call.data.get(ATTR_DASHBOARD_URL)
+                if ATTR_DASHBOARD_URL in call.data
+                else None,
+                task_source=call.data.get(ATTR_TASK_SOURCE)
+                if ATTR_TASK_SOURCE in call.data
+                else None,
+                photo_source=call.data.get(ATTR_PHOTO_SOURCE)
+                if ATTR_PHOTO_SOURCE in call.data
+                else None,
+                calendar_sources=params.get(ATTR_CALENDAR_SOURCES)
+                if ATTR_CALENDAR_SOURCES in call.data
+                else None,
+                calendar_view=call.data.get(ATTR_CALENDAR_VIEW)
+                if ATTR_CALENDAR_VIEW in call.data
+                else None,
+                enabled_screens=params.get(ATTR_ENABLED_SCREENS)
+                if ATTR_ENABLED_SCREENS in call.data
+                else None,
+                show_bottom_menu=call.data.get(ATTR_SHOW_BOTTOM_MENU)
+                if ATTR_SHOW_BOTTOM_MENU in call.data
+                else None,
+                kindle_actions=params.get(ATTR_KINDLE_ACTIONS)
+                if ATTR_KINDLE_ACTIONS in call.data
+                else None,
+            )
+        except Exception as err:
+            raise ServiceValidationError(
+                f"No configured OldPhoneKiosk backend knows device '{device_id}'."
+            ) from err
+        return
+    if coordinator is None:
+        raise ServiceValidationError(
+            f"No configured OldPhoneKiosk backend knows device '{device_id}'."
+        )
 
     try:
         await coordinator.client.async_set_panel_ui(
@@ -342,6 +392,9 @@ async def _async_set_panel_ui(hass: HomeAssistant, call: ServiceCall) -> None:
             else None,
             calendar_view=call.data.get(ATTR_CALENDAR_VIEW)
             if ATTR_CALENDAR_VIEW in call.data
+            else None,
+            kindle_actions=params.get(ATTR_KINDLE_ACTIONS)
+            if ATTR_KINDLE_ACTIONS in call.data
             else None,
         )
     except BridgeError as err:

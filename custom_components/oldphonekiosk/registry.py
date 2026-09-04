@@ -235,7 +235,7 @@ class Registry:
     def create_web_display(
         self, *, name: str, room: str | None = None
     ) -> NewDeviceCredentials:
-        """Create a read-only Kindle/web display without on-device pairing.
+        """Create an action-capable Kindle/web display without on-device pairing.
 
         Home Assistant returns the ready URL containing this secret; the Kindle
         simply opens that URL and renders the server-side display page.
@@ -434,6 +434,7 @@ class Registry:
         dim_after_seconds: float | None | object = _UNSET,
         sleep_after_seconds: float | None | object = _UNSET,
         task_refresh_seconds: float | None | object = _UNSET,
+        kindle_actions: str | None | object = _UNSET,
     ) -> PanelDevice:
         """Persist the HA-owned per-panel UI sources (dashboard/tasks/photos/sound).
 
@@ -495,6 +496,8 @@ class Registry:
                 if task_refresh_seconds is not None
                 else None
             )
+        if kindle_actions is not _UNSET:
+            device.media.kindle_actions = str(kindle_actions) if kindle_actions else None
         self._store.update_media(device_id, device.media)
         return device
 

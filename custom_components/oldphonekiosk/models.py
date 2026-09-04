@@ -132,6 +132,7 @@ class DeviceMedia(BaseModel):
     dim_after_seconds: float | None = None
     sleep_after_seconds: float | None = None
     task_refresh_seconds: float | None = None
+    kindle_actions: str | None = None
 
 
 class DeviceState(BaseModel):
